@@ -184,7 +184,7 @@ export default async function Index(props: IIndexProps) {
               </div>
 
               <div className="mt-auto pt-10">
-                <Button variant="accent" className="w-full">
+                <Button variant="primary" className="w-full">
                   Get access now
                 </Button>
               </div>
@@ -218,7 +218,7 @@ export default async function Index(props: IIndexProps) {
               </div>
 
               <div className="mt-auto pt-10">
-                <Button variant="accent" className="w-full">
+                <Button variant="primary" className="w-full">
                   Get access now
                 </Button>
               </div>
@@ -257,7 +257,7 @@ export default async function Index(props: IIndexProps) {
               </div>
 
               <div className="mt-auto pt-10">
-                <Button variant="accent" className="w-full">
+                <Button variant="primary" className="w-full">
                   Get access now
                 </Button>
               </div>

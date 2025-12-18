@@ -25,6 +25,7 @@ export function ClassroomPanel(props: { initial: Classroom[]; role: 'teacher' | 
   const [sessionTitle, setSessionTitle] = useState('');
   const [quizByClass, setQuizByClass] = useState<Record<string, QuizLite[]>>({});
   const [selectedQuizByClass, setSelectedQuizByClass] = useState<Record<string, string>>({});
+  const [expandedClassId, setExpandedClassId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -207,20 +208,40 @@ export function ClassroomPanel(props: { initial: Classroom[]; role: 'teacher' | 
             : classes.map(c => (
                 <div
                   key={c.id}
-                  className="flex items-center justify-between rounded-md border border-border-subtle bg-bg-section px-3 py-2"
+                  className="rounded-md border border-border-subtle bg-bg-section"
                 >
-                  <div className="min-w-0">
-                    <div className="truncate font-medium">{c.name}</div>
-                    <div className="text-sm text-text-muted">
-                      Code:
-                      {' '}
-                      <span className="font-mono">{c.classCode}</span>
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between px-3 py-2 text-left"
+                    onClick={() => {
+                      setExpandedClassId(prev => (prev === c.id ? null : c.id));
+                    }}
+                    disabled={busy}
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate font-medium text-text-heading">{c.name}</div>
+                      <div className="text-xs text-text-muted">
+                        Code:
+                        {' '}
+                        <span className="font-mono tracking-tight">{c.classCode}</span>
+                      </div>
                     </div>
                     {props.role === 'teacher'
                       ? (
-                          <div className="mt-2 flex items-center gap-2">
+                          <span className="ml-3 text-xs text-text-muted">
+                            {expandedClassId === c.id ? 'Ẩn chi tiết' : 'Tạo session'}
+                          </span>
+                        )
+                      : null}
+                  </button>
+
+                  {props.role === 'teacher' && expandedClassId === c.id
+                    ? (
+                        <div className="border-t border-border-subtle px-3 py-3 text-xs text-text-body">
+                          <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                            <div className="text-text-muted md:w-40">Quiz cho session này</div>
                             <select
-                              className="rounded-md border border-border-subtle bg-bg-card px-2 py-1 text-xs text-text-body"
+                              className="w-full rounded-md border border-border-subtle bg-bg-card px-2 py-1 text-xs text-text-body"
                               value={selectedQuizByClass[c.id] ?? ''}
                               onChange={(e) => {
                                 setSelectedQuizByClass(prev => ({ ...prev, [c.id]: e.target.value }));
@@ -241,19 +262,18 @@ export function ClassroomPanel(props: { initial: Classroom[]; role: 'teacher' | 
                               ))}
                             </select>
                           </div>
-                        )
-                      : null}
-                  </div>
-                  {props.role === 'teacher'
-                    ? (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          disabled={busy || sessionTitle.trim().length === 0}
-                          onClick={() => void createSession(c.id)}
-                        >
-                          Tạo session
-                        </Button>
+
+                          <div className="mt-3 flex justify-end">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              disabled={busy || sessionTitle.trim().length === 0}
+                              onClick={() => void createSession(c.id)}
+                            >
+                              Tạo session
+                            </Button>
+                          </div>
+                        </div>
                       )
                     : null}
                 </div>
