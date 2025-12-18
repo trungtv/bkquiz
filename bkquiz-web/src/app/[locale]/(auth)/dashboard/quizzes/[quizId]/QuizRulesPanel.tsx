@@ -1,6 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
+import { Table, TableWrap } from '@/components/ui/Table';
 
 type PoolLite = { id: string; name: string; visibility: 'private' | 'shared'; permission?: 'view' | 'use' | 'edit' };
 type RuleRow = {
@@ -151,38 +155,33 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-white p-4">
+      <Card>
         <div className="text-lg font-semibold">Quiz Rules (same-set)</div>
-        <div className="mt-1 text-sm text-gray-600">
+        <div className="mt-1 text-sm text-text-muted">
           Quiz:
           {' '}
           <span className="font-mono">{props.quizId}</span>
         </div>
         {error
           ? (
-              <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <div className="mt-3 rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
                 {error}
               </div>
             )
           : null}
-      </div>
+      </Card>
 
-      <div className="rounded-lg border bg-white p-4">
+      <Card>
         <div className="flex items-center justify-between">
           <div className="text-lg font-semibold">Preview đủ/thiếu theo rule</div>
-          <button
-            type="button"
-            className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50"
-            onClick={() => void loadPreview()}
-            disabled={busy}
-          >
+          <Button size="sm" variant="ghost" onClick={() => void loadPreview()} disabled={busy}>
             Preview
-          </button>
+          </Button>
         </div>
         {preview
           ? (
               <div className="mt-3 overflow-x-auto">
-                <div className="mb-2 text-sm text-gray-700">
+                <div className="mb-2 text-sm text-text-heading">
                   Tổng requested:
                   {' '}
                   <span className="font-mono">{preview.totals.totalRequested}</span>
@@ -195,55 +194,63 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
                   {' '}
                   <span className="font-mono">{preview.totals.totalShortage}</span>
                 </div>
-                <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
-                  <thead>
-                    <tr className="text-gray-600">
-                      <th className="border-b p-2">Tag</th>
-                      <th className="border-b p-2">Requested</th>
-                      <th className="border-b p-2">PoolSize</th>
-                      <th className="border-b p-2">Available</th>
-                      <th className="border-b p-2">Shortage</th>
-                      <th className="border-b p-2">Pools</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {preview.rows.map(r => (
-                      <tr key={r.ruleId} className={r.shortage > 0 ? 'bg-amber-50' : 'odd:bg-gray-50'}>
-                        <td className="p-2 font-mono">{r.tag.normalizedName}</td>
-                        <td className="p-2 font-mono">{r.requested}</td>
-                        <td className="p-2 font-mono">{r.poolSize}</td>
-                        <td className="p-2 font-mono">{r.available}</td>
-                        <td className="p-2 font-mono">{r.shortage}</td>
-                        <td className="p-2 text-xs">
-                          {r.poolIds.length === 0
-                            ? <span className="font-mono">ALL</span>
-                            : r.poolIds.map(id => poolById.get(id)?.name ?? id).join(', ')}
-                        </td>
+                <TableWrap>
+                  <Table>
+                    <thead>
+                      <tr className="text-text-muted">
+                        <th className="border-b p-2">Tag</th>
+                        <th className="border-b p-2">Requested</th>
+                        <th className="border-b p-2">PoolSize</th>
+                        <th className="border-b p-2">Available</th>
+                        <th className="border-b p-2">Shortage</th>
+                        <th className="border-b p-2">Pools</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {preview.rows.map(r => (
+                        <tr
+                          key={r.ruleId}
+                          className={r.shortage > 0
+                            ? 'bg-warning/10'
+                            : 'odd:bg-bg-elevated'}
+                        >
+                          <td className="p-2 font-mono">{r.tag.normalizedName}</td>
+                          <td className="p-2 font-mono">{r.requested}</td>
+                          <td className="p-2 font-mono">{r.poolSize}</td>
+                          <td className="p-2 font-mono">{r.available}</td>
+                          <td className="p-2 font-mono">{r.shortage}</td>
+                          <td className="p-2 text-xs">
+                            {r.poolIds.length === 0
+                              ? <span className="font-mono">ALL</span>
+                              : r.poolIds.map(id => poolById.get(id)?.name ?? id).join(', ')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </TableWrap>
               </div>
             )
           : (
-              <div className="mt-2 text-sm text-gray-600">
+              <div className="mt-2 text-sm text-text-muted">
                 Bấm “Preview” để kiểm tra đủ/thiếu câu theo từng tag/pool trước khi tạo session.
               </div>
             )}
-      </div>
+      </Card>
 
-      <div className="rounded-lg border bg-white p-4">
+      <Card>
         <div className="text-lg font-semibold">Thêm / cập nhật rule theo tag</div>
         <div className="mt-3 grid gap-3">
-          <div className="rounded-md border bg-gray-50 p-3 text-sm">
-            <div className="font-medium text-gray-700">Variant default extraPercent (quiz-level)</div>
+          <Card className="p-3 text-sm">
+            <div className="font-medium text-text-heading">Variant default extraPercent (quiz-level)</div>
             <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end">
-              <label className="flex-1">
-                <div className="text-sm font-medium text-gray-700">defaultExtraPercent</div>
-                <input
+              <label className="flex-1" htmlFor="defaultExtraPercent">
+                <div className="text-sm font-medium text-text-heading">defaultExtraPercent</div>
+                <Input
+                  id="defaultExtraPercent"
                   type="number"
                   step="0.05"
-                  className="mt-1 w-full rounded-md border px-3 py-2"
+                  className="mt-1"
                   value={defaultExtraPercent}
                   onChange={e => setDefaultExtraPercent(Number(e.target.value))}
                   disabled={busy}
@@ -251,21 +258,16 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
                   max={5}
                 />
               </label>
-              <button
-                type="button"
-                className="rounded-md border px-3 py-2 text-sm hover:bg-white disabled:opacity-50"
-                onClick={() => void saveDefaultExtra()}
-                disabled={busy}
-              >
+              <Button size="sm" variant="ghost" onClick={() => void saveDefaultExtra()} disabled={busy}>
                 Lưu default
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
 
-          <label className="grid gap-1 text-sm">
-            <div className="font-medium text-gray-700">Tag</div>
-            <input
-              className="rounded-md border px-3 py-2"
+          <label className="grid gap-1 text-sm" htmlFor="ruleTag">
+            <div className="font-medium text-text-heading">Tag</div>
+            <Input
+              id="ruleTag"
               value={tag}
               onChange={e => setTag(e.target.value)}
               disabled={busy}
@@ -273,10 +275,11 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
             />
           </label>
 
-          <label className="grid gap-1 text-sm">
-            <div className="font-medium text-gray-700">Mode</div>
+          <label className="grid gap-1 text-sm" htmlFor="ruleMode">
+            <div className="font-medium text-text-heading">Mode</div>
             <select
-              className="rounded-md border px-3 py-2"
+              id="ruleMode"
+              className="rounded-md border border-border-subtle bg-bg-section px-3 py-2 text-text-body"
               value={mode}
               onChange={e => setMode(e.target.value as 'same' | 'variant')}
               disabled={busy}
@@ -286,11 +289,11 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
             </select>
           </label>
 
-          <label className="grid gap-1 text-sm">
-            <div className="font-medium text-gray-700">Số câu (count)</div>
-            <input
+          <label className="grid gap-1 text-sm" htmlFor="ruleCount">
+            <div className="font-medium text-text-heading">Số câu (count)</div>
+            <Input
+              id="ruleCount"
               type="number"
-              className="rounded-md border px-3 py-2"
               value={count}
               onChange={e => setCount(Number(e.target.value))}
               disabled={busy || mode !== 'same'}
@@ -302,11 +305,11 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
           {mode === 'variant'
             ? (
                 <div className="grid gap-3 md:grid-cols-3">
-                  <label className="grid gap-1 text-sm">
-                    <div className="font-medium text-gray-700">commonCount</div>
-                    <input
+                  <label className="grid gap-1 text-sm" htmlFor="commonCount">
+                    <div className="font-medium text-text-heading">commonCount</div>
+                    <Input
+                      id="commonCount"
                       type="number"
-                      className="rounded-md border px-3 py-2"
                       value={commonCount}
                       onChange={e => setCommonCount(Number(e.target.value))}
                       disabled={busy}
@@ -314,11 +317,11 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
                       max={500}
                     />
                   </label>
-                  <label className="grid gap-1 text-sm">
-                    <div className="font-medium text-gray-700">variantCount</div>
-                    <input
+                  <label className="grid gap-1 text-sm" htmlFor="variantCount">
+                    <div className="font-medium text-text-heading">variantCount</div>
+                    <Input
+                      id="variantCount"
                       type="number"
-                      className="rounded-md border px-3 py-2"
                       value={variantCount}
                       onChange={e => setVariantCount(Number(e.target.value))}
                       disabled={busy}
@@ -326,12 +329,12 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
                       max={500}
                     />
                   </label>
-                  <label className="grid gap-1 text-sm">
-                    <div className="font-medium text-gray-700">extraPercent</div>
-                    <input
+                  <label className="grid gap-1 text-sm" htmlFor="extraPercent">
+                    <div className="font-medium text-text-heading">extraPercent</div>
+                    <Input
+                      id="extraPercent"
                       type="number"
                       step="0.05"
-                      className="rounded-md border px-3 py-2"
                       value={extraPercent}
                       onChange={e => setExtraPercent(Number(e.target.value))}
                       disabled={busy || useDefaultExtra}
@@ -360,14 +363,14 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
               )
             : null}
 
-          <div className="text-sm font-medium text-gray-700">Chọn pools (có thể chọn nhiều)</div>
+          <div className="text-sm font-medium text-text-heading">Chọn pools (có thể chọn nhiều)</div>
           <div className="grid gap-2 md:grid-cols-2">
             {pools.length === 0
               ? (
-                  <div className="text-sm text-gray-600">Chưa có pool nào.</div>
+                  <div className="text-sm text-text-muted">Chưa có pool nào.</div>
                 )
               : pools.map(p => (
-                  <div key={p.id} className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                  <div key={p.id} className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-section px-3 py-2 text-sm">
                     <input
                       aria-label={`pool:${p.name}`}
                       type="checkbox"
@@ -384,7 +387,7 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
                     />
                     <div className="min-w-0">
                       <div className="truncate font-medium">{p.name}</div>
-                      <div className="text-xs text-gray-600">
+                      <div className="text-xs text-text-muted">
                         <span className="font-mono">{p.visibility}</span>
                         {p.permission
                           ? (
@@ -401,7 +404,7 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
                   </div>
                 ))}
           </div>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-text-muted">
             Nếu không chọn pool nào, rule sẽ lấy từ
             {' '}
             <strong>tất cả pools</strong>
@@ -409,30 +412,29 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
             (MVP).
           </div>
 
-          <button
-            type="button"
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          <Button
+            variant="primary"
             disabled={busy || tag.trim().length === 0 || (mode === 'same' ? count < 1 : (commonCount + variantCount) < 1)}
             onClick={() => void saveRule()}
           >
             {busy ? 'Đang lưu...' : 'Lưu rule'}
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
 
-      <div className="rounded-lg border bg-white p-4">
+      <Card>
         <div className="text-lg font-semibold">Rules hiện tại</div>
         <div className="mt-3 grid gap-2">
           {rules.length === 0
             ? (
-                <div className="text-sm text-gray-600">Chưa có rule nào.</div>
+                <div className="text-sm text-text-muted">Chưa có rule nào.</div>
               )
             : (
                 rules.map((r) => {
                   const poolIds: string[] = (r.filters?.poolIds ?? []) as string[];
                   const ruleMode: 'same' | 'variant' = (r.commonCount ?? 0) > 0 || (r.variantCount ?? 0) > 0 ? 'variant' : 'same';
                   return (
-                    <div key={r.id} className="rounded-md border p-3">
+                    <div key={r.id} className="rounded-md border border-border-subtle bg-bg-section p-3">
                       <div className="text-sm">
                         Tag:
                         {' '}
@@ -467,7 +469,7 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
                               </>
                             )}
                       </div>
-                      <div className="mt-2 text-xs text-gray-600">
+                      <div className="mt-2 text-xs text-text-muted">
                         Pools:
                         {' '}
                         {poolIds.length === 0
@@ -479,7 +481,7 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
                 })
               )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

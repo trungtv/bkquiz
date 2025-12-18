@@ -1,3 +1,106 @@
-@layer theme, base, clerk, components, utilities; /* Ensure Clerk is compatible with Tailwind CSS v4 */
+@config '../../tailwind.config.ts';
+
+@layer theme, base, clerk, components, utilities;
 
 @import 'tailwindcss';
+
+@layer theme {
+  :root {
+    /* Fallback tokens cho các class bg-* / text-* đang dùng,
+       phòng trường hợp Tailwind chưa generate util tương ứng. */
+    --bk-bg-page: #101010;
+    --bk-bg-section: #141414;
+    --bk-bg-card: #181818;
+    --bk-bg-card-hover: #202020;
+
+    --bk-text-heading: #f5f6fa;
+    --bk-text-body: #cfd3e1;
+    --bk-text-muted: #9aa1b5;
+    --bk-text-on-primary: #05060e;
+
+    --bk-primary: #ff5a00;
+    --bk-primary-hover: #ff6a1a;
+  }
+
+  .bg-bg-page {
+    background-color: var(--bk-bg-page);
+  }
+
+  .bg-bg-section {
+    background-color: var(--bk-bg-section);
+  }
+
+  .bg-bg-card {
+    background-color: var(--bk-bg-card);
+  }
+
+  .bg-bg-cardHover {
+    background-color: var(--bk-bg-card-hover);
+  }
+
+  .bg-primary {
+    background-color: var(--bk-primary);
+  }
+
+  .hover\:bg-primary-hover:hover {
+    background-color: var(--bk-primary-hover);
+  }
+
+  .bg-accent-orange {
+    background-color: var(--bk-accent-orange);
+  }
+
+  .hover\:bg-accent-orangeHover:hover {
+    background-color: var(--bk-accent-orange-hover);
+  }
+
+  .text-text-heading {
+    color: var(--bk-text-heading);
+  }
+
+  .text-text-base,
+  .text-text-body {
+    color: var(--bk-text-body);
+  }
+
+  .text-text-muted {
+    color: var(--bk-text-muted);
+  }
+
+   .text-text-onPrimary {
+     color: var(--bk-text-on-primary);
+   }
+}
+
+@layer base {
+  /* Body gradient background - quá phức tạp để viết inline bằng Tailwind */
+  body {
+    /* Charcoal neutral background, không còn tint xanh */
+    background:
+      radial-gradient(1200px 800px at -10% -10%, rgba(255, 255, 255, 0.04), transparent 60%),
+      radial-gradient(900px 600px at 110% 0%, rgba(255, 255, 255, 0.02), transparent 65%),
+      linear-gradient(180deg, #101010, #141414);
+  }
+
+  /* Global focus styles cho accessibility */
+  :where(a, button, input, select, textarea):focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(91, 124, 250, 0.22);
+    border-radius: 0.5rem;
+  }
+
+  /* Selection highlight */
+  ::selection {
+    background: rgba(91, 124, 250, 0.3);
+  }
+
+  /* Accessibility: respect user's motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 type SessionStatus = {
   id: string;
@@ -54,66 +56,61 @@ export function Lobby(props: { sessionId: string }) {
 
   if (error) {
     return (
-      <div className="rounded-lg border bg-white p-6">
+      <Card className="p-6">
         <div className="text-lg font-semibold">Không vào được session</div>
-        <div className="mt-2 text-sm text-red-700">{error}</div>
-      </div>
+        <div className="mt-2 text-sm text-danger">{error}</div>
+      </Card>
     );
   }
 
   if (!data) {
     return (
-      <div className="rounded-lg border bg-white p-6">
+      <Card className="p-6">
         <div className="text-lg font-semibold">Đang tải...</div>
-      </div>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border bg-white p-6">
-        <div className="text-lg font-semibold">{data.quiz.title}</div>
-        <div className="mt-1 text-sm text-gray-600">
+      <Card className="p-6">
+        <div className="text-lg font-semibold text-text-heading">{data.quiz.title}</div>
+        <div className="mt-1 text-sm text-text-body">
           Lớp:
           {' '}
           <span className="font-medium">{data.quiz.classroom.name}</span>
         </div>
-        <div className="mt-1 text-xs text-gray-500">
+        <div className="mt-1 text-xs text-text-muted">
           Session ID:
           {' '}
           <span className="font-mono">{data.id}</span>
         </div>
-      </div>
+      </Card>
 
       {data.status === 'lobby'
         ? (
-            <div className="rounded-lg border bg-white p-6">
-              <div className="text-lg font-semibold">Đang chờ giảng viên bắt đầu</div>
-              <div className="mt-2 text-sm text-gray-700">
+            <Card className="p-6">
+              <div className="text-lg font-semibold text-text-heading">Đang chờ giảng viên bắt đầu</div>
+              <div className="mt-2 text-sm text-text-body">
                 Khi bắt đầu bài, hệ thống sẽ tự chuyển sang màn hình làm bài.
               </div>
-            </div>
+            </Card>
           )
         : data.status === 'active'
           ? (
-              <div className="rounded-lg border bg-white p-6">
+              <Card className="p-6">
                 <div className="text-lg font-semibold">Session đã bắt đầu</div>
                 <div className="mt-3">
-                  <button
-                    type="button"
-                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-                    onClick={() => void join()}
-                    disabled={busy}
-                  >
+                  <Button variant="primary" onClick={() => void join()} disabled={busy}>
                     {busy ? 'Đang vào...' : 'Vào làm bài'}
-                  </button>
+                  </Button>
                 </div>
-              </div>
+              </Card>
             )
           : (
-              <div className="rounded-lg border bg-white p-6">
+              <Card className="p-6">
                 <div className="text-lg font-semibold">Session đã kết thúc</div>
-              </div>
+              </Card>
             )}
     </div>
   );

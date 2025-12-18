@@ -1,6 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 type Pool = {
   id: string;
@@ -63,11 +66,19 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-white p-4">
-        <div className="text-lg font-semibold">Question Bank</div>
-        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+      <Card className="p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-base font-semibold text-text-heading">Question Bank</div>
+            <div className="mt-1 text-sm text-text-muted">
+              Quản lý question pools và import nhanh câu hỏi từ Markdown/ZIP.
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1">
-            <div className="text-sm font-medium text-gray-700">Import (.md hoặc .zip)</div>
+            <div className="text-sm font-medium text-text-heading">Import (.md hoặc .zip)</div>
             <input
               type="file"
               accept=".md,.zip"
@@ -75,62 +86,87 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
               onChange={e => setFile(e.target.files?.[0] ?? null)}
               disabled={busy}
             />
-            <div className="mt-1 text-xs text-gray-500">
-              ZIP yêu cầu có file
+            <div className="mt-1 text-xs text-text-muted">
+              ZIP cần chứa file
               {' '}
               <span className="font-mono">questions.md</span>
               {' '}
-              ở root hoặc trong folder.
+              (xem chi tiết ở
+              {' '}
+              <span className="font-mono">docs/import.md</span>
+              ).
             </div>
           </div>
-          <button
-            type="button"
-            onClick={importFile}
-            disabled={busy || !file}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
+          <Button variant="primary" onClick={importFile} disabled={busy || !file}>
             {busy ? 'Đang import...' : 'Import'}
-          </button>
+          </Button>
         </div>
 
         {error
           ? (
-              <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <div className="mt-3 rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
                 {error}
               </div>
             )
           : null}
-      </div>
+      </Card>
 
-      <div className="rounded-lg border bg-white p-4">
-        <div className="text-lg font-semibold">Pools của bạn</div>
-        <div className="mt-3 grid gap-2">
-          {sorted.length === 0
+      <Card className="p-5">
+        <div className="text-base font-semibold text-text-heading">Pools của bạn</div>
+        <div className="mt-1 text-sm text-text-muted">
+          Bao gồm các pools bạn sở hữu; có thể dùng trong quiz rules và sessions.
+        </div>
+        <div className="mt-4 grid gap-2">
+          {busy && sorted.length === 0
             ? (
-                <div className="text-sm text-gray-600">Chưa có pool nào.</div>
+                <div className="grid gap-2">
+                  <Skeleton className="h-14" />
+                  <Skeleton className="h-14" />
+                </div>
               )
-            : (
-                sorted.map(p => (
-                  <div key={p.id} className="flex items-center justify-between rounded-md border px-3 py-2">
+              : sorted.length === 0
+              ? (
+                  <div className="rounded-md border border-dashed border-border-subtle px-4 py-6 text-center text-sm text-text-muted">
+                    Chưa có pool nào.
+                    {' '}
+                    <span className="font-medium text-text-heading">
+                      Hãy import từ Markdown/ZIP hoặc tạo pool mới (phase sau).
+                    </span>
+                  </div>
+                )
+              : sorted.map(p => (
+                  <Card
+                    key={p.id}
+                    interactive
+                    className="flex cursor-pointer items-center justify-between gap-3 px-3 py-3"
+                    onClick={() => {
+                      window.location.href = `/dashboard/question-bank/${p.id}`;
+                    }}
+                  >
                     <div className="min-w-0">
-                      <div className="truncate font-medium">{p.name}</div>
-                      <div className="text-sm text-gray-600">
-                        Visibility:
-                        {' '}
+                      <div className="truncate text-sm font-medium text-text-heading">{p.name}</div>
+                      <div className="mt-1 text-xs text-text-muted">
                         <span className="font-mono">{p.visibility}</span>
+                        {' · cập nhật: '}
+                        <span className="font-mono">
+                          {new Date(p.updatedAt).toLocaleString()}
+                        </span>
                       </div>
                     </div>
-                    <a
-                      className="text-sm font-medium text-blue-700 hover:underline"
-                      href={`/dashboard/question-bank/${p.id}`}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.location.href = `/dashboard/question-bank/${p.id}`;
+                      }}
                     >
                       Mở
-                    </a>
-                  </div>
-                ))
-              )}
+                    </Button>
+                  </Card>
+                ))}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

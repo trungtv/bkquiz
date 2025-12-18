@@ -22,7 +22,7 @@ export default async function Layout(props: {
             <li>
               <Link
                 href="/"
-                className="border-none text-gray-700 hover:text-gray-900"
+                className="rounded-md px-3 py-2 text-text-muted hover:bg-bg-card hover:text-text-heading"
               >
                 {t('home_link')}
               </Link>
@@ -30,7 +30,7 @@ export default async function Layout(props: {
             <li>
               <Link
                 href="/dashboard/"
-                className="border-none text-gray-700 hover:text-gray-900"
+                className="rounded-md px-3 py-2 text-text-muted hover:bg-bg-card hover:text-text-heading"
               >
                 Dashboard
               </Link>
@@ -42,7 +42,7 @@ export default async function Layout(props: {
             <li>
               <Link
                 href="/sign-in/"
-                className="border-none text-gray-700 hover:text-gray-900"
+                className="rounded-md px-3 py-2 text-text-muted hover:bg-bg-card hover:text-text-heading"
               >
                 {t('sign_in_link')}
               </Link>
@@ -51,7 +51,7 @@ export default async function Layout(props: {
             <li>
               <Link
                 href="/sign-up/"
-                className="border-none text-gray-700 hover:text-gray-900"
+                className="rounded-md px-3 py-2 text-text-muted hover:bg-bg-card hover:text-text-heading"
               >
                 {t('sign_up_link')}
               </Link>
@@ -63,7 +63,7 @@ export default async function Layout(props: {
           </>
         )}
       >
-        <div className="py-5 text-xl [&_p]:my-6">{props.children}</div>
+        <div className="text-base">{props.children}</div>
       </BaseTemplate>
     </>
   );

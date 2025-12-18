@@ -1,6 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
 import { idbGet, idbSet } from '@/utils/idb';
 
 type AttemptState = {
@@ -308,51 +312,87 @@ export function AttemptClient(props: { attemptId: string }) {
 
   if (error) {
     return (
-      <div className="rounded-lg border bg-white p-6">
-        <div className="text-lg font-semibold">Có lỗi</div>
-        <div className="mt-2 text-sm text-red-700">{error}</div>
-      </div>
+      <Card>
+        <div className="text-lg font-semibold text-text-heading">Có lỗi</div>
+        <div className="mt-2 text-sm text-danger">{error}</div>
+      </Card>
     );
   }
 
   if (!state) {
     return (
-      <div className="rounded-lg border bg-white p-6">
+      <Card className="p-6">
         <div className="text-lg font-semibold">Đang tải...</div>
-      </div>
+      </Card>
     );
   }
 
   const blocked = state.isLocked || (state.due && state.session.status === 'active') || (!isOnline && state.session.status === 'active' && state.nextDueAt !== null);
   const q = questions[idx] ?? null;
+  const progressPct = questions.length > 0 ? Math.round(((idx + 1) / questions.length) * 100) : 0;
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border bg-white p-6">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="text-lg font-semibold">{state.session.quiz.title}</div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className={isOnline ? 'rounded bg-emerald-50 px-2 py-1 text-emerald-700' : 'rounded bg-zinc-100 px-2 py-1 text-zinc-700'}>
-              {isOnline ? 'Online' : 'Offline'}
-            </span>
-            <span className="rounded bg-amber-50 px-2 py-1 text-amber-700">
-              Pending:
+    <div className="space-y-6">
+      {/* Sticky topbar */}
+      <div className="sticky top-[56px] z-40 -mx-4 border-b border-border-subtle bg-bg-page/80 px-4 py-3 backdrop-blur">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
+            <div className="truncate text-base font-semibold">{state.session.quiz.title}</div>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-muted">
+              <span className="font-mono">
+                Attempt
+                {state.id.slice(0, 8)}
+              </span>
+              <span>·</span>
+              <span>
+                Câu
+                {' '}
+                <span className="font-mono">{questions.length === 0 ? '-' : (idx + 1)}</span>
+                /
+                <span className="font-mono">{questions.length || '-'}</span>
+                {' '}
+                (
+                {progressPct}
+                %)
+              </span>
+              <span>·</span>
+              <span>
+                Checkpoint còn:
+                {' '}
+                <span className="font-mono">{nextDueIn === null ? '...' : `${nextDueIn}s`}</span>
+              </span>
+            </div>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-bg-section">
+              <div
+                className="h-full rounded-full bg-primary"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={isOnline ? 'success' : 'danger'}>{isOnline ? 'Online' : 'Offline'}</Badge>
+            <Badge variant={pendingCount > 0 ? 'warning' : 'neutral'}>
+              Pending
               {' '}
               <span className="font-mono">{pendingCount}</span>
-            </span>
-            <button
-              type="button"
-              className="rounded border px-2 py-1 text-xs hover:bg-gray-50 disabled:opacity-50"
+            </Badge>
+            <Button
+              size="sm"
+              variant="ghost"
               disabled={!isOnline || pendingCount === 0 || busy}
               onClick={() => void syncDirtyAnswers()}
             >
               Sync now
-            </button>
+            </Button>
+            {state.warning && !blocked ? <Badge variant="warning">Sắp tới hạn</Badge> : null}
+            {blocked ? <Badge variant="danger">Bị block</Badge> : null}
           </div>
         </div>
+
         {syncError
           ? (
-              <div className="mt-2 text-xs text-red-700">
+              <div className="mt-2 text-xs text-danger">
                 Sync lỗi (sẽ tự thử lại khi online):
                 {' '}
                 <span className="font-mono">{syncError}</span>
@@ -361,41 +401,42 @@ export function AttemptClient(props: { attemptId: string }) {
           : null}
         {lastSyncAt
           ? (
-              <div className="mt-1 text-xs text-gray-500">
+              <div className="mt-1 text-xs text-text-muted">
                 Last sync:
                 {' '}
                 <span className="font-mono">{new Date(lastSyncAt).toLocaleTimeString()}</span>
               </div>
             )
           : null}
-        <div className="mt-1 text-sm text-gray-600">
-          Attempt:
-          {' '}
-          <span className="font-mono">{state.id}</span>
-        </div>
-        <div className="mt-1 text-sm text-gray-600">
-          Next checkpoint:
-          {' '}
-          <span className="font-mono">{nextDueIn === null ? '...' : `${nextDueIn}s`}</span>
-        </div>
       </div>
 
-      <div className="rounded-lg border bg-white p-6">
-        <div className="text-sm text-gray-700">
+      <Card className="p-6">
+        <div className="text-sm text-text-body">
           {q
             ? (
                 <div>
-                  <div className="mb-3 text-sm text-gray-600">
-                    Câu
-                    {' '}
-                    {idx + 1}
-                    /
-                    {questions.length}
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-sm text-text-muted">
+                      Câu
+                      {' '}
+                      <span className="font-mono">{idx + 1}</span>
+                      /
+                      <span className="font-mono">{questions.length}</span>
+                    </div>
+                    <Badge variant="info">{q.type === 'mcq_single' ? 'Chọn 1' : 'Chọn nhiều'}</Badge>
                   </div>
-                  <div className="whitespace-pre-wrap text-gray-900">{q.prompt}</div>
+                  <div className="text-base whitespace-pre-wrap text-text-heading">{q.prompt}</div>
                   <div className="mt-4 grid gap-2">
                     {q.options.map(o => (
-                      <label key={o.order} className="flex items-start gap-2 rounded-md border p-3">
+                      <label
+                        key={o.order}
+                        aria-label={`option:${o.order}`}
+                        className={[
+                          'flex cursor-pointer items-start gap-3 rounded-md border border-border-subtle p-3 transition-colors duration-fast ease-soft',
+                          'bg-bg-section hover:bg-bg-elevated',
+                          selected.includes(o.order) ? 'border-primary bg-primary-subtle' : '',
+                        ].filter(Boolean).join(' ')}
+                      >
                         <input
                           type="checkbox"
                           checked={selected.includes(o.order)}
@@ -412,105 +453,97 @@ export function AttemptClient(props: { attemptId: string }) {
                             });
                           }}
                         />
-                        <div className="text-sm text-gray-800">{o.content}</div>
+                        <div className="min-w-0">
+                          <div className="text-sm text-text-body">{o.content}</div>
+                        </div>
                       </label>
                     ))}
                   </div>
-                  <div className="mt-3 text-xs text-gray-500">
-                    Autosave bật: lưu local ngay lập tức, sync khi online.
-                  </div>
-                  <div className="mt-4 flex items-center justify-between">
-                    <button
-                      type="button"
-                      className="rounded-md border px-3 py-2 text-sm disabled:opacity-50"
-                      onClick={() => setIdx(i => Math.max(0, i - 1))}
-                      disabled={idx === 0}
-                    >
-                      Trước
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded-md border px-3 py-2 text-sm disabled:opacity-50"
-                      onClick={() => setIdx(i => Math.min(questions.length - 1, i + 1))}
-                      disabled={idx >= questions.length - 1}
-                    >
-                      Sau
-                    </button>
-                  </div>
-                  <div className="mt-3 text-xs text-gray-500">
-                    (MVP) Chưa autosave/submit, mình sẽ nối API answers + submit ở bước kế tiếp.
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-xs text-text-muted">
+                      Autosave bật: lưu local ngay lập tức, sync khi online.
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setIdx(i => Math.max(0, i - 1))}
+                        disabled={idx === 0}
+                      >
+                        Trước
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setIdx(i => Math.min(questions.length - 1, i + 1))}
+                        disabled={idx >= questions.length - 1}
+                      >
+                        Sau
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )
             : (
-                <div className="text-sm text-gray-700">
+                <div className="text-sm text-text-body">
                   Chưa có câu hỏi trong session (cần cấu hình quiz rules + Start session để snapshot).
                 </div>
               )}
         </div>
-        {state.warning && !blocked
-          ? (
-              <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                Sắp đến hạn verify token (grace
-                {' '}
-                {state.graceSecondsBeforeBlock}
-                s)…
-              </div>
-            )
-          : null}
-      </div>
+      </Card>
 
-      <div className="rounded-lg border bg-white p-6">
-        <button
-          type="button"
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          disabled={busy || blocked || state.status !== 'active' || !isOnline || pendingCount > 0}
-          onClick={() => void submit()}
-        >
-          Submit
-        </button>
-        <div className="mt-2 text-xs text-gray-500">
-          Chỉ submit được khi online, không pending sync, và không bị checkpoint block.
+      <Card className="p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Button
+            variant="primary"
+            disabled={busy || blocked || state.status !== 'active' || !isOnline || pendingCount > 0}
+            onClick={() => void submit()}
+          >
+            Submit
+          </Button>
+          <div className="text-xs text-text-muted">
+            Chỉ submit khi online, không pending sync, và không bị checkpoint block.
+          </div>
         </div>
-      </div>
+      </Card>
 
       {blocked
         ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-6">
-              <div className="text-lg font-semibold text-red-800">Checkpoint: nhập token để tiếp tục</div>
-              <div className="mt-2 text-sm text-red-700">
+            <Card className="p-6 border border-danger/40 bg-danger/10">
+              <div className="text-lg font-semibold text-danger">Checkpoint: nhập token để tiếp tục</div>
+              <div className="mt-2 text-sm text-danger/90">
                 {!isOnline
                   ? 'Bạn đang offline. Vui lòng online lại để verify token.'
                   : (state.isLocked ? 'Bạn đang bị lock do nhập sai nhiều lần.' : 'Đến hạn verify token.')}
               </div>
 
               <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
-                <label className="flex-1">
-                  <div className="text-sm font-medium text-red-900">Token</div>
-                  <input
-                    className="mt-1 w-full rounded-md border px-3 py-2 font-mono"
+                <label className="flex-1" htmlFor="checkpointToken">
+                  <div className="text-sm font-medium text-danger">Token</div>
+                  <Input
+                    id="checkpointToken"
+                    className="mt-1 font-mono"
                     value={token}
                     onChange={e => setToken(e.target.value)}
                     disabled={busy || state.inCooldown || state.isLocked || !isOnline}
                   />
                 </label>
-                <button
-                  type="button"
-                  className="rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                <Button
+                  variant="danger"
                   onClick={() => void verify()}
                   disabled={busy || token.trim().length === 0 || state.inCooldown || state.isLocked || !isOnline}
                 >
                   {busy ? 'Đang verify...' : 'Verify'}
-                </button>
+                </Button>
               </div>
 
-              <div className="mt-3 text-sm text-red-700">
+              <div className="mt-3 text-sm text-danger/90">
                 Sai:
                 {' '}
                 <span className="font-mono">{state.failedCount}</span>
                 {state.inCooldown ? ' · đang cooldown 30s' : null}
               </div>
-            </div>
+            </Card>
           )
         : null}
     </div>

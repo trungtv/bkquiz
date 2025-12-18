@@ -39,10 +39,27 @@ const QuestionFrontMatterSchema = z.object({
 });
 
 function splitQuestionBlocks(markdownAfterPoolHeader: string) {
-  // Questions are separated by `---` lines. We expect each block to start with front-matter.
-  return markdownAfterPoolHeader
-    .split(/\n---\n/g)
-    .map(s => s.trim())
+  // IMPORTANT:
+  // - We use YAML front-matter (`---`) inside each question block.
+  // - Therefore we MUST NOT split on `\n---\n` (it would split inside front-matter).
+  // Preferred convention (recommended): question blocks are separated by a dedicated delimiter line:
+  //
+  //   ===
+  //
+  // Fallback (legacy): a blank line + a `---` line.
+  const normalized = markdownAfterPoolHeader.trim();
+
+  const splitByTripleEq = normalized.split(/\n={3,}\n/g).map(s => s.trim()).filter(Boolean);
+  const parts = splitByTripleEq.length > 1 ? splitByTripleEq : normalized.split(/\n\n---\n/g).map(s => s.trim()).filter(Boolean);
+
+  return parts
+    .map((s) => {
+      const t = s.trim();
+      if (!t) {
+        return '';
+      }
+      return t.startsWith('---\n') ? t : `---\n${t}`;
+    })
     .filter(Boolean);
 }
 

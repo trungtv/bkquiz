@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'react-qr-code';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { Table, TableWrap } from '@/components/ui/Table';
 
 type TeacherTokenResponse = {
   sessionId: string;
@@ -177,9 +182,9 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="rounded-lg border bg-white p-4">
+      <Card>
         <div className="text-lg font-semibold">Teacher Screen</div>
-        <div className="mt-1 text-sm text-gray-600">
+        <div className="mt-1 text-sm text-text-muted">
           <div>
             Session:
             {' '}
@@ -189,6 +194,13 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
             Trạng thái:
             {' '}
             <span className="font-mono">{session?.status ?? '...'}</span>
+            {' '}
+            <Badge
+              variant={session?.status === 'active' ? 'success' : session?.status === 'ended' ? 'neutral' : 'info'}
+              className="align-middle"
+            >
+              {session?.status ?? 'loading'}
+            </Badge>
             {session?.quiz?.title
               ? (
                   <>
@@ -207,114 +219,73 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
         </div>
         {error
           ? (
-              <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <div className="mt-3 rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
                 {error}
               </div>
             )
           : null}
         {session?.status === 'active'
           ? (
-              <div className="mt-3 rounded-md border bg-gray-50 p-3 text-sm text-gray-700">
-                Nếu thấy “Chưa có câu hỏi” ở phía sinh viên, hãy kiểm tra quiz đã có rules và bấm Start lại (snapshot chỉ build 1 lần/1 session).
-              </div>
+              <Card className="mt-3 p-3 text-sm text-text-body">
+                Nếu thấy "Chưa có câu hỏi" ở phía sinh viên, hãy kiểm tra quiz đã có rules và bấm Start lại (snapshot chỉ build 1 lần/1 session).
+              </Card>
             )
           : null}
 
-        {snapshotInfo && snapshotInfo.perRule.length > 0
-          ? (
-              <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                <div className="font-medium">Snapshot summary</div>
-                <div className="mt-1 text-xs text-amber-900/80">
-                  Total picked:
-                  {' '}
-                  <span className="font-mono">{snapshotInfo.totalPicked}</span>
-                  {snapshotInfo.alreadyBuilt ? ' (already built)' : ''}
-                </div>
-                <div className="mt-2 grid gap-1">
-                  {snapshotInfo.perRule.filter(r => r.picked < r.requested).length === 0
-                    ? (
-                        <div className="text-sm">Đủ câu theo tất cả rules.</div>
-                      )
-                    : snapshotInfo.perRule.filter(r => r.picked < r.requested).map(r => (
-                        <div key={r.tagId} className="text-sm">
-                          Tag
-                          {' '}
-                          <span className="font-mono">{r.tagNormalizedName}</span>
-                          : requested
-                          {' '}
-                          <span className="font-mono">{r.requested}</span>
-                          , picked
-                          {' '}
-                          <span className="font-mono">{r.picked}</span>
-                        </div>
-                      ))}
-                </div>
-              </div>
-            )
-          : null}
-      </div>
+      </Card>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border bg-white p-6">
-          <div className="text-sm font-medium text-gray-700">QR để sinh viên vào bài</div>
+        <Card className="p-6">
+          <div className="text-sm font-medium text-text-heading">QR để sinh viên vào bài</div>
           <div className="mt-4 flex items-center justify-center">
             {data?.joinUrl
               ? (
-                  <div className="rounded-md bg-white p-4">
+                  <div className="rounded-md bg-bg-card p-4">
                     <QRCode value={data.joinUrl} size={360} />
                   </div>
                 )
               : (
-                  <div className="text-sm text-gray-500">Đang tải QR...</div>
+                  <div className="w-full max-w-[420px]">
+                    <Skeleton className="mx-auto h-[360px] w-[360px]" />
+                    <div className="mt-3 text-center text-sm text-text-muted">Đang tải QR...</div>
+                  </div>
                 )}
           </div>
           {/* eslint-disable-next-line tailwindcss/classnames-order */}
-          <div className="mt-4 rounded-md border bg-gray-50 p-3 break-all text-sm text-gray-700">
+          <Card className="mt-4 p-3 break-all text-sm text-text-body">
             {data?.joinUrl ?? '...'}
-          </div>
-        </div>
+          </Card>
+        </Card>
 
-        <div className="rounded-lg border bg-white p-6">
+        <Card className="p-6">
           <div className="flex items-center justify-between">
-            <div className="text-sm font-medium text-gray-700">Token (TOTP)</div>
+            <div className="text-sm font-medium text-text-heading">Token (TOTP)</div>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-                onClick={() => void fetchToken()}
-              >
+              <Button size="sm" variant="ghost" onClick={() => void fetchToken()}>
                 Refresh token
-              </button>
+              </Button>
               {session?.status === 'lobby'
                 ? (
-                    <button
-                      type="button"
-                      className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-                      onClick={() => void startSession()}
-                    >
+                    <Button size="sm" variant="primary" onClick={() => void startSession()}>
                       Start
-                    </button>
+                    </Button>
                   )
                 : null}
               {session?.status === 'active'
                 ? (
-                    <button
-                      type="button"
-                      className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
-                      onClick={() => void endSession()}
-                    >
+                    <Button size="sm" variant="danger" onClick={() => void endSession()}>
                       End
-                    </button>
+                    </Button>
                   )
                 : null}
             </div>
           </div>
 
           <div className="mt-6 text-center">
-            <div className="text-6xl font-bold tracking-widest text-gray-900">
+            <div className="text-7xl font-bold tracking-[0.25em] text-text-heading">
               {data?.token ?? '------'}
             </div>
-            <div className="mt-3 text-sm text-gray-600">
+            <div className="mt-3 text-sm text-text-muted">
               Đổi sau:
               {' '}
               <span className="font-mono">
@@ -329,37 +300,64 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
             </div>
           </div>
 
-          <div className="mt-6 rounded-md border bg-gray-50 p-3 text-sm text-gray-700">
+          <Card className="mt-6 p-3 text-sm text-text-body">
             Gợi ý: chiếu màn hình này lên projector; sinh viên scan QR để vào link, khi tới checkpoint sẽ nhập token hiện tại.
-          </div>
-        </div>
+          </Card>
+        </Card>
       </div>
 
-      <div className="mt-6 rounded-lg border bg-white p-6">
+      {snapshotInfo && snapshotInfo.perRule.length > 0
+        ? (
+            <Card className="mt-6 p-6">
+              <div className="font-semibold text-text-heading">Snapshot summary</div>
+              <div className="mt-1 text-xs text-text-muted">
+                Total picked:
+                {' '}
+                <span className="font-mono">{snapshotInfo.totalPicked}</span>
+                {snapshotInfo.alreadyBuilt ? ' (already built)' : ''}
+              </div>
+              <div className="mt-2 grid gap-1">
+                {snapshotInfo.perRule.filter(r => r.picked < r.requested).length === 0
+                  ? (
+                      <div className="text-sm text-text-body">Đủ câu theo tất cả rules.</div>
+                    )
+                  : snapshotInfo.perRule.filter(r => r.picked < r.requested).map(r => (
+                      <div key={r.tagId} className="text-sm text-text-body">
+                        Tag
+                        {' '}
+                        <span className="font-mono">{r.tagNormalizedName}</span>
+                        : requested
+                        {' '}
+                        <span className="font-mono">{r.requested}</span>
+                        , picked
+                        {' '}
+                        <span className="font-mono">{r.picked}</span>
+                      </div>
+                    ))}
+              </div>
+            </Card>
+          )
+        : null}
+
+      <Card className="mt-6 p-6">
         <div className="flex items-center justify-between">
           <div className="text-lg font-semibold">Token log</div>
           <div className="flex items-center gap-2">
             <a
-              className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+              className="rounded-md border border-border-subtle px-3 py-1.5 text-sm text-text-body hover:bg-bg-card"
               href={`/api/sessions/${props.sessionId}/report/tokenLog?format=csv`}
               target="_blank"
               rel="noreferrer"
             >
               Download CSV
             </a>
-            <button
-              type="button"
-              className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-              onClick={() => void fetchLogs()}
-            >
-              Refresh log
-            </button>
+            <Button size="sm" variant="ghost" onClick={() => void fetchLogs()}>Refresh log</Button>
           </div>
         </div>
-        <div className="mt-3 overflow-x-auto">
-          <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
+        <TableWrap className="mt-3">
+          <Table>
             <thead>
-              <tr className="text-gray-600">
+              <tr className="text-text-muted">
                 <th className="border-b p-2">Time</th>
                 <th className="border-b p-2">User</th>
                 <th className="border-b p-2">Type</th>
@@ -371,11 +369,11 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
               {logs.length === 0
                 ? (
                     <tr>
-                      <td className="p-2 text-gray-500" colSpan={5}>Chưa có log.</td>
+                      <td className="p-2 text-text-muted" colSpan={5}>Chưa có log.</td>
                     </tr>
                   )
                 : logs.slice(0, 50).map(l => (
-                    <tr key={l.id} className="odd:bg-gray-50">
+                    <tr key={l.id} className="odd:bg-bg-elevated">
                       <td className="p-2 font-mono">{new Date(l.createdAt).toLocaleTimeString()}</td>
                       <td className="p-2">
                         {l.user.email ?? l.user.name ?? l.user.id}
@@ -390,35 +388,29 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
                     </tr>
                   ))}
             </tbody>
-          </table>
-        </div>
-      </div>
+          </Table>
+        </TableWrap>
+      </Card>
 
-      <div className="mt-6 rounded-lg border bg-white p-6">
+      <Card className="mt-6 p-6">
         <div className="flex items-center justify-between">
           <div className="text-lg font-semibold">Scoreboard</div>
           <div className="flex items-center gap-2">
             <a
-              className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+              className="rounded-md border border-border-subtle px-3 py-1.5 text-sm text-text-body hover:bg-bg-card"
               href={`/api/sessions/${props.sessionId}/report/scoreboard?format=csv`}
               target="_blank"
               rel="noreferrer"
             >
               Download CSV
             </a>
-            <button
-              type="button"
-              className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
-              onClick={() => void fetchScoreboard()}
-            >
-              Refresh scoreboard
-            </button>
+            <Button size="sm" variant="ghost" onClick={() => void fetchScoreboard()}>Refresh scoreboard</Button>
           </div>
         </div>
-        <div className="mt-3 overflow-x-auto">
-          <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
+        <TableWrap className="mt-3">
+          <Table>
             <thead>
-              <tr className="text-gray-600">
+              <tr className="text-text-muted">
                 <th className="border-b p-2">User</th>
                 <th className="border-b p-2">Status</th>
                 <th className="border-b p-2">Score</th>
@@ -430,11 +422,11 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
               {scores.length === 0
                 ? (
                     <tr>
-                      <td className="p-2 text-gray-500" colSpan={5}>Chưa có attempt.</td>
+                      <td className="p-2 text-text-muted" colSpan={5}>Chưa có attempt.</td>
                     </tr>
                   )
                 : scores.map(s => (
-                    <tr key={s.id} className="odd:bg-gray-50">
+                    <tr key={s.id} className="odd:bg-bg-elevated">
                       <td className="p-2">
                         {s.user.email ?? s.user.name ?? s.user.id}
                       </td>
@@ -447,9 +439,9 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
                     </tr>
                   ))}
             </tbody>
-          </table>
-        </div>
-      </div>
+          </Table>
+        </TableWrap>
+      </Card>
     </div>
   );
 }

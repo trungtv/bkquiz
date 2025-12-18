@@ -1,11 +1,24 @@
 import type { Metadata } from 'next';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { PostHogProvider } from '@/components/analytics/PostHogProvider';
 import { DemoBadge } from '@/components/DemoBadge';
 import { routing } from '@/libs/I18nRouting';
 import '@/styles/global.css';
+
+const inter = Inter({
+  subsets: ['latin', 'vietnamese'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const mono = JetBrains_Mono({
+  subsets: ['latin', 'vietnamese'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   icons: [
@@ -49,8 +62,10 @@ export default async function RootLayout(props: {
   setRequestLocale(locale);
 
   return (
-    <html lang={locale}>
-      <body>
+    // eslint-disable-next-line tailwindcss/no-custom-classname
+    <html lang={locale} className={`dark ${inter.variable} ${mono.variable}`}>
+      {/* eslint-disable-next-line tailwindcss/classnames-order */}
+      <body className="min-h-dvh text-text-body antialiased [font-family:var(--font-sans)]">
         <NextIntlClientProvider>
           <PostHogProvider>
             {props.children}

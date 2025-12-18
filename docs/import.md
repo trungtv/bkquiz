@@ -44,7 +44,8 @@ Chỉ dùng khi:
 ### 2.1 Nguyên tắc
 - **Mỗi file `questions.md` tương ứng đúng 1 `QuestionPool`**.
 - File có **pool-level front-matter** ở đầu file (khai báo thông tin pool + default).
-- Sau đó, mỗi câu hỏi là một **block** ngăn cách bằng `---`.
+- Sau đó, mỗi câu hỏi là một **block** ngăn cách bằng **một dòng `===`** (khuyến nghị, dễ kiểm soát).
+- Hệ thống vẫn hỗ trợ format cũ (legacy): **một dòng trống + một dòng `---`**.
 - Mỗi block có **YAML front-matter** (metadata của câu) + phần nội dung markdown.
 - Tags là **global** (đã chốt).
 

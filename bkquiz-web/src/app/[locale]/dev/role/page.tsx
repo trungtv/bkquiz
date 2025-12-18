@@ -1,5 +1,6 @@
 import { setRequestLocale } from 'next-intl/server';
 import Link from 'next/link';
+import { Button } from '@/components/ui/Button';
 
 export default async function DevRolePage(props: { params: Promise<{ locale: string }> }) {
   const { locale } = await props.params;
@@ -8,7 +9,7 @@ export default async function DevRolePage(props: { params: Promise<{ locale: str
   return (
     <div className="mx-auto max-w-lg space-y-4 py-16">
       <h1 className="text-2xl font-semibold">DEV: Chọn role để test</h1>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-text-muted">
         Chỉ dùng khi
         {' '}
         <span className="font-mono">DEV_BYPASS_AUTH=1</span>
@@ -16,19 +17,21 @@ export default async function DevRolePage(props: { params: Promise<{ locale: str
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <Link
-          className="rounded-md bg-emerald-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-emerald-700"
           href={`/api/dev/role?role=teacher&next=/${locale}/dashboard`}
         >
-          Teacher
+          <Button variant="primary" className="w-full text-center">
+            Teacher
+          </Button>
         </Link>
         <Link
-          className="rounded-md bg-blue-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-blue-700"
           href={`/api/dev/role?role=student&next=/${locale}/dashboard`}
         >
-          Student
+          <Button variant="ghost" className="w-full text-center">
+            Student
+          </Button>
         </Link>
       </div>
-      <div className="text-xs text-gray-500">
+      <div className="text-xs text-text-muted">
         Tip: đổi role nhanh bằng cách quay lại trang này.
       </div>
     </div>

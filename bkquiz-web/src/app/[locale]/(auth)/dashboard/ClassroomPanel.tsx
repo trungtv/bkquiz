@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
 
 type Classroom = {
   id: string;
@@ -15,7 +18,7 @@ type QuizLite = {
   ruleCount?: number;
 };
 
-export function ClassroomPanel(props: { initial: Classroom[] }) {
+export function ClassroomPanel(props: { initial: Classroom[]; role: 'teacher' | 'student' }) {
   const [classes, setClasses] = useState<Classroom[]>(props.initial);
   const [newClassName, setNewClassName] = useState('');
   const [joinCode, setJoinCode] = useState('');
@@ -129,122 +132,134 @@ export function ClassroomPanel(props: { initial: Classroom[] }) {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-lg border bg-white p-4">
-          <div className="text-lg font-semibold">Tạo lớp (Teacher)</div>
-          <div className="mt-3 flex gap-2">
-            <input
-              className="w-full rounded-md border px-3 py-2"
-              placeholder="Tên lớp (VD: DSA K66)"
-              value={newClassName}
-              onChange={e => setNewClassName(e.target.value)}
-            />
-            <button
-              type="button"
-              className="rounded-md bg-zinc-900 px-4 py-2 text-white disabled:opacity-50"
-              onClick={createClass}
-              disabled={busy || newClassName.trim().length === 0}
-            >
-              Tạo
-            </button>
-          </div>
-        </div>
+    <div className="space-y-7">
+      <div className="grid gap-5 md:grid-cols-2">
+        {props.role === 'teacher'
+          ? (
+              <Card className="p-5 md:p-6">
+                <div className="text-lg font-semibold text-text-heading">Tạo lớp (Teacher)</div>
+                <div className="mt-3 flex gap-2">
+                  <Input
+                    placeholder="Tên lớp (VD: DSA K66)"
+                    value={newClassName}
+                    onChange={e => setNewClassName(e.target.value)}
+                  />
+                  <Button
+                    variant="primary"
+                    onClick={createClass}
+                    disabled={busy || newClassName.trim().length === 0}
+                  >
+                    Tạo
+                  </Button>
+                </div>
+              </Card>
+            )
+          : null}
 
-        <div className="rounded-lg border bg-white p-4">
-          <div className="text-lg font-semibold">Join lớp (Student)</div>
+        <Card className="p-5 md:p-6">
+          <div className="text-lg font-semibold text-text-heading">Join lớp (Student)</div>
           <div className="mt-3 flex gap-2">
-            <input
-              className="w-full rounded-md border px-3 py-2 uppercase"
+            <Input
+              className="uppercase"
               placeholder="Nhập class code"
               value={joinCode}
               onChange={e => setJoinCode(e.target.value)}
             />
-            <button
-              type="button"
-              className="rounded-md bg-zinc-900 px-4 py-2 text-white disabled:opacity-50"
+            <Button
+              variant="primary"
               onClick={joinClass}
               disabled={busy || joinCode.trim().length === 0}
             >
               Join
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
 
       {error
         ? (
-            <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
               {error}
             </div>
           )
         : null}
 
-      <div className="rounded-lg border bg-white p-4">
-        <div className="text-lg font-semibold">Các lớp của bạn</div>
-        <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center">
-          <div className="text-sm text-gray-700 md:w-40">Tên session</div>
-          <input
-            className="w-full rounded-md border px-3 py-2"
-            placeholder="VD: Quiz tuần 1"
-            value={sessionTitle}
-            onChange={e => setSessionTitle(e.target.value)}
-            disabled={busy}
-          />
-        </div>
+      <Card className="mt-1 p-5 md:p-6">
+        <div className="text-lg font-semibold text-text-heading">Các lớp của bạn</div>
+        {props.role === 'teacher'
+          ? (
+              <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center">
+                <div className="text-sm text-text-muted md:w-40">Tên session</div>
+                <Input
+                  placeholder="VD: Quiz tuần 1"
+                  value={sessionTitle}
+                  onChange={e => setSessionTitle(e.target.value)}
+                  disabled={busy}
+                />
+              </div>
+            )
+          : null}
         <div className="mt-3 grid gap-2">
           {classes.length === 0
             ? (
-                <div className="text-sm text-gray-600">Chưa có lớp nào.</div>
+                <div className="text-sm text-text-muted">Chưa có lớp nào.</div>
               )
             : classes.map(c => (
                 <div
                   key={c.id}
-                  className="flex items-center justify-between rounded-md border px-3 py-2"
+                  className="flex items-center justify-between rounded-md border border-border-subtle bg-bg-section px-3 py-2"
                 >
                   <div className="min-w-0">
                     <div className="truncate font-medium">{c.name}</div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-text-muted">
                       Code:
                       {' '}
                       <span className="font-mono">{c.classCode}</span>
                     </div>
-                    <div className="mt-2 flex items-center gap-2">
-                      <select
-                        className="rounded-md border px-2 py-1 text-xs"
-                        value={selectedQuizByClass[c.id] ?? ''}
-                        onChange={(e) => {
-                          setSelectedQuizByClass(prev => ({ ...prev, [c.id]: e.target.value }));
-                        }}
-                        disabled={busy || !(quizByClass[c.id]?.length)}
-                      >
-                        <option value="">(Không chọn quiz)</option>
-                        {(quizByClass[c.id] ?? []).map(q => (
-                          <option key={q.id} value={q.id}>
-                            {q.title}
-                            {' '}
-                            [
-                            {q.status}
-                            , rules=
-                            {q.ruleCount ?? 0}
-                            ]
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    {props.role === 'teacher'
+                      ? (
+                          <div className="mt-2 flex items-center gap-2">
+                            <select
+                              className="rounded-md border border-border-subtle bg-bg-card px-2 py-1 text-xs text-text-body"
+                              value={selectedQuizByClass[c.id] ?? ''}
+                              onChange={(e) => {
+                                setSelectedQuizByClass(prev => ({ ...prev, [c.id]: e.target.value }));
+                              }}
+                              disabled={busy || !(quizByClass[c.id]?.length)}
+                            >
+                              <option value="">(Không chọn quiz)</option>
+                              {(quizByClass[c.id] ?? []).map(q => (
+                                <option key={q.id} value={q.id}>
+                                  {q.title}
+                                  {' '}
+                                  [
+                                  {q.status}
+                                  , rules=
+                                  {q.ruleCount ?? 0}
+                                  ]
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )
+                      : null}
                   </div>
-                  <button
-                    type="button"
-                    className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-                    disabled={busy || sessionTitle.trim().length === 0}
-                    onClick={() => void createSession(c.id)}
-                  >
-                    Tạo session
-                  </button>
+                  {props.role === 'teacher'
+                    ? (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          disabled={busy || sessionTitle.trim().length === 0}
+                          onClick={() => void createSession(c.id)}
+                        >
+                          Tạo session
+                        </Button>
+                      )
+                    : null}
                 </div>
               ))}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

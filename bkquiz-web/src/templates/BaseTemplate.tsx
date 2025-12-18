@@ -9,53 +9,51 @@ export const BaseTemplate = (props: {
   const t = useTranslations('BaseTemplate');
 
   return (
-    <div className="w-full px-1 text-gray-700 antialiased">
-      <div className="mx-auto max-w-screen-md">
-        <header className="border-b border-gray-300">
-          <div className="pt-16 pb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
+    <div className="w-full text-text-body antialiased">
+      <header className="sticky top-0 z-50 border-b border-border-subtle bg-bg-page/70 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+          <div className="min-w-0">
+            <div className="truncate text-base font-semibold tracking-tight text-text-heading">
               {AppConfig.name}
-            </h1>
-            <h2 className="text-xl">{t('description')}</h2>
+            </div>
+            <div className="hidden truncate text-xs text-text-muted sm:block">
+              {t('description')}
+            </div>
           </div>
 
-          <div className="flex justify-between">
-            <nav aria-label="Main navigation">
-              <ul className="flex flex-wrap gap-x-5 text-xl">
+          <div className="flex items-center gap-3">
+            <nav aria-label="Main navigation" className="hidden md:block">
+              <ul className="flex flex-wrap items-center gap-2 text-sm">
                 {props.leftNav}
               </ul>
             </nav>
 
-            <nav>
-              <ul className="flex flex-wrap gap-x-5 text-xl">
+            <nav aria-label="Secondary navigation">
+              <ul className="flex flex-wrap items-center gap-2 text-sm">
                 {props.rightNav}
               </ul>
             </nav>
           </div>
-        </header>
+        </div>
+      </header>
 
-        <main>{props.children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-8">{props.children}</main>
 
-        <footer className="border-t border-gray-300 py-8 text-center text-sm">
-          {`© Copyright ${new Date().getFullYear()} ${AppConfig.name}. `}
+      <footer className="border-t border-border-subtle bg-bg-page py-10 text-center text-sm text-text-muted">
+        <div className="mx-auto max-w-6xl px-4">
+          {`© ${new Date().getFullYear()} ${AppConfig.name}. `}
           {t.rich('made_with', {
             author: () => (
               <a
                 href="https://nextjs-boilerplate.com"
-                className="text-blue-700 hover:border-b-2 hover:border-blue-700"
+                className="text-primary hover:border-b-2 hover:border-primary"
               >
                 Next.js Boilerplate
               </a>
             ),
           })}
-          {/*
-           * PLEASE READ THIS SECTION
-           * I'm an indie maker with limited resources and funds, I'll really appreciate if you could have a link to my website.
-           * The link doesn't need to appear on every pages, one link on one page is enough.
-           * For example, in the `About` page. Thank you for your support, it'll mean a lot to me.
-           */}
-        </footer>
-      </div>
+        </div>
+      </footer>
     </div>
   );
 };

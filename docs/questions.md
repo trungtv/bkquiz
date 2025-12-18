@@ -18,6 +18,8 @@ Stack là cấu trúc dữ liệu hoạt động theo nguyên tắc nào?
 ( ) FIFO (First In, First Out)
 ( ) Random
 
+===
+
 ---
 tags: ["array", "complexity"]
 type: "mcq_multi"
@@ -28,6 +30,8 @@ Chọn tất cả phát biểu đúng về mảng (array):
 [ ] Chèn phần tử vào giữa mảng luôn là \(O(1)\)
 [x] Duyệt toàn bộ mảng là \(O(n)\)
 [ ] Mảng tự động đảm bảo không có phần tử trùng nhau
+
+===
 
 ---
 tags: ["math", "integral"]

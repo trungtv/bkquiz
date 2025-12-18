@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 type Pool = {
   id: string;
@@ -125,13 +127,13 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border bg-white p-4">
+      <Card className="p-4">
         <div className="text-lg font-semibold">
           Pool:
           {' '}
           <span className="font-mono">{props.poolId}</span>
         </div>
-        <div className="mt-2 text-sm text-gray-700">
+        <div className="mt-2 text-sm text-text-body">
           {pool
             ? (
                 <>
@@ -143,26 +145,26 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                 </>
               )
             : (
-                <span className="text-gray-500">Loading...</span>
+                <span className="text-text-muted">Loading...</span>
               )}
         </div>
         {error
           ? (
-              <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <div className="mt-3 rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
                 {error}
               </div>
             )
           : null}
-      </div>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border bg-white p-4">
+        <Card className="p-4">
           <div className="text-lg font-semibold">Thêm câu hỏi (quick)</div>
           <div className="mt-3 grid gap-3">
             <label className="grid gap-1 text-sm">
-              <div className="font-medium text-gray-700">Type</div>
+              <div className="font-medium text-text-heading">Type</div>
               <select
-                className="rounded-md border px-2 py-2"
+                className="rounded-md border border-border-subtle bg-bg-section px-2 py-2 text-text-body"
                 value={qType}
                 onChange={e => setQType(e.target.value as 'mcq_single' | 'mcq_multi')}
                 disabled={busy}
@@ -173,9 +175,9 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
             </label>
 
             <label className="grid gap-1 text-sm">
-              <div className="font-medium text-gray-700">Prompt</div>
+              <div className="font-medium text-text-heading">Prompt</div>
               <textarea
-                className="min-h-24 rounded-md border px-2 py-2"
+                className="min-h-24 rounded-md border border-border-subtle bg-bg-section px-2 py-2 text-text-body"
                 value={qPrompt}
                 onChange={e => setQPrompt(e.target.value)}
                 disabled={busy}
@@ -183,9 +185,9 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
             </label>
 
             <label className="grid gap-1 text-sm">
-              <div className="font-medium text-gray-700">Tags (comma-separated)</div>
+              <div className="font-medium text-text-heading">Tags (comma-separated)</div>
               <input
-                className="rounded-md border px-2 py-2"
+                className="rounded-md border border-border-subtle bg-bg-section px-2 py-2 text-text-body"
                 value={qTags}
                 onChange={e => setQTags(e.target.value)}
                 disabled={busy}
@@ -193,19 +195,19 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
             </label>
 
             <div className="grid gap-2">
-              <div className="text-sm font-medium text-gray-700">Options</div>
-              <input className="rounded-md border px-2 py-2" value={optA} onChange={e => setOptA(e.target.value)} disabled={busy} placeholder="A" />
-              <input className="rounded-md border px-2 py-2" value={optB} onChange={e => setOptB(e.target.value)} disabled={busy} placeholder="B" />
-              <input className="rounded-md border px-2 py-2" value={optC} onChange={e => setOptC(e.target.value)} disabled={busy} placeholder="C (optional)" />
-              <input className="rounded-md border px-2 py-2" value={optD} onChange={e => setOptD(e.target.value)} disabled={busy} placeholder="D (optional)" />
+              <div className="text-sm font-medium text-text-heading">Options</div>
+              <input className="rounded-md border border-border-subtle bg-bg-section px-2 py-2 text-text-body" value={optA} onChange={e => setOptA(e.target.value)} disabled={busy} placeholder="A" />
+              <input className="rounded-md border border-border-subtle bg-bg-section px-2 py-2 text-text-body" value={optB} onChange={e => setOptB(e.target.value)} disabled={busy} placeholder="B" />
+              <input className="rounded-md border border-border-subtle bg-bg-section px-2 py-2 text-text-body" value={optC} onChange={e => setOptC(e.target.value)} disabled={busy} placeholder="C (optional)" />
+              <input className="rounded-md border border-border-subtle bg-bg-section px-2 py-2 text-text-body" value={optD} onChange={e => setOptD(e.target.value)} disabled={busy} placeholder="D (optional)" />
             </div>
 
             {qType === 'mcq_single'
               ? (
                   <label className="grid gap-1 text-sm">
-                    <div className="font-medium text-gray-700">Correct option</div>
+                    <div className="font-medium text-text-heading">Correct option</div>
                     <select
-                      className="rounded-md border px-2 py-2"
+                      className="rounded-md border border-border-subtle bg-bg-section px-2 py-2 text-text-body"
                       value={correctIdx}
                       onChange={e => setCorrectIdx(Number(e.target.value))}
                       disabled={busy}
@@ -223,38 +225,39 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                   </label>
                 )
               : (
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-text-muted">
                     mcq_multi: UI quick hiện chưa set multi-correct (sẽ làm ở bước CRUD đầy đủ).
                   </div>
                 )}
 
-            <button
+            <Button
               type="button"
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              variant="primary"
+              size="sm"
               disabled={busy || !qPrompt.trim()}
               onClick={addQuestion}
             >
               {busy ? 'Đang lưu...' : 'Thêm câu'}
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
 
-        <div className="rounded-lg border bg-white p-4">
+        <Card className="p-4">
           <div className="text-lg font-semibold">Share pool (owner)</div>
           <div className="mt-3 grid gap-3">
             <label className="grid gap-1 text-sm">
-              <div className="font-medium text-gray-700">Email giảng viên</div>
+              <div className="font-medium text-text-heading">Email giảng viên</div>
               <input
-                className="rounded-md border px-2 py-2"
+                className="rounded-md border border-border-subtle bg-bg-section px-2 py-2 text-text-body"
                 value={shareEmail}
                 onChange={e => setShareEmail(e.target.value)}
                 disabled={busy}
               />
             </label>
             <label className="grid gap-1 text-sm">
-              <div className="font-medium text-gray-700">Permission</div>
+              <div className="font-medium text-text-heading">Permission</div>
               <select
-                className="rounded-md border px-2 py-2"
+                className="rounded-md border border-border-subtle bg-bg-section px-2 py-2 text-text-body"
                 value={sharePerm}
                 onChange={e => setSharePerm(e.target.value as 'view' | 'use' | 'edit')}
                 disabled={busy}
@@ -264,30 +267,31 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                 <option value="edit">edit</option>
               </select>
             </label>
-            <button
+            <Button
               type="button"
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              variant="ghost"
+              size="sm"
               disabled={busy || !shareEmail.trim()}
               onClick={sharePool}
             >
               Share
-            </button>
+            </Button>
           </div>
 
           <div className="mt-5">
-            <div className="text-sm font-medium text-gray-700">Danh sách share</div>
+            <div className="text-sm font-medium text-text-heading">Danh sách share</div>
             <div className="mt-2 grid gap-2">
               {shares.length === 0
                 ? (
-                    <div className="text-sm text-gray-600">Chưa share cho ai.</div>
+                    <div className="text-sm text-text-muted">Chưa share cho ai.</div>
                   )
                 : (
                     shares.map(s => (
-                      <div key={s.sharedWithTeacher.id} className="rounded-md border px-3 py-2 text-sm">
+                      <div key={s.sharedWithTeacher.id} className="rounded-md border border-border-subtle bg-bg-section px-3 py-2 text-sm">
                         <div className="font-medium">
                           {s.sharedWithTeacher.email ?? '(no email)'}
                         </div>
-                        <div className="text-gray-600">
+                        <div className="text-text-muted">
                           perm:
                           {' '}
                           <span className="font-mono">{s.permission}</span>
@@ -297,11 +301,11 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                   )}
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
-      <div className="rounded-lg border bg-white p-4">
-        <div className="text-lg font-semibold">
+      <Card className="p-4">
+        <div className="text-lg font-semibold text-text-heading">
           Câu hỏi (
           {questions.length}
           )
@@ -309,11 +313,11 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
         <div className="mt-3 grid gap-3">
           {questions.length === 0
             ? (
-                <div className="text-sm text-gray-600">Chưa có câu hỏi.</div>
+                <div className="text-sm text-text-muted">Chưa có câu hỏi.</div>
               )
             : (
                 questions.map(q => (
-                  <div key={q.id} className="rounded-md border p-3">
+                  <div key={q.id} className="rounded-md border border-border-subtle bg-bg-section p-3">
                     <div className="flex items-center justify-between">
                       <div className="text-sm font-medium">
                         <span className="font-mono">{q.type}</span>
@@ -323,15 +327,15 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                         <span className="font-mono">{q.id}</span>
                       </div>
                     </div>
-                    <div className="mt-2 text-sm whitespace-pre-wrap text-gray-800">{q.prompt}</div>
+                    <div className="mt-2 text-sm whitespace-pre-wrap text-text-body">{q.prompt}</div>
                     <div className="mt-2 grid gap-1 text-sm">
                       {q.options.map(o => (
                         <div key={o.order} className="flex items-start gap-2">
-                          <div className="w-6 shrink-0 font-mono text-gray-500">
+                          <div className="w-6 shrink-0 font-mono text-text-muted">
                             {o.order + 1}
                             .
                           </div>
-                          <div className={o.isCorrect ? 'font-medium text-green-700' : ''}>{o.content}</div>
+                          <div className={o.isCorrect ? 'font-medium text-success' : 'text-text-body'}>{o.content}</div>
                         </div>
                       ))}
                     </div>
@@ -339,7 +343,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                       {q.tags.map(t => (
                         <span
                           key={t.normalizedName}
-                          className="rounded-full border bg-gray-50 px-2 py-0.5 text-xs text-gray-700"
+                          className="rounded-full border border-border-subtle bg-bg-section px-2 py-0.5 text-xs text-text-body"
                           title={t.normalizedName}
                         >
                           {t.name}
@@ -350,7 +354,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                 ))
               )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
