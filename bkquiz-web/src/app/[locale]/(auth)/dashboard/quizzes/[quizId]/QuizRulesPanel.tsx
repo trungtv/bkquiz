@@ -19,6 +19,7 @@ type RuleRow = {
 type QuizRulesResponse = { rules: RuleRow[] };
 type PoolsResponse = { owned: PoolLite[]; shared: PoolLite[] };
 type QuizSettingsResponse = { variant?: { defaultExtraPercent: number } };
+type TagSuggestion = { id: string; name: string; normalizedName: string; questionCount: number };
 
 export function QuizRulesPanel(props: { quizId: string; userId: string | null }) {
   const [rules, setRules] = useState<RuleRow[]>([]);
@@ -44,10 +45,39 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
   const [defaultExtraPercent, setDefaultExtraPercent] = useState(0.2);
   const [useDefaultExtra, setUseDefaultExtra] = useState(true);
   const [selectedPoolIds, setSelectedPoolIds] = useState<string[]>([]);
+  const [tagSuggestions, setTagSuggestions] = useState<TagSuggestion[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const poolById = useMemo(() => new Map(pools.map(p => [p.id, p])), [pools]);
+  const projectedQuestions = mode === 'same' ? count : commonCount + variantCount;
+  const totalRequestedFromRules = useMemo(
+    () =>
+      rules.reduce((acc, r) => {
+        if (typeof r.count === 'number' && r.count > 0) {
+          return acc + r.count;
+        }
+        const common = r.commonCount ?? 0;
+        const variant = r.variantCount ?? 0;
+        return acc + common + variant;
+      }, 0),
+    [rules],
+  );
+
+  async function fetchTagSuggestions(query: string) {
+    const q = query.trim();
+    try {
+      const url = q ? `/api/tags?q=${encodeURIComponent(q)}` : '/api/tags';
+      const res = await fetch(url, { method: 'GET' });
+      if (!res.ok) {
+        return;
+      }
+      const json = await res.json() as { tags?: TagSuggestion[] };
+      setTagSuggestions(json.tags ?? []);
+    } catch {
+      // ignore suggestion errors – không chặn flow chính
+    }
+  }
 
   async function load() {
     setError(null);
@@ -78,6 +108,7 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
 
   useEffect(() => {
     void load();
+    void fetchTagSuggestions('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.quizId]);
 
@@ -239,13 +270,14 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
       </Card>
 
       <Card>
-        <div className="text-lg font-semibold">Thêm / cập nhật rule theo tag</div>
+        <div className="text-lg font-semibold">Bước 2 – Chọn câu cho đề (rule theo tag/pool)</div>
         <div className="mt-3 grid gap-3">
+          {/* 1) Tỉ lệ dự phòng mặc định */}
           <Card className="p-3 text-sm">
-            <div className="font-medium text-text-heading">Variant default extraPercent (quiz-level)</div>
+            <div className="font-medium text-text-heading">Tỉ lệ câu dự phòng mặc định (quiz-level)</div>
             <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end">
               <label className="flex-1" htmlFor="defaultExtraPercent">
-                <div className="text-sm font-medium text-text-heading">defaultExtraPercent</div>
+                <div className="text-sm font-medium text-text-heading">Tỉ lệ câu dự phòng mặc định (%)</div>
                 <Input
                   id="defaultExtraPercent"
                   type="number"
@@ -264,113 +296,18 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
             </div>
           </Card>
 
-          <label className="grid gap-1 text-sm" htmlFor="ruleTag">
-            <div className="font-medium text-text-heading">Tag</div>
-            <Input
-              id="ruleTag"
-              value={tag}
-              onChange={e => setTag(e.target.value)}
-              disabled={busy}
-              placeholder="VD: dsa"
-            />
-          </label>
-
-          <label className="grid gap-1 text-sm" htmlFor="ruleMode">
-            <div className="font-medium text-text-heading">Mode</div>
-            <select
-              id="ruleMode"
-              className="rounded-md border border-border-subtle bg-bg-section px-3 py-2 text-text-body"
-              value={mode}
-              onChange={e => setMode(e.target.value as 'same' | 'variant')}
-              disabled={busy}
-            >
-              <option value="same">same-set</option>
-              <option value="variant">variant-set</option>
-            </select>
-          </label>
-
-          <label className="grid gap-1 text-sm" htmlFor="ruleCount">
-            <div className="font-medium text-text-heading">Số câu (count)</div>
-            <Input
-              id="ruleCount"
-              type="number"
-              value={count}
-              onChange={e => setCount(Number(e.target.value))}
-              disabled={busy || mode !== 'same'}
-              min={1}
-              max={500}
-            />
-          </label>
-
-          {mode === 'variant'
-            ? (
-                <div className="grid gap-3 md:grid-cols-3">
-                  <label className="grid gap-1 text-sm" htmlFor="commonCount">
-                    <div className="font-medium text-text-heading">commonCount</div>
-                    <Input
-                      id="commonCount"
-                      type="number"
-                      value={commonCount}
-                      onChange={e => setCommonCount(Number(e.target.value))}
-                      disabled={busy}
-                      min={0}
-                      max={500}
-                    />
-                  </label>
-                  <label className="grid gap-1 text-sm" htmlFor="variantCount">
-                    <div className="font-medium text-text-heading">variantCount</div>
-                    <Input
-                      id="variantCount"
-                      type="number"
-                      value={variantCount}
-                      onChange={e => setVariantCount(Number(e.target.value))}
-                      disabled={busy}
-                      min={0}
-                      max={500}
-                    />
-                  </label>
-                  <label className="grid gap-1 text-sm" htmlFor="extraPercent">
-                    <div className="font-medium text-text-heading">extraPercent</div>
-                    <Input
-                      id="extraPercent"
-                      type="number"
-                      step="0.05"
-                      value={extraPercent}
-                      onChange={e => setExtraPercent(Number(e.target.value))}
-                      disabled={busy || useDefaultExtra}
-                      min={0}
-                      max={5}
-                    />
-                  </label>
-                </div>
-              )
-            : null}
-          {mode === 'variant'
-            ? (
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={useDefaultExtra}
-                    onChange={e => setUseDefaultExtra(e.target.checked)}
-                    disabled={busy}
-                  />
-                  <span>
-                    Dùng default extraPercent của quiz (
-                    <span className="font-mono">{defaultExtraPercent}</span>
-                    )
-                  </span>
-                </label>
-              )
-            : null}
-
-          <div className="text-sm font-medium text-text-heading">Chọn pools (có thể chọn nhiều)</div>
+          {/* 2) Chọn pools trước */}
+          <div className="text-sm font-medium text-text-heading">Ngân hàng câu hỏi (pools) – có thể chọn nhiều</div>
           <div className="grid gap-2 md:grid-cols-2">
             {pools.length === 0
               ? (
                   <div className="text-sm text-text-muted">Chưa có pool nào.</div>
                 )
               : pools.map(p => (
-                  <div key={p.id} className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-section px-3 py-2 text-sm">
+                  <div
+                    key={p.id}
+                    className="flex items-center gap-2 rounded-md border border-border-subtle bg-bg-section px-3 py-2 text-sm"
+                  >
                     <input
                       aria-label={`pool:${p.name}`}
                       type="checkbox"
@@ -405,25 +342,176 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
                 ))}
           </div>
           <div className="text-xs text-text-muted">
-            Nếu không chọn pool nào, rule sẽ lấy từ
+            Nếu không chọn pool nào, lượt này sẽ lấy câu từ
             {' '}
             <strong>tất cả pools</strong>
-            {' '}
-            (MVP).
+            .
           </div>
 
-          <Button
-            variant="primary"
-            disabled={busy || tag.trim().length === 0 || (mode === 'same' ? count < 1 : (commonCount + variantCount) < 1)}
-            onClick={() => void saveRule()}
-          >
-            {busy ? 'Đang lưu...' : 'Lưu rule'}
-          </Button>
+          {/* 3) Sau đó chọn chủ đề (tag) bằng cách bấm chọn trong danh sách */}
+          <div className="grid gap-1 text-sm">
+            <div className="font-medium text-text-heading">Chủ đề (tag)</div>
+            <div className="flex flex-wrap gap-2">
+              {tagSuggestions.length === 0
+                ? (
+                    <div className="text-xs text-text-muted">
+                      Chưa có tag nào. Thêm tag cho câu hỏi trong Question Bank trước.
+                    </div>
+                  )
+                : tagSuggestions.map(s => {
+                    const selected = tag === s.normalizedName;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs ${
+                          selected
+                            ? 'border-primary bg-primary text-white'
+                            : 'border-border-subtle bg-bg-section text-text-body hover:bg-bg-card'
+                        }`}
+                        onClick={() => {
+                          setTag(selected ? '' : s.normalizedName);
+                        }}
+                        disabled={busy}
+                      >
+                        <span className="truncate">{s.name}</span>
+                        <span className="font-mono text-[10px] text-text-muted">
+                          ({s.questionCount}
+                          {' '}
+                          câu)
+                        </span>
+                      </button>
+                    );
+                  })}
+            </div>
+            <div className="text-xs text-text-muted">
+              {tag
+                ? (
+                    <>
+                      Đang chọn tag:
+                      {' '}
+                      <span className="font-mono">{tag}</span>
+                      . Mỗi lượt chọn hiện tại dùng 1 chủ đề chính.
+                    </>
+                  )
+                : 'Bấm chọn 1 chủ đề để áp dụng cho lượt chọn này.'}
+            </div>
+          </div>
+
+          <label className="grid gap-1 text-sm" htmlFor="ruleMode">
+            <div className="font-medium text-text-heading">Kiểu đề</div>
+            <select
+              id="ruleMode"
+              className="rounded-md border border-border-subtle bg-bg-section px-3 py-2 text-text-body"
+              value={mode}
+              onChange={e => setMode(e.target.value as 'same' | 'variant')}
+              disabled={busy}
+            >
+              <option value="same">Một đề giống nhau cho tất cả sinh viên (same-set)</option>
+              <option value="variant">Nhiều phiên bản đề (variant-set)</option>
+            </select>
+          </label>
+
+          <label className="grid gap-1 text-sm" htmlFor="ruleCount">
+            <div className="font-medium text-text-heading">Số câu cần lấy (nếu dùng một đề chung)</div>
+            <Input
+              id="ruleCount"
+              type="number"
+              value={count}
+              onChange={e => setCount(Number(e.target.value))}
+              disabled={busy || mode !== 'same'}
+              min={1}
+              max={500}
+            />
+          </label>
+
+          {mode === 'variant'
+            ? (
+                <div className="grid gap-3 md:grid-cols-3">
+                  <label className="grid gap-1 text-sm" htmlFor="commonCount">
+                    <div className="font-medium text-text-heading">Số câu chung cho mọi đề (commonCount)</div>
+                    <Input
+                      id="commonCount"
+                      type="number"
+                      value={commonCount}
+                      onChange={e => setCommonCount(Number(e.target.value))}
+                      disabled={busy}
+                      min={0}
+                      max={500}
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm" htmlFor="variantCount">
+                    <div className="font-medium text-text-heading">Số câu riêng cho mỗi đề (variantCount)</div>
+                    <Input
+                      id="variantCount"
+                      type="number"
+                      value={variantCount}
+                      onChange={e => setVariantCount(Number(e.target.value))}
+                      disabled={busy}
+                      min={0}
+                      max={500}
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm" htmlFor="extraPercent">
+                    <div className="font-medium text-text-heading">Tỉ lệ câu dự phòng cho đề biến thể (extraPercent)</div>
+                    <Input
+                      id="extraPercent"
+                      type="number"
+                      step="0.05"
+                      value={extraPercent}
+                      onChange={e => setExtraPercent(Number(e.target.value))}
+                      disabled={busy || useDefaultExtra}
+                      min={0}
+                      max={5}
+                    />
+                  </label>
+                </div>
+              )
+            : null}
+          {mode === 'variant'
+            ? (
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={useDefaultExtra}
+                    onChange={e => setUseDefaultExtra(e.target.checked)}
+                    disabled={busy}
+                  />
+                  <span>
+                    Dùng default extraPercent của quiz (
+                    <span className="font-mono">{defaultExtraPercent}</span>
+                    )
+                  </span>
+                </label>
+              )
+            : null}
+
+          <div className="mt-2 text-xs text-text-muted">
+            Lượt này dự kiến sẽ lấy
+            {' '}
+            <span className="font-mono">{projectedQuestions}</span>
+            {' '}
+            câu từ các pool / tag đã chọn (thực tế còn phụ thuộc vào số câu có trong ngân hàng).
+          </div>
+
+          <div className="mt-3 flex justify-end">
+            <Button
+              variant="primary"
+              disabled={
+                busy
+                || tag.trim().length === 0
+                || (mode === 'same' ? count < 1 : (commonCount + variantCount) < 1)
+              }
+              onClick={() => void saveRule()}
+            >
+              {busy ? 'Đang lưu...' : 'Xong lượt chọn này'}
+            </Button>
+          </div>
         </div>
       </Card>
 
       <Card>
-        <div className="text-lg font-semibold">Rules hiện tại</div>
+        <div className="text-lg font-semibold">Các lượt chọn câu (rules hiện tại)</div>
         <div className="mt-3 grid gap-2">
           {rules.length === 0
             ? (
@@ -435,7 +523,8 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
                   const ruleMode: 'same' | 'variant' = (r.commonCount ?? 0) > 0 || (r.variantCount ?? 0) > 0 ? 'variant' : 'same';
                   return (
                     <div key={r.id} className="rounded-md border border-border-subtle bg-bg-section p-3">
-                      <div className="text-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="text-sm">
                         Tag:
                         {' '}
                         <span className="font-mono">{r.tag.normalizedName}</span>
@@ -468,6 +557,34 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
                                 <span className="font-mono">{r.extraPercent ?? 0}</span>
                               </>
                             )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            className="text-xs text-text-muted hover:text-danger"
+                            disabled={busy}
+                            onClick={async () => {
+                              setBusy(true);
+                              setError(null);
+                              try {
+                                const res = await fetch(
+                                  `/api/quizzes/${props.quizId}/rules?ruleId=${encodeURIComponent(r.id)}`,
+                                  { method: 'DELETE' },
+                                );
+                                const json = await res.json() as { error?: string };
+                                if (!res.ok) {
+                                  setError(json.error ?? 'DELETE_FAILED');
+                                  return;
+                                }
+                                await load();
+                              } finally {
+                                setBusy(false);
+                              }
+                            }}
+                          >
+                            Xóa lượt này
+                          </button>
+                        </div>
                       </div>
                       <div className="mt-2 text-xs text-text-muted">
                         Pools:
@@ -480,6 +597,13 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
                   );
                 })
               )}
+        </div>
+        <div className="mt-3 text-xs text-text-muted">
+          Tổng số câu dự kiến lấy từ tất cả lượt chọn:
+          {' '}
+          <span className="font-mono">{totalRequestedFromRules}</span>
+          {' '}
+          (ước tính, dùng để bạn so với số câu trong đề mong muốn).
         </div>
       </Card>
     </div>

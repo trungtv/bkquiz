@@ -74,6 +74,26 @@ export function QuizzesPanel(props: { classrooms: ClassroomLite[] }) {
     }
   }
 
+  async function updateQuizStatus(quizId: string, status: QuizLite['status']) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/quizzes/${quizId}/status`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      const json = await res.json() as { error?: string };
+      if (!res.ok) {
+        setError(json.error ?? 'UPDATE_STATUS_FAILED');
+        return;
+      }
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Card className="p-5">
@@ -198,15 +218,29 @@ export function QuizzesPanel(props: { classrooms: ClassroomLite[] }) {
                         : null}
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      window.location.href = `/dashboard/quizzes/${q.id}`;
-                    }}
-                  >
-                    Mở
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {q.status === 'draft'
+                      ? (
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            disabled={busy}
+                            onClick={() => void updateQuizStatus(q.id, 'published')}
+                          >
+                            Publish
+                          </Button>
+                        )
+                      : null}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        window.location.href = `/dashboard/quizzes/${q.id}`;
+                      }}
+                    >
+                      Mở
+                    </Button>
+                  </div>
                 </Card>
               ))}
         </div>

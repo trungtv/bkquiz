@@ -146,4 +146,38 @@ export async function POST(req: Request, ctx: { params: Promise<{ quizId: string
 
   return NextResponse.json({ ok: true, rule });
 }
+
+export async function DELETE(req: Request, ctx: { params: Promise<{ quizId: string }> }) {
+  const { userId } = await requireUser();
+  const { quizId } = await ctx.params;
+  const url = new URL(req.url);
+  const ruleId = url.searchParams.get('ruleId');
+
+  if (!ruleId) {
+    return NextResponse.json({ error: 'MISSING_RULE_ID' }, { status: 400 });
+  }
+
+  const quiz = await prisma.quiz.findUnique({
+    where: { id: quizId },
+    select: { classroomId: true },
+  });
+
+  if (!quiz) {
+    return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
+  }
+
+  const membership = await prisma.classMembership.findUnique({
+    where: { classroomId_userId: { classroomId: quiz.classroomId, userId } },
+    select: { roleInClass: true, status: true },
+  });
+  if (!membership || membership.status !== 'active' || (membership.roleInClass !== 'teacher' && membership.roleInClass !== 'ta')) {
+    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+  }
+
+  await prisma.quizRule.delete({
+    where: { id: ruleId },
+  });
+
+  return NextResponse.json({ ok: true });
+}
 // EOF

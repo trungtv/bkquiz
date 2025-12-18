@@ -87,30 +87,59 @@ Màn hình chi tiết quiz phục vụ việc mapping với `docs/api.md` (quizz
   - Khi chưa có dữ liệu:
     - Text: “Bấm “Preview” để kiểm tra đủ/thiếu câu theo từng tag/pool trước khi tạo session.”
 
-### 3.3. Form tạo/cập nhật rule
+### 3.3. Bước 2 – Khung “Chọn câu” (Rule builder)
 
-- Section “Thêm / cập nhật rule theo tag”:
-  - **Default extraPercent (quiz-level)**:
-    - Field number `defaultExtraPercent` với Button “Lưu default”.
-    - Ghi chú: dùng cho variant-set nếu rule không override.
-  - **Fields chính của rule**:
-    - `Tag` (text, requirement): normalizedName.
-    - `Mode` (select): `same-set` / `variant-set`.
-    - Nếu `same-set`:
-      - Field `count`.
-    - Nếu `variant-set`:
-      - `commonCount`, `variantCount`, `extraPercent`.
-      - Checkbox “Dùng default extraPercent của quiz (x.xx)”.
-  - **Chọn pools**:
-    - Grid card nhỏ cho từng pool:
-      - Tên, visibility, permission.
-      - Checkbox để chọn.
-      - Copy: “Nếu không chọn pool nào, rule sẽ lấy từ tất cả pools (MVP).”
+**Mục tiêu UX**: giáo viên nghĩ theo kiểu “mỗi lượt chọn câu” thay vì “định nghĩa rule kỹ thuật”.
 
-  - Button `Lưu rule` (primary):
-    - Disabled nếu:
-      - Tag rỗng.
-      - Count <= 0 (same-set) hoặc (common+variant) <= 0 (variant-set).
+#### 3.3.1. Khung chọn câu (1 lượt chọn)
+
+- Card chính có tiêu đề: **“Chọn câu cho đề”**.
+- Bên trong chia thành các vùng:
+  - **Chọn ngân hàng câu hỏi (pool)**:
+    - Select hoặc dropdown nhiều lựa chọn:
+      - `Pools` (multi-select): mỗi item = tên + visibility + permission.
+    - Copy nhỏ: “Bạn có thể chọn 1 hoặc nhiều ngân hàng câu hỏi.”
+  - **Chọn chủ đề (tag) để lọc**:
+    - Multi-select tags:
+      - Cho phép chọn **nhiều tag** để filter khi lấy câu cho lượt này.
+      - Gợi ý placeholder: “VD: dsa-tree, heap, graph”.
+  - **Số lượng câu**:
+    - Với **same-set**:
+      - Field `Số câu cần lấy` (count).
+    - Với **variant-set**:
+      - `Số câu chung cho mọi đề` (commonCount).
+      - `Số câu riêng cho mỗi đề` (variantCount).
+      - (Tuỳ chọn) `Tỉ lệ câu dự phòng (%)` (extraPercent / defaultExtraPercent).
+  - **Hiển thị tổng số câu đã lấy**:
+    - Dòng info bên dưới:  
+      - “Lượt này: dự kiến lấy **X câu** từ **Y câu khả dụng** trong pools đã chọn.”
+      - Nếu thiếu: highlight màu vàng và giải thích.
+
+- Nút ở cuối khung:
+  - **`Xong lượt chọn này`** (primary):
+    - Validate:
+      - Phải chọn ít nhất 1 pool.
+      - Phải có ít nhất 1 tag hoặc có copy “(ALL tags)” nếu để trống.
+      - Số câu > 0.
+    - Sau khi success:
+      - Clear các control hoặc giữ lại state tuỳ lựa chọn (MVP: clear).
+
+#### 3.3.2. Danh sách các lượt chọn đã cấu hình
+
+- Ngay bên dưới khung chọn câu:
+  - Hiển thị mỗi lượt sau khi bấm `Xong lượt chọn này` dưới dạng **card / list item**:
+    - Pools đã chọn.
+    - Tags filter.
+    - Mode (same/variant).
+    - Số câu chung / riêng / dự phòng.
+    - Tổng số câu dự kiến lấy cho lượt này.
+  - Người dùng có thể:
+    - Thêm lượt mới bằng cách quay lại khung phía trên.
+    - (Phase sau) chỉnh sửa / xoá 1 lượt.
+
+- Tổng quan bên dưới danh sách:
+  - Dòng “Tổng số câu dự kiến lấy từ tất cả lượt chọn: **N câu**”.
+  - Gợi ý bấm `Preview` ở card 3.2 để kiểm tra đủ/thiếu theo tag/pool.
 
 ### 3.4. Rules hiện tại
 
