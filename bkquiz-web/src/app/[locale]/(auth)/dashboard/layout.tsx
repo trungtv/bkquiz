@@ -1,8 +1,8 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import Link from 'next/link';
 import { signOut } from '@/auth';
 import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { AppConfig } from '@/utils/AppConfig';
+import { Sidebar } from './Sidebar';
 
 export default async function DashboardLayout(props: {
   children: React.ReactNode;
@@ -18,44 +18,14 @@ export default async function DashboardLayout(props: {
   return (
     <div className="min-h-screen bg-bg-page text-text-body antialiased">
       <div className="flex">
-        {/* Sidebar – Framer-style, hidden on mobile */}
-        <aside className="hidden w-64 border-r border-border-subtle bg-bg-section/95 px-4 py-4 lg:block">
-          <div className="mb-6">
-            <div className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-              BKquiz
-            </div>
-            <div className="mt-1 text-xs text-text-muted">
-              Dashboard
-            </div>
-          </div>
-
-          <nav className="space-y-1 text-sm">
-            <Link
-              href="/dashboard/"
-              className="block rounded-md px-3 py-2 text-text-muted hover:bg-bg-card hover:text-text-heading"
-            >
-              {t('dashboard_link')}
-            </Link>
-            <Link
-              href="/dashboard/quizzes/"
-              className="block rounded-md px-3 py-2 text-text-muted hover:bg-bg-card hover:text-text-heading"
-            >
-              {t('quizzes_link')}
-            </Link>
-            <Link
-              href="/dashboard/question-bank/"
-              className="block rounded-md px-3 py-2 text-text-muted hover:bg-bg-card hover:text-text-heading"
-            >
-              {t('question_bank_link')}
-            </Link>
-            <Link
-              href="/dashboard/user-profile/"
-              className="block rounded-md px-3 py-2 text-text-muted hover:bg-bg-card hover:text-text-heading"
-            >
-              {t('user_profile_link')}
-            </Link>
-          </nav>
-        </aside>
+        {/* Sidebar – Framer-style, hidden on mobile, với expand/collapse */}
+        <Sidebar
+          dashboardLink={t('dashboard_link')}
+          classesLink={t('classes_link')}
+          quizzesLink={t('quizzes_link')}
+          questionBankLink={t('question_bank_link')}
+          userProfileLink={t('user_profile_link')}
+        />
 
         {/* Main column */}
         <div className="flex min-h-screen flex-1 flex-col">
