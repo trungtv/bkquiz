@@ -92,9 +92,15 @@ export async function buildSessionSnapshotIfNeeded(sessionId: string) {
     const poolIds = uniq(filters.poolIds ?? []);
 
     const requestedBase = (rule.count ?? 0) || ((rule.commonCount ?? 0) + (rule.variantCount ?? 0));
-    const tagExtra = typeof perTagExtraPercent[rule.tag.normalizedName] === 'number' ? perTagExtraPercent[rule.tag.normalizedName] : undefined;
-    const extraPercent = typeof rule.extraPercent === 'number' ? rule.extraPercent : (typeof tagExtra === 'number' ? tagExtra : defaultExtraPercent);
-    const poolSize = Math.ceil(requestedBase * (1 + extraPercent));
+    const isVariantSet = (rule.commonCount ?? 0) > 0 || (rule.variantCount ?? 0) > 0;
+    // Chỉ áp dụng extraPercent cho variant-set (same-set không cần dự phòng)
+    const poolSize = isVariantSet
+      ? (() => {
+          const tagExtra = typeof perTagExtraPercent[rule.tag.normalizedName] === 'number' ? perTagExtraPercent[rule.tag.normalizedName] : undefined;
+          const extraPercent = typeof rule.extraPercent === 'number' ? rule.extraPercent : (typeof tagExtra === 'number' ? tagExtra : defaultExtraPercent);
+          return Math.ceil(requestedBase * (1 + extraPercent));
+        })()
+      : requestedBase;
 
     // If poolIds empty => allow all pools.
     const rows = await prisma.question.findMany({

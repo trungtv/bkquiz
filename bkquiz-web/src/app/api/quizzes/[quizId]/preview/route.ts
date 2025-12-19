@@ -56,9 +56,15 @@ export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }>
     const poolIds = (filters.poolIds ?? []).filter(Boolean);
 
     const requestedBase = (rule.count ?? 0) || ((rule.commonCount ?? 0) + (rule.variantCount ?? 0));
-    const tagExtra = typeof perTagExtraPercent[rule.tag.normalizedName] === 'number' ? perTagExtraPercent[rule.tag.normalizedName] : undefined;
-    const extraPercent = typeof rule.extraPercent === 'number' ? rule.extraPercent : (typeof tagExtra === 'number' ? tagExtra : defaultExtraPercent);
-    const poolSize = Math.ceil(requestedBase * (1 + extraPercent));
+    const isVariantSet = (rule.commonCount ?? 0) > 0 || (rule.variantCount ?? 0) > 0;
+    // Chỉ áp dụng extraPercent cho variant-set (same-set không cần dự phòng)
+    const poolSize = isVariantSet
+      ? (() => {
+          const tagExtra = typeof perTagExtraPercent[rule.tag.normalizedName] === 'number' ? perTagExtraPercent[rule.tag.normalizedName] : undefined;
+          const extraPercent = typeof rule.extraPercent === 'number' ? rule.extraPercent : (typeof tagExtra === 'number' ? tagExtra : defaultExtraPercent);
+          return Math.ceil(requestedBase * (1 + extraPercent));
+        })()
+      : requestedBase;
 
     const available = await prisma.question.count({
       where: {
