@@ -21,7 +21,10 @@ type RuleRow = {
 };
 type QuizRulesResponse = { rules: RuleRow[] };
 type PoolsResponse = { owned: PoolLite[]; shared: PoolLite[] };
-type QuizSettingsResponse = { variant?: { defaultExtraPercent: number } };
+type QuizSettingsResponse = {
+  durationSeconds?: number | null;
+  variant?: { defaultExtraPercent: number };
+};
 type TagSuggestion = { id: string; name: string; normalizedName: string; questionCount: number };
 type QuizInfo = {
   id: string;
@@ -63,6 +66,7 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [showDefaultExtra, setShowDefaultExtra] = useState(false);
   const [poolSearchQuery, setPoolSearchQuery] = useState('');
+  const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
 
   const poolById = useMemo(() => new Map(pools.map(p => [p.id, p])), [pools]);
   const selectedTagInfo = useMemo(
@@ -144,11 +148,18 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
     setRules(rJson.rules ?? []);
     setPools([...(pJson.owned ?? []), ...(pJson.shared ?? [])]);
 
-    // settings (defaultExtraPercent)
+    // settings (defaultExtraPercent, durationSeconds)
     const sRes = await fetch(`/api/quizzes/${props.quizId}/settings`, { method: 'GET' });
     const sJson = await sRes.json() as QuizSettingsResponse & { error?: string };
-    if (sRes.ok && sJson.variant && typeof sJson.variant.defaultExtraPercent === 'number') {
-      setDefaultExtraPercent(sJson.variant.defaultExtraPercent);
+    if (sRes.ok) {
+      if (sJson.variant && typeof sJson.variant.defaultExtraPercent === 'number') {
+        setDefaultExtraPercent(sJson.variant.defaultExtraPercent);
+      }
+      if (typeof sJson.durationSeconds === 'number') {
+        setDurationMinutes(Math.round(sJson.durationSeconds / 60));
+      } else {
+        setDurationMinutes(null);
+      }
     }
   }
 
@@ -212,6 +223,32 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
         return;
       }
       setToast({ message: 'Đã lưu cài đặt mặc định', type: 'success' });
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveDuration() {
+    if (durationMinutes === null || durationMinutes < 1) {
+      setToast({ message: 'Vui lòng nhập thời gian làm bài (tối thiểu 1 phút)', type: 'error' });
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/quizzes/${props.quizId}/settings`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ durationSeconds: durationMinutes * 60 }),
+      });
+      const json = await res.json() as { error?: string };
+      if (!res.ok) {
+        setError(json.error ?? 'SAVE_DURATION_FAILED');
+        setToast({ message: 'Không thể lưu thời gian làm bài', type: 'error' });
+        return;
+      }
+      setToast({ message: 'Đã lưu thời gian làm bài', type: 'success' });
       await load();
     } finally {
       setBusy(false);
@@ -368,108 +405,137 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
 
       {/* Rules List - Hiển thị trước */}
       <Card className="p-5 md:p-6">
-        <div className="text-lg font-semibold text-text-heading">Các lượt chọn câu (rules hiện tại)</div>
-        <div className="mt-4 grid gap-3">
-          {rules.length === 0
-            ? (
-                <div className="py-8 text-center">
-                  <div className="text-sm text-text-muted">
-                    Chưa có lượt chọn câu nào.
-                  </div>
-                  <div className="mt-2 text-xs text-text-muted">
-                    Bấm "Mở rộng" ở khung "Thêm lượt chọn câu mới" bên dưới để bắt đầu.
-                  </div>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="text-lg font-semibold text-text-heading">Các lượt chọn câu (rules hiện tại)</div>
+            <div className="mt-1 text-sm text-text-muted">
+              Tổng số câu dự kiến:
+              {' '}
+              <span className="font-mono text-base font-semibold text-text-heading">{totalRequestedFromRules}</span>
+              {' '}
+              câu
+            </div>
+          </div>
+        </div>
+        {rules.length === 0
+          ? (
+              <div className="mt-6 py-8 text-center">
+                <div className="text-sm text-text-muted">
+                  Chưa có lượt chọn câu nào.
                 </div>
-              )
-            : (
-                rules.map((r) => {
-                  const poolIds: string[] = (r.filters?.poolIds ?? []) as string[];
+                <div className="mt-2 text-xs text-text-muted">
+                  Bấm "Mở rộng" ở khung "Thêm lượt chọn câu mới" bên dưới để bắt đầu.
+                </div>
+              </div>
+            )
+          : (
+              <div className="mt-4 space-y-2">
+                {rules.map((r) => {
                   const ruleMode: 'same' | 'variant' = (r.commonCount ?? 0) > 0 || (r.variantCount ?? 0) > 0 ? 'variant' : 'same';
+                  const questionCount = ruleMode === 'same' ? (r.count ?? 0) : ((r.commonCount ?? 0) + (r.variantCount ?? 0));
                   return (
-                    <div key={r.id} className="rounded-md border border-border-subtle bg-bg-section p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="text-sm">
-                          Tag:
-                          {' '}
-                          <span className="font-mono">{r.tag.normalizedName}</span>
-                          {' '}
-                          · mode:
-                          {' '}
-                          <span className="font-mono">{ruleMode}</span>
-                          {ruleMode === 'same'
-                            ? (
-                                <>
-                                  {' '}
-                                  · count:
-                                  {' '}
-                                  <span className="font-mono">{r.count ?? 0}</span>
-                                </>
-                              )
-                            : (
-                                <>
-                                  {' '}
-                                  · common:
-                                  {' '}
-                                  <span className="font-mono">{r.commonCount ?? 0}</span>
-                                  {' '}
-                                  · variant:
-                                  {' '}
-                                  <span className="font-mono">{r.variantCount ?? 0}</span>
-                                  {' '}
-                                  · extra:
-                                  {' '}
-                                  <span className="font-mono">{r.extraPercent ?? 0}</span>
-                                </>
-                              )}
+                    <div
+                      key={r.id}
+                      className="rounded-md border border-border-subtle bg-bg-section transition-colors hover:border-border-strong"
+                    >
+                      <div className="flex items-center justify-between gap-4 px-4 py-3">
+                        <div className="grid min-w-0 flex-1 grid-cols-[auto_1fr_auto] items-center gap-4 md:grid-cols-[120px_100px_auto]">
+                          <Badge variant="info" className="text-xs">
+                            {r.tag.name}
+                          </Badge>
+                          <span className="text-sm font-medium text-text-heading">
+                            {questionCount}
+                            {' '}
+                            câu
+                          </span>
+                          <Badge variant={ruleMode === 'variant' ? 'warning' : 'neutral'} className="text-xs">
+                            {ruleMode === 'variant' ? 'Variant-set' : 'Same-set'}
+                          </Badge>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            className="text-xs text-text-muted hover:text-danger"
-                            disabled={busy}
-                            onClick={async () => {
-                              setBusy(true);
-                              setError(null);
-                              try {
-                                const res = await fetch(
-                                  `/api/quizzes/${props.quizId}/rules?ruleId=${encodeURIComponent(r.id)}`,
-                                  { method: 'DELETE' },
-                                );
-                                const json = await res.json() as { error?: string };
-                                if (!res.ok) {
-                                  setError(json.error ?? 'DELETE_FAILED');
-                                  setToast({ message: 'Không thể xóa lượt chọn', type: 'error' });
-                                  return;
-                                }
-                                setToast({ message: 'Đã xóa lượt chọn thành công', type: 'success' });
-                                await load();
-                              } finally {
-                                setBusy(false);
+                        <button
+                          type="button"
+                          className="flex-shrink-0 text-sm text-text-muted transition-colors hover:text-danger"
+                          disabled={busy}
+                          onClick={async () => {
+                            setBusy(true);
+                            setError(null);
+                            try {
+                              const res = await fetch(
+                                `/api/quizzes/${props.quizId}/rules?ruleId=${encodeURIComponent(r.id)}`,
+                                { method: 'DELETE' },
+                              );
+                              const json = await res.json() as { error?: string };
+                              if (!res.ok) {
+                                setError(json.error ?? 'DELETE_FAILED');
+                                setToast({ message: 'Không thể xóa lượt chọn', type: 'error' });
+                                return;
                               }
-                            }}
-                          >
-                            Xóa lượt này
-                          </button>
-                        </div>
-                      </div>
-                      <div className="mt-2 text-xs text-text-muted">
-                        Pools:
-                        {' '}
-                        {poolIds.length === 0
-                          ? <span className="font-mono">ALL</span>
-                          : poolIds.map(id => poolById.get(id)?.name ?? id).join(', ')}
+                              setToast({ message: 'Đã xóa lượt chọn thành công', type: 'success' });
+                              await load();
+                            } finally {
+                              setBusy(false);
+                            }
+                          }}
+                        >
+                          ✕
+                        </button>
                       </div>
                     </div>
                   );
-                })
-              )}
-        </div>
-        <div className="mt-4 text-xs text-text-muted">
-          Tổng số câu dự kiến lấy từ tất cả lượt chọn:
-          {' '}
-          <span className="font-mono">{totalRequestedFromRules}</span>
-          {' '}
-          (ước tính, dùng để bạn so với số câu trong đề mong muốn).
+                })}
+              </div>
+            )}
+      </Card>
+
+      {/* Quiz Settings - Time Limit */}
+      <Card className="p-5 md:p-6">
+        <div className="text-lg font-semibold text-text-heading">Cài đặt quiz</div>
+        <div className="mt-4 grid gap-4">
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-text-heading" htmlFor="durationMinutes">
+              Thời gian làm bài (phút)
+            </label>
+            <div className="flex items-center gap-3">
+              <Input
+                id="durationMinutes"
+                type="number"
+                min={1}
+                max={1440}
+                value={durationMinutes ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value === '' ? null : Number(e.target.value);
+                  setDurationMinutes(val);
+                }}
+                placeholder="VD: 60 (1 giờ)"
+                disabled={busy}
+                className="w-32"
+              />
+              <span className="text-sm text-text-muted">
+                {durationMinutes !== null && durationMinutes > 0
+                  ? (
+                      <>
+                        (
+                        {durationMinutes >= 60
+                          ? `${Math.floor(durationMinutes / 60)} giờ ${durationMinutes % 60 > 0 ? `${durationMinutes % 60} phút` : ''}`
+                          : `${durationMinutes} phút`}
+                        )
+                      </>
+                    )
+                  : 'Không giới hạn thời gian'}
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => void saveDuration()}
+                disabled={busy || durationMinutes === null || durationMinutes < 1}
+              >
+                Lưu
+              </Button>
+            </div>
+            <div className="text-xs text-text-muted">
+              Thời gian tối đa để sinh viên hoàn thành quiz. Để trống nếu không giới hạn.
+            </div>
+          </div>
         </div>
       </Card>
 

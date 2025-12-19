@@ -9,10 +9,12 @@ type VariantSettings = {
 };
 
 type QuizSettings = {
+  durationSeconds?: number;
   variant?: VariantSettings;
 };
 
 const PatchSettingsSchema = z.object({
+  durationSeconds: z.number().int().min(60).max(86400).optional(), // 1 phút đến 24 giờ
   variant: z.object({
     defaultExtraPercent: z.number().min(0).max(5).optional(),
   }).optional(),
@@ -42,6 +44,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }>
   const variant = (settings.variant ?? {}) as VariantSettings;
   return NextResponse.json({
     quizId: quiz.id,
+    durationSeconds: typeof settings.durationSeconds === 'number' ? settings.durationSeconds : null,
     variant: {
       defaultExtraPercent: typeof variant.defaultExtraPercent === 'number' ? variant.defaultExtraPercent : 0.2,
       perTagExtraPercent: variant.perTagExtraPercent ?? {},
@@ -73,6 +76,10 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ quizId: strin
   const settings = (quiz.settings ?? {}) as QuizSettings;
   const next: QuizSettings = { ...settings };
   next.variant = { ...(settings.variant ?? {}) };
+
+  if (body.durationSeconds !== undefined) {
+    next.durationSeconds = body.durationSeconds;
+  }
 
   if (body.variant && typeof body.variant.defaultExtraPercent === 'number') {
     next.variant.defaultExtraPercent = body.variant.defaultExtraPercent;
