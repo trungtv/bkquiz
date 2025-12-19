@@ -1,0 +1,200 @@
+# 🎓 BKquiz
+
+Hệ thống quiz trên lớp với xác nhận hiện diện bằng token động (TOTP) và checkpoint per-student.
+
+## 📋 Tổng quan
+
+BKquiz là nền tảng web fullstack (Next.js) phục vụ việc tổ chức và quản lý quiz trên lớp học, với các tính năng chính:
+
+- **Quản lý lớp học**: Tạo lớp, join lớp bằng class code, quản lý thành viên
+- **Question Bank**: Quản lý question pools, tags, import/export Markdown
+- **Tạo Quiz**: Tạo quiz với rules linh hoạt (same-set hoặc variant-set), preview đủ/thiếu câu
+- **Session Runtime**: Start session, hiển thị QR code và TOTP token động cho sinh viên
+- **Attempt & Scoring**: Sinh viên làm bài, tự động chấm điểm
+- **Presence Check**: Xác nhận hiện diện bằng TOTP token với checkpoint schedule
+
+## 🏗️ Kiến trúc
+
+- **Frontend**: Next.js 16+ App Router (Teacher UI + Student UI)
+- **Backend**: Next.js Route Handlers (`app/api/...`)
+- **Auth**: Auth.js/NextAuth (Google OAuth)
+- **Database**: PostgreSQL + Prisma ORM
+- **Styling**: Tailwind CSS 4 với custom design tokens
+- **i18n**: next-intl (hỗ trợ đa ngôn ngữ)
+
+## 📁 Cấu trúc dự án
+
+```
+BKquiz/
+├── bkquiz-web/          # Next.js application
+│   ├── src/
+│   │   ├── app/         # App Router pages & API routes
+│   │   ├── components/  # React components
+│   │   ├── server/      # Server-side utilities
+│   │   └── ...
+│   ├── prisma/          # Database schema & migrations
+│   └── ...
+├── docs/                # Tài liệu dự án
+│   ├── architecture.md  # Kiến trúc hệ thống
+│   ├── database.md      # Database schema
+│   ├── api.md           # API documentation
+│   ├── flows.md         # User flows
+│   ├── import.md        # Markdown import format
+│   └── uiux/            # UI/UX design docs
+└── README.md            # File này
+```
+
+## 🚀 Bắt đầu
+
+### Yêu cầu
+
+- Node.js 22+ và npm
+- PostgreSQL database (hoặc dùng Neon/PGlite cho development)
+
+### Cài đặt
+
+```bash
+# Clone repository
+git clone <repository-url>
+cd BKquiz
+
+# Cài đặt dependencies
+cd bkquiz-web
+npm install
+
+# Setup environment variables
+cp .env.example .env.local
+# Chỉnh sửa .env.local với các giá trị phù hợp
+
+# Generate Prisma client
+npm run prisma:generate
+
+# Chạy migrations
+npm run prisma:migrate
+
+# Chạy development server
+npm run dev
+```
+
+Mở http://localhost:3000 để xem ứng dụng.
+
+### Environment Variables
+
+Xem `bkquiz-web/.env.example` để biết các biến môi trường cần thiết.
+
+## 📚 Tài liệu
+
+- [Kiến trúc hệ thống](docs/architecture.md)
+- [Database schema](docs/database.md)
+- [API documentation](docs/api.md)
+- [User flows](docs/flows.md)
+- [Markdown import format](docs/import.md)
+- [UI/UX guidelines](docs/uiux/README.md)
+
+## 🎯 Tính năng chính
+
+### 1. Classroom Management
+- Tạo lớp học với class code
+- Join lớp bằng class code
+- Quản lý thành viên (teacher/student)
+- Xem danh sách sessions của lớp
+
+### 2. Question Bank
+- Tạo và quản lý question pools
+- Import/export Markdown format
+- Quản lý tags
+- Share pools với quyền (view/use/edit)
+- Hỗ trợ LaTeX math expressions
+
+### 3. Quiz Creation
+- Tạo quiz độc lập (không gắn với lớp cụ thể)
+- Cấu hình rules theo tag và pool
+- Mode same-set: tất cả sinh viên cùng đề
+- Mode variant-set: đề chung + đề riêng cho mỗi SV
+- Preview đủ/thiếu câu hỏi theo rules
+
+### 4. Session Runtime
+- Start/end session
+- Teacher Screen: QR code + TOTP token động
+- Materialize và snapshot câu hỏi
+- Real-time countdown
+
+### 5. Student Attempt
+- Join session bằng QR code hoặc link
+- Làm bài với navigation linh hoạt
+- Checkpoint token verification
+- Auto-save answers
+- Submit và xem điểm
+
+## 🛠️ Development
+
+### Scripts
+
+```bash
+# Development
+npm run dev              # Start dev server
+npm run dev:spotlight    # Start with Sentry Spotlight
+
+# Database
+npm run prisma:generate  # Generate Prisma client
+npm run prisma:migrate   # Run migrations
+npm run db:studio        # Open Drizzle Studio
+
+# Code Quality
+npm run lint             # Run ESLint
+npm run lint:fix         # Fix linting errors
+npm run check:types      # Type checking
+npm run check:deps       # Check unused dependencies
+
+# Testing
+npm run test             # Run unit tests
+npm run test:e2e         # Run E2E tests
+
+# Build
+npm run build            # Production build
+npm run start            # Start production server
+```
+
+## 📝 Markdown Import Format
+
+BKquiz hỗ trợ import câu hỏi từ Markdown file. Xem [docs/import.md](docs/import.md) và [docs/questions.md](docs/questions.md) để biết format chi tiết.
+
+Ví dụ:
+
+```markdown
+---
+pool:
+  name: "DSA Week 1"
+  visibility: "private"
+---
+
+# QUESTION:
+Stack là cấu trúc dữ liệu hoạt động theo nguyên tắc nào?
+## TAGS: ["stack", "basics"]
+## ANSWER:
+(x) LIFO (Last In, First Out)
+( ) FIFO (First In, First Out)
+( ) Random
+```
+
+## 🤝 Contributing
+
+Mọi đóng góp đều được chào đón! Vui lòng:
+
+1. Fork repository
+2. Tạo feature branch
+3. Commit changes (theo [Conventional Commits](https://www.conventionalcommits.org/))
+4. Push và tạo Pull Request
+
+## 📄 License
+
+MIT License - xem [LICENSE](bkquiz-web/LICENSE) để biết thêm chi tiết.
+
+## 👥 Authors
+
+- TrungTV
+
+---
+
+Made with ❤️ for education
+
