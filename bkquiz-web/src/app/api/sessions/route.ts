@@ -6,8 +6,7 @@ import { generateTotpSecret } from '@/server/totp';
 
 const CreateSessionSchema = z.object({
   classroomId: z.string().trim().min(1),
-  title: z.string().trim().min(1).max(200),
-  quizId: z.string().trim().min(1).optional(),
+  quizId: z.string().trim().min(1),
   totpStepSeconds: z.number().int().min(15).max(120).optional(),
 });
 
@@ -15,31 +14,24 @@ export async function POST(req: Request) {
   const { userId } = await requireUser();
   const body = CreateSessionSchema.parse(await req.json());
 
+  // Check teacher có trong classroom
   await requireTeacherInClassroom(userId, body.classroomId);
 
-  const quiz = body.quizId
-    ? await prisma.quiz.findUnique({
-        where: { id: body.quizId },
-        select: { id: true, classroomId: true, _count: { select: { rules: true } } },
-      })
-    : await prisma.quiz.create({
-        data: {
-          classroomId: body.classroomId,
-          title: body.title,
-          createdByTeacherId: userId,
-          settings: {
-            checkpoint: {
-              tokenStepSeconds: body.totpStepSeconds ?? 45,
-            },
-          },
-          status: 'published',
-        },
-        select: { id: true, classroomId: true, _count: { select: { rules: true } } },
-      });
+  // Check quiz tồn tại và teacher sở hữu quiz
+  const quiz = await prisma.quiz.findUnique({
+    where: { id: body.quizId },
+    select: { id: true, createdByTeacherId: true, _count: { select: { rules: true } } },
+  });
 
-  if (!quiz || quiz.classroomId !== body.classroomId) {
+  if (!quiz) {
     return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
   }
+
+  // Chỉ teacher sở hữu quiz mới được tạo session
+  if (quiz.createdByTeacherId !== userId) {
+    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+  }
+
   if (quiz._count.rules === 0) {
     return NextResponse.json({ error: 'QUIZ_HAS_NO_RULES' }, { status: 400 });
   }

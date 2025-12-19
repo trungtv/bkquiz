@@ -23,7 +23,7 @@ export function ClassroomPanel(props: { initial: Classroom[]; role: 'teacher' | 
   const [newClassName, setNewClassName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [sessionTitle, setSessionTitle] = useState('');
-  const [quizByClass, setQuizByClass] = useState<Record<string, QuizLite[]>>({});
+  const [allQuizzes, setAllQuizzes] = useState<QuizLite[]>([]);
   const [selectedQuizByClass, setSelectedQuizByClass] = useState<Record<string, string>>({});
   const [expandedClassId, setExpandedClassId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -84,13 +84,14 @@ export function ClassroomPanel(props: { initial: Classroom[]; role: 'teacher' | 
       return;
     }
     const quizId = selectedQuizByClass[classroomId] || '';
-    if (quizId) {
-      const quizzes = quizByClass[classroomId] ?? [];
-      const q = quizzes.find(x => x.id === quizId) ?? null;
-      if (q && (q.ruleCount ?? 0) === 0) {
-        setError('Quiz bạn chọn chưa có rule (tag/pool). Vào Dashboard → Quizzes để cấu hình rule trước.');
-        return;
-      }
+    if (!quizId) {
+      setError('Vui lòng chọn quiz trước khi tạo session.');
+      return;
+    }
+    const q = allQuizzes.find(x => x.id === quizId) ?? null;
+    if (q && (q.ruleCount ?? 0) === 0) {
+      setError('Quiz bạn chọn chưa có rule (tag/pool). Vào Dashboard → Quizzes để cấu hình rule trước.');
+      return;
     }
     setBusy(true);
     setError(null);
@@ -100,8 +101,7 @@ export function ClassroomPanel(props: { initial: Classroom[]; role: 'teacher' | 
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           classroomId,
-          title: sessionTitle,
-          quizId: quizId || undefined,
+          quizId,
         }),
       });
       const data = await res.json() as { sessionId?: string; error?: string };
@@ -109,6 +109,7 @@ export function ClassroomPanel(props: { initial: Classroom[]; role: 'teacher' | 
         throw new Error(data.error ?? 'CREATE_SESSION_FAILED');
       }
       setSessionTitle('');
+      setSelectedQuizByClass(prev => ({ ...prev, [classroomId]: '' }));
       window.location.href = `/dashboard/sessions/${data.sessionId}/teacher`;
     } catch {
       setError('Không tạo được session. Vui lòng thử lại.');
@@ -117,18 +118,18 @@ export function ClassroomPanel(props: { initial: Classroom[]; role: 'teacher' | 
     }
   }
 
-  async function loadQuizzesForClassroom(classroomId: string) {
-    const res = await fetch(`/api/quizzes?classroomId=${encodeURIComponent(classroomId)}`, { method: 'GET' });
+  async function loadAllQuizzes() {
+    const res = await fetch('/api/quizzes', { method: 'GET' });
     const json = await res.json() as { quizzes?: QuizLite[] };
     if (!res.ok) {
       return;
     }
-    setQuizByClass(prev => ({ ...prev, [classroomId]: json.quizzes ?? [] }));
+    setAllQuizzes(json.quizzes ?? []);
   }
 
-  // Auto-load quizzes for visible classrooms (best-effort).
+  // Load tất cả quiz của teacher
   useEffect(() => {
-    void Promise.all(classes.map(c => loadQuizzesForClassroom(c.id)));
+    void loadAllQuizzes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -246,20 +247,22 @@ export function ClassroomPanel(props: { initial: Classroom[]; role: 'teacher' | 
                               onChange={(e) => {
                                 setSelectedQuizByClass(prev => ({ ...prev, [c.id]: e.target.value }));
                               }}
-                              disabled={busy || !(quizByClass[c.id]?.length)}
+                              disabled={busy || allQuizzes.length === 0}
                             >
-                              <option value="">(Không chọn quiz)</option>
-                              {(quizByClass[c.id] ?? []).map(q => (
-                                <option key={q.id} value={q.id}>
-                                  {q.title}
-                                  {' '}
-                                  [
-                                  {q.status}
-                                  , rules=
-                                  {q.ruleCount ?? 0}
-                                  ]
-                                </option>
-                              ))}
+                              <option value="">-- Chọn quiz --</option>
+                              {allQuizzes
+                                .filter(q => q.status === 'published')
+                                .map(q => (
+                                  <option key={q.id} value={q.id}>
+                                    {q.title}
+                                    {' '}
+                                    [
+                                    {q.status}
+                                    , rules=
+                                    {q.ruleCount ?? 0}
+                                    ]
+                                  </option>
+                                ))}
                             </select>
                           </div>
 

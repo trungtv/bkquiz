@@ -32,7 +32,6 @@ type QuizInfo = {
   status: 'draft' | 'published' | 'archived';
   updatedAt: string;
   createdAt: string;
-  classroom: { id: string; name: string; classCode: string };
 };
 
 export function QuizRulesPanel(props: { quizId: string; userId: string | null }) {
@@ -351,17 +350,6 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-text-muted">
                 <span>
-                  Lớp:
-                  {' '}
-                  <Link
-                    href="/dashboard/classes"
-                    className="text-primary hover:underline"
-                  >
-                    {quizInfo.classroom.name}
-                  </Link>
-                </span>
-                <span>·</span>
-                <span>
                   Cập nhật:
                   {' '}
                   {formatDate(quizInfo.updatedAt)}
@@ -489,7 +477,7 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
 
       {/* Quiz Settings - Time Limit */}
       <Card className="p-5 md:p-6">
-        <div className="text-lg font-semibold text-text-heading">Cài đặt quiz</div>
+        <div className="text-lg font-semibold text-text-heading">Bước 1 - Cài đặt quiz</div>
         <div className="mt-4 grid gap-4">
           <div className="grid gap-2">
             <label className="text-sm font-medium text-text-heading" htmlFor="durationMinutes">

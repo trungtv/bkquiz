@@ -14,7 +14,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }>
     where: { id: quizId },
     select: {
       id: true,
-      classroomId: true,
+      createdByTeacherId: true,
       title: true,
       settings: true,
       rules: {
@@ -36,12 +36,8 @@ export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }>
     return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
   }
 
-  const membership = await prisma.classMembership.findUnique({
-    where: { classroomId_userId: { classroomId: quiz.classroomId, userId } },
-    select: { roleInClass: true, status: true },
-  });
-
-  if (!membership || membership.status !== 'active' || (membership.roleInClass !== 'teacher' && membership.roleInClass !== 'ta')) {
+  // Chỉ teacher sở hữu quiz mới được preview
+  if (quiz.createdByTeacherId !== userId) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 

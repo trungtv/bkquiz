@@ -112,7 +112,6 @@ model Classroom {
   updatedAt      DateTime @updatedAt
 
   memberships ClassMembership[]
-  quizzes     Quiz[]
 }
 
 model ClassMembership {
@@ -218,7 +217,6 @@ model QuestionTag {
 
 model Quiz {
   id                 String     @id @default(cuid())
-  classroomId        String
   title              String
   createdByTeacherId String
   settings           Json       @default("{}")
@@ -226,13 +224,11 @@ model Quiz {
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
-  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   createdBy User      @relation("QuizCreatedBy", fields: [createdByTeacherId], references: [id], onDelete: Restrict)
 
   sessions QuizSession[]
   rules    QuizRule[]
 
-  @@index([classroomId])
   @@index([createdByTeacherId])
 }
 

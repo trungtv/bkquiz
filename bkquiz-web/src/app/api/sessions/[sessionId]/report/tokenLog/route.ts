@@ -17,19 +17,15 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
 
   const session = await prisma.quizSession.findUnique({
     where: { id: sessionId },
-    select: { id: true, quiz: { select: { classroomId: true } } },
+    select: { id: true, quiz: { select: { createdByTeacherId: true } } },
   });
 
   if (!session) {
     return NextResponse.json({ error: 'SESSION_NOT_FOUND' }, { status: 404 });
   }
 
-  const membership = await prisma.classMembership.findUnique({
-    where: { classroomId_userId: { classroomId: session.quiz.classroomId, userId } },
-    select: { roleInClass: true, status: true },
-  });
-
-  if (!membership || membership.status !== 'active' || (membership.roleInClass !== 'teacher' && membership.roleInClass !== 'ta')) {
+  // Chỉ teacher sở hữu quiz mới được xem report
+  if (session.quiz.createdByTeacherId !== userId) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 

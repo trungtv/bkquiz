@@ -1,10 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { Toast } from '@/components/ui/Toast';
 
 type ClassroomLite = {
   id: string;
@@ -21,20 +23,33 @@ type QuizLite = {
   ruleCount?: number;
 };
 
-export function QuizzesPanel(props: { classrooms: ClassroomLite[] }) {
-  const [classroomId, setClassroomId] = useState<string>(props.classrooms[0]?.id ?? '');
+export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
   const [quizzes, setQuizzes] = useState<QuizLite[]>([]);
   const [title, setTitle] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
-  const classroom = useMemo(() => props.classrooms.find(c => c.id === classroomId) ?? null, [props.classrooms, classroomId]);
+  const stats = useMemo(() => {
+    const draft = quizzes.filter(q => q.status === 'draft').length;
+    const published = quizzes.filter(q => q.status === 'published').length;
+    const archived = quizzes.filter(q => q.status === 'archived').length;
+    return { total: quizzes.length, draft, published, archived };
+  }, [quizzes]);
+
+  function formatDate(dateString: string) {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('vi-VN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  }
 
   async function load() {
-    if (!classroomId) {
-      return;
-    }
-    const res = await fetch(`/api/quizzes?classroomId=${encodeURIComponent(classroomId)}`, { method: 'GET' });
+    const res = await fetch('/api/quizzes', { method: 'GET' });
     const json = await res.json() as { quizzes?: QuizLite[]; error?: string };
     if (!res.ok) {
       setError(json.error ?? 'LOAD_FAILED');
@@ -47,10 +62,11 @@ export function QuizzesPanel(props: { classrooms: ClassroomLite[] }) {
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [classroomId]);
+  }, []);
 
   async function createQuiz() {
-    if (!classroomId) {
+    if (title.trim().length === 0) {
+      setError('Vui lòng nhập tên quiz');
       return;
     }
     setBusy(true);
@@ -59,7 +75,7 @@ export function QuizzesPanel(props: { classrooms: ClassroomLite[] }) {
       const res = await fetch('/api/quizzes', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ classroomId, title, status: 'draft' }),
+        body: JSON.stringify({ title, status: 'draft' }),
       });
       const json = await res.json() as { id?: string; error?: string };
       if (!res.ok || !json.id) {
@@ -67,8 +83,12 @@ export function QuizzesPanel(props: { classrooms: ClassroomLite[] }) {
         return;
       }
       setTitle('');
+      setToast({ message: 'Đã tạo quiz thành công', type: 'success' });
       await load();
-      window.location.href = `/dashboard/quizzes/${json.id}`;
+      // Delay redirect để user thấy toast
+      setTimeout(() => {
+        window.location.href = `/dashboard/quizzes/${json.id}`;
+      }, 500);
     } finally {
       setBusy(false);
     }
@@ -86,8 +106,10 @@ export function QuizzesPanel(props: { classrooms: ClassroomLite[] }) {
       const json = await res.json() as { error?: string };
       if (!res.ok) {
         setError(json.error ?? 'UPDATE_STATUS_FAILED');
+        setToast({ message: 'Không thể publish quiz', type: 'error' });
         return;
       }
+      setToast({ message: 'Đã publish quiz thành công', type: 'success' });
       await load();
     } finally {
       setBusy(false);
@@ -95,50 +117,32 @@ export function QuizzesPanel(props: { classrooms: ClassroomLite[] }) {
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="p-5">
+    <div className="space-y-7">
+      {/* Breadcrumb */}
+      <nav className="text-sm">
+        <div className="flex items-center gap-2 text-text-muted">
+          <Link href="/dashboard" className="hover:text-text-heading">
+            Dashboard
+          </Link>
+          <span>·</span>
+          <span className="text-text-heading">Quizzes</span>
+        </div>
+      </nav>
+
+      {/* Header */}
+      <Card className="p-5 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-base font-semibold text-text-heading">Ngân hàng quiz</div>
+            <h1 className="text-2xl font-semibold text-text-heading">Quizzes</h1>
             <div className="mt-1 text-sm text-text-muted">
-              Chọn lớp và tạo quiz cho từng buổi học.
+              Quản lý quiz của bạn. Quiz có thể được sử dụng cho nhiều lớp học.
             </div>
           </div>
-          {classroom
-            ? (
-                <Badge variant="info">
-                  Lớp hiện tại:
-                  {' '}
-                  <span className="font-mono">{classroom.classCode}</span>
-                </Badge>
-              )
-            : null}
         </div>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <label className="grid gap-1 text-sm" htmlFor="quizClassroom">
-            <div className="font-medium text-text-muted">Chọn lớp</div>
-            <select
-              id="quizClassroom"
-              className="rounded-md border border-border-subtle bg-bg-section px-3 py-2 text-sm text-text-body"
-              value={classroomId}
-              onChange={e => setClassroomId(e.target.value)}
-              disabled={busy}
-            >
-              {props.classrooms.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                  {' '}
-                  (
-                  {c.classCode}
-                  )
-                </option>
-              ))}
-            </select>
-          </label>
-
+        <div className="mt-4">
           <label className="grid gap-1 text-sm" htmlFor="quizTitle">
-            <div className="font-medium text-text-muted">Tạo quiz (draft)</div>
+            <div className="font-medium text-text-muted">Tạo quiz mới (draft)</div>
             <div className="flex gap-2">
               <Input
                 id="quizTitle"
@@ -150,7 +154,7 @@ export function QuizzesPanel(props: { classrooms: ClassroomLite[] }) {
               />
               <Button
                 variant="primary"
-                disabled={busy || title.trim().length === 0 || !classroom || (classroom.roleInClass !== 'teacher' && classroom.roleInClass !== 'ta')}
+                disabled={busy || title.trim().length === 0}
                 onClick={() => void createQuiz()}
               >
                 Tạo
@@ -168,83 +172,117 @@ export function QuizzesPanel(props: { classrooms: ClassroomLite[] }) {
           : null}
       </Card>
 
-      <Card className="p-5">
+      {/* Stats Cards */}
+      {quizzes.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card className="p-4">
+            <div className="text-xs text-text-muted">Tổng quiz</div>
+            <div className="mt-1 text-2xl font-semibold text-text-heading">{stats.total}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-xs text-text-muted">Draft</div>
+            <div className="mt-1 text-2xl font-semibold text-text-heading">{stats.draft}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-xs text-text-muted">Published</div>
+            <div className="mt-1 text-2xl font-semibold text-text-heading">{stats.published}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-xs text-text-muted">Archived</div>
+            <div className="mt-1 text-2xl font-semibold text-text-heading">{stats.archived}</div>
+          </Card>
+        </div>
+      )}
+
+      {/* Quiz List */}
+      <Card className="p-5 md:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-base font-semibold text-text-heading">Danh sách quiz</div>
+            <div className="text-lg font-semibold text-text-heading">Danh sách quiz</div>
             <div className="mt-1 text-sm text-text-muted">
               Mỗi quiz tương ứng với một cấu hình rules và session.
             </div>
           </div>
-          <div className="text-xs text-text-muted">
-            Tổng:
-            {' '}
-            <span className="font-mono">{quizzes.length}</span>
-          </div>
         </div>
 
-        <div className="mt-4 grid gap-2">
-          {quizzes.length === 0
-            ? (
-                <div className="rounded-md border border-dashed border-border-subtle px-4 py-6 text-center text-sm text-text-muted">
+        {quizzes.length === 0
+          ? (
+              <div className="mt-6 rounded-md border border-dashed border-border-subtle px-4 py-8 text-center">
+                <div className="text-sm text-text-muted">
                   Chưa có quiz nào cho lớp này.
-                  {' '}
-                  <span className="font-medium text-text-heading">Tạo quiz draft ở phía trên để bắt đầu.</span>
                 </div>
-              )
-            : quizzes.map(q => (
-                <Card key={q.id} interactive className="flex items-center justify-between gap-3 px-3 py-3">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-text-heading">{q.title}</div>
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-muted">
-                      <Badge
-                        variant={q.status === 'published' ? 'success' : (q.status === 'archived' ? 'neutral' : 'warning')}
-                      >
-                        {q.status}
-                      </Badge>
-                      <span className="font-mono">
-                        Cập nhật:
-                        {' '}
-                        {new Date(q.updatedAt).toLocaleString()}
-                      </span>
-                      {typeof q.ruleCount === 'number'
-                        ? (
-                            <span className="font-mono">
-                              · rules:
-                              {' '}
+                <div className="mt-2 text-xs text-text-muted">
+                  Tạo quiz draft ở phía trên để bắt đầu.
+                </div>
+              </div>
+            )
+          : (
+              <div className="mt-4 space-y-2">
+                {quizzes.map(q => (
+                  <div
+                    key={q.id}
+                    className="rounded-md border border-border-subtle bg-bg-section transition-colors hover:border-border-strong"
+                  >
+                    <div className="flex items-center justify-between gap-4 px-4 py-3">
+                      <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_auto] items-center gap-4 md:grid-cols-[2fr_120px_100px]">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium text-text-heading">{q.title}</div>
+                          {typeof q.ruleCount === 'number' && (
+                            <div className="mt-1 text-xs text-text-muted">
                               {q.ruleCount}
-                            </span>
-                          )
-                        : null}
+                              {' '}
+                              lượt chọn câu
+                            </div>
+                          )}
+                        </div>
+                        <Badge
+                          variant={q.status === 'published' ? 'success' : (q.status === 'archived' ? 'neutral' : 'warning')}
+                          className="text-xs"
+                        >
+                          {q.status}
+                        </Badge>
+                        <div className="text-xs text-text-muted">
+                          {formatDate(q.updatedAt)}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {q.status === 'draft'
+                          ? (
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                disabled={busy}
+                                onClick={() => void updateQuizStatus(q.id, 'published')}
+                              >
+                                Publish
+                              </Button>
+                            )
+                          : null}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            window.location.href = `/dashboard/quizzes/${q.id}`;
+                          }}
+                        >
+                          Mở
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {q.status === 'draft'
-                      ? (
-                          <Button
-                            size="sm"
-                            variant="primary"
-                            disabled={busy}
-                            onClick={() => void updateQuizStatus(q.id, 'published')}
-                          >
-                            Publish
-                          </Button>
-                        )
-                      : null}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        window.location.href = `/dashboard/quizzes/${q.id}`;
-                      }}
-                    >
-                      Mở
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-        </div>
+                ))}
+              </div>
+            )}
       </Card>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

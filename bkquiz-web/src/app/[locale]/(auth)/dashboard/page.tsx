@@ -50,16 +50,22 @@ export default async function Dashboard() {
 
   const classroomIds = rows.map(r => r.classroomId);
 
+  // Quiz count: đếm quiz của teacher (quiz không còn gắn với classroom)
   const [quizCount, poolCount, activeSessionCount] = await Promise.all([
-    classroomIds.length === 0
-      ? Promise.resolve(0)
-      : prisma.quiz.count({ where: { classroomId: { in: classroomIds } } }),
+    role === 'teacher'
+      ? prisma.quiz.count({ where: { createdByTeacherId: userId } })
+      : Promise.resolve(0),
     prisma.questionPool.count({ where: { ownerTeacherId: userId } }),
-    classroomIds.length === 0
-      ? Promise.resolve(0)
-      : prisma.quizSession.count({
-          where: { status: 'active', quiz: { classroomId: { in: classroomIds } } },
-        }),
+    // Active sessions: đếm tất cả active sessions của quiz mà teacher sở hữu
+    // (không filter theo classroom vì session không có classroomId trực tiếp)
+    role === 'teacher'
+      ? prisma.quizSession.count({
+          where: {
+            status: 'active',
+            quiz: { createdByTeacherId: userId },
+          },
+        })
+      : Promise.resolve(0),
   ]);
 
   const recentClasses = initial.slice(0, 5);

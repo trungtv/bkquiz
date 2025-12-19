@@ -20,7 +20,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ sessionId: stri
       id: true,
       totpSecret: true,
       totpStepSeconds: true,
-      quiz: { select: { classroomId: true } },
+      quiz: { select: { createdByTeacherId: true } },
     },
   });
 
@@ -28,12 +28,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ sessionId: stri
     return NextResponse.json({ error: 'SESSION_NOT_FOUND' }, { status: 404 });
   }
 
-  const membership = await prisma.classMembership.findUnique({
-    where: { classroomId_userId: { classroomId: session.quiz.classroomId, userId } },
-    select: { roleInClass: true, status: true },
-  });
-
-  if (!membership || membership.status !== 'active' || (membership.roleInClass !== 'teacher' && membership.roleInClass !== 'ta')) {
+  // Chỉ teacher sở hữu quiz mới được xem token
+  if (session.quiz.createdByTeacherId !== userId) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 

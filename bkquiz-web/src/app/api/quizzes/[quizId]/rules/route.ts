@@ -20,18 +20,15 @@ export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }>
 
   const quiz = await prisma.quiz.findUnique({
     where: { id: quizId },
-    select: { id: true, classroomId: true },
+    select: { id: true, createdByTeacherId: true },
   });
 
   if (!quiz) {
     return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
   }
 
-  const membership = await prisma.classMembership.findUnique({
-    where: { classroomId_userId: { classroomId: quiz.classroomId, userId } },
-    select: { roleInClass: true, status: true },
-  });
-  if (!membership || membership.status !== 'active') {
+  // Chỉ teacher sở hữu quiz mới được xem
+  if (quiz.createdByTeacherId !== userId) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 
@@ -59,18 +56,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ quizId: string
 
   const quiz = await prisma.quiz.findUnique({
     where: { id: quizId },
-    select: { id: true, classroomId: true, createdByTeacherId: true },
+    select: { id: true, createdByTeacherId: true },
   });
 
   if (!quiz) {
     return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
   }
 
-  const membership = await prisma.classMembership.findUnique({
-    where: { classroomId_userId: { classroomId: quiz.classroomId, userId } },
-    select: { roleInClass: true, status: true },
-  });
-  if (!membership || membership.status !== 'active' || (membership.roleInClass !== 'teacher' && membership.roleInClass !== 'ta')) {
+  // Chỉ teacher sở hữu quiz mới được edit
+  if (quiz.createdByTeacherId !== userId) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 
@@ -159,18 +153,15 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ quizId: stri
 
   const quiz = await prisma.quiz.findUnique({
     where: { id: quizId },
-    select: { classroomId: true },
+    select: { createdByTeacherId: true },
   });
 
   if (!quiz) {
     return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
   }
 
-  const membership = await prisma.classMembership.findUnique({
-    where: { classroomId_userId: { classroomId: quiz.classroomId, userId } },
-    select: { roleInClass: true, status: true },
-  });
-  if (!membership || membership.status !== 'active' || (membership.roleInClass !== 'teacher' && membership.roleInClass !== 'ta')) {
+  // Chỉ teacher sở hữu quiz mới được xóa rule
+  if (quiz.createdByTeacherId !== userId) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 

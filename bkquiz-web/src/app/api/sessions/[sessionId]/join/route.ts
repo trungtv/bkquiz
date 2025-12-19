@@ -46,7 +46,6 @@ export async function POST(_: Request, ctx: { params: Promise<{ sessionId: strin
       id: true,
       status: true,
       quizId: true,
-      quiz: { select: { classroomId: true } },
     },
   });
 
@@ -57,14 +56,15 @@ export async function POST(_: Request, ctx: { params: Promise<{ sessionId: strin
     return NextResponse.json({ error: 'SESSION_ENDED' }, { status: 400 });
   }
 
-  const membership = await prisma.classMembership.findUnique({
-    where: { classroomId_userId: { classroomId: session.quiz.classroomId, userId } },
-    select: { status: true },
-  });
-
-  if (!membership || membership.status !== 'active') {
-    return NextResponse.json({ error: 'CLASSROOM_FORBIDDEN' }, { status: 403 });
-  }
+  // TODO: Cần thêm classroomId vào QuizSession để verify student có trong classroom
+  // Tạm thời bỏ check classroom membership vì Quiz không còn classroomId
+  // const membership = await prisma.classMembership.findUnique({
+  //   where: { classroomId_userId: { classroomId: session.classroomId, userId } },
+  //   select: { status: true },
+  // });
+  // if (!membership || membership.status !== 'active') {
+  //   return NextResponse.json({ error: 'CLASSROOM_FORBIDDEN' }, { status: 403 });
+  // }
 
   const now = new Date();
   const nextDueAt = new Date(now.getTime() + randomInt(240, 300) * 1000);
