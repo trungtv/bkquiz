@@ -49,6 +49,7 @@
     "gray-matter": "^4.0.3",
     "js-yaml": "^4.1.1",
     "jszip": "^3.10.1",
+    "katex": "^0.16.27",
     "next": "^16.0.10",
     "next-auth": "^5.0.0-beta.30",
     "next-intl": "^4.5.8",
@@ -59,6 +60,7 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-hook-form": "^7.67.0",
+    "react-katex": "^3.1.0",
     "react-qr-code": "^2.0.18",
     "zod": "^4.1.13"
   },
