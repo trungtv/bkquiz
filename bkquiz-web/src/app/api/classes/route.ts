@@ -8,6 +8,46 @@ const CreateClassSchema = z.object({
   name: z.string().trim().min(1).max(120),
 });
 
+export async function GET(req: Request) {
+  const { userId } = await requireUser();
+
+  const memberships = await prisma.classMembership.findMany({
+    where: { userId, status: 'active' },
+    orderBy: { joinedAt: 'desc' },
+    select: {
+      roleInClass: true,
+      joinedAt: true,
+      classroom: {
+        select: {
+          id: true,
+          name: true,
+          classCode: true,
+          createdAt: true,
+          ownerTeacherId: true,
+          _count: {
+            select: {
+              memberships: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return NextResponse.json({
+    classes: memberships.map(m => ({
+      id: m.classroom.id,
+      name: m.classroom.name,
+      classCode: m.classroom.classCode,
+      createdAt: m.classroom.createdAt,
+      ownerTeacherId: m.classroom.ownerTeacherId,
+      roleInClass: m.roleInClass,
+      joinedAt: m.joinedAt,
+      memberCount: m.classroom._count.memberships,
+    })),
+  });
+}
+
 export async function POST(req: Request) {
   const { userId } = await requireUser();
   const body = CreateClassSchema.parse(await req.json());

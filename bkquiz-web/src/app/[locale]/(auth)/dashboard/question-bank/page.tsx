@@ -18,12 +18,46 @@ export default async function QuestionBankPage() {
   const owned = await prisma.questionPool.findMany({
     where: { ownerTeacherId: userId },
     orderBy: { updatedAt: 'desc' },
-    select: { id: true, name: true, visibility: true, updatedAt: true },
+    select: {
+      id: true,
+      name: true,
+      visibility: true,
+      updatedAt: true,
+      _count: {
+        select: {
+          questions: { where: { deletedAt: null } },
+        },
+      },
+    },
   });
+
+  // Get tag counts for each pool
+  const ownedWithStats = await Promise.all(
+    owned.map(async (pool) => {
+      // Use groupBy to count distinct tags
+      const tagGroups = await prisma.questionTag.groupBy({
+        by: ['tagId'],
+        where: {
+          question: {
+            poolId: pool.id,
+            deletedAt: null,
+          },
+        },
+      });
+      return {
+        id: pool.id,
+        name: pool.name,
+        visibility: pool.visibility,
+        updatedAt: pool.updatedAt,
+        questionCount: pool._count.questions,
+        tagCount: tagGroups.length,
+      };
+    }),
+  );
 
   return (
     <div className="py-5">
-      <QuestionBankPanel initialOwned={owned} />
+      <QuestionBankPanel initialOwned={ownedWithStats} />
     </div>
   );
 }

@@ -14,17 +14,16 @@ type SidebarProps = {
 
 export function Sidebar(props: SidebarProps) {
   const pathname = usePathname();
-  const [isExpanded, setIsExpanded] = useState(true);
-
-  // Load từ localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('sidebar-expanded');
-    if (saved !== null) {
-      setIsExpanded(saved === 'true');
+  // Lazy initialization: chỉ chạy một lần khi component mount
+  const [isExpanded, setIsExpanded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sidebar-expanded');
+      return saved !== null ? saved === 'true' : true;
     }
-  }, []);
+    return true;
+  });
 
-  // Save vào localStorage
+  // Save vào localStorage khi state thay đổi
   useEffect(() => {
     localStorage.setItem('sidebar-expanded', String(isExpanded));
   }, [isExpanded]);
@@ -33,86 +32,101 @@ export function Sidebar(props: SidebarProps) {
     setIsExpanded(prev => !prev);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggle();
+    }
+  };
+
   const isActive = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
 
   return (
     <aside
-      onClick={toggle}
-      className={`hidden cursor-pointer border-r border-border-subtle bg-bg-section/95 transition-all duration-300 lg:block ${
+      className={`hidden border-r border-border-subtle bg-bg-section/95 transition-all duration-300 lg:block ${
         isExpanded ? 'w-64 px-4' : 'w-16 px-2'
       }`}
     >
-      <div className="flex h-full flex-col py-4">
+      <div
+        onClick={toggle}
+        onKeyDown={handleKeyDown}
+        role="button"
+        aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
+        tabIndex={0}
+        className="flex h-full cursor-pointer flex-col py-4"
+      >
         {/* Header với toggle button */}
         <div className="mb-6 flex items-center justify-between">
-          {isExpanded ? (
-            <>
-              <div>
-                <div className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-                  BKquiz
-                </div>
-                <div className="mt-1 text-xs text-text-muted">
-                  Dashboard
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggle();
-                }}
-                className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-card hover:text-text-heading"
-                aria-label="Collapse sidebar"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="lucide lucide-chevron-left"
+          {isExpanded
+            ? (
+                <>
+                  <div>
+                    <div className="text-sm font-semibold uppercase tracking-wide text-text-muted">
+                      BKquiz
+                    </div>
+                    <div className="mt-1 text-xs text-text-muted">
+                      Dashboard
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggle();
+                    }}
+                    className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-card hover:text-text-heading"
+                    aria-label="Collapse sidebar"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-chevron-left"
+                    >
+                      <path d="m15 18-6-6 6-6" />
+                    </svg>
+                  </button>
+                </>
+              )
+            : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggle();
+                  }}
+                  className="mx-auto rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-card hover:text-text-heading"
+                  aria-label="Expand sidebar"
                 >
-                  <path d="m15 18-6-6 6-6" />
-                </svg>
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggle();
-              }}
-              className="mx-auto rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-card hover:text-text-heading"
-              aria-label="Expand sidebar"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-chevron-right"
-              >
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-            </button>
-          )}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-chevron-right"
+                  >
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </button>
+              )}
         </div>
 
         {/* Navigation */}
         <nav className="space-y-1 text-sm">
           <Link
             href="/dashboard/"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             className={`flex items-center rounded-md py-2 transition-colors ${
               isExpanded ? 'gap-3 px-3' : 'justify-center px-2'
             } ${
@@ -144,7 +158,7 @@ export function Sidebar(props: SidebarProps) {
 
           <Link
             href="/dashboard/classes/"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             className={`flex items-center rounded-md py-2 transition-colors ${
               isExpanded ? 'gap-3 px-3' : 'justify-center px-2'
             } ${
@@ -176,7 +190,7 @@ export function Sidebar(props: SidebarProps) {
 
           <Link
             href="/dashboard/quizzes/"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             className={`flex items-center rounded-md py-2 transition-colors ${
               isExpanded ? 'gap-3 px-3' : 'justify-center px-2'
             } ${
@@ -207,7 +221,7 @@ export function Sidebar(props: SidebarProps) {
 
           <Link
             href="/dashboard/question-bank/"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             className={`flex items-center rounded-md py-2 transition-colors ${
               isExpanded ? 'gap-3 px-3' : 'justify-center px-2'
             } ${
@@ -239,7 +253,7 @@ export function Sidebar(props: SidebarProps) {
 
           <Link
             href="/dashboard/user-profile/"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             className={`flex items-center rounded-md py-2 transition-colors ${
               isExpanded ? 'gap-3 px-3' : 'justify-center px-2'
             } ${
@@ -271,4 +285,3 @@ export function Sidebar(props: SidebarProps) {
     </aside>
   );
 }
-

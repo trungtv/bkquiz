@@ -69,6 +69,7 @@
   },
   "DashboardLayout": {
     "dashboard_link": "Tableau de bord",
+    "classes_link": "Classes",
     "quizzes_link": "Quiz",
     "question_bank_link": "Banque de questions",
     "user_profile_link": "Gérer votre compte",

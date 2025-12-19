@@ -14,21 +14,85 @@ export async function GET() {
   const owned = await prisma.questionPool.findMany({
     where: { ownerTeacherId: userId },
     orderBy: { updatedAt: 'desc' },
-    select: { id: true, name: true, visibility: true, updatedAt: true },
+    select: {
+      id: true,
+      name: true,
+      visibility: true,
+      updatedAt: true,
+      _count: {
+        select: {
+          questions: { where: { deletedAt: null } },
+        },
+      },
+    },
   });
+
+  // Get tag counts for each pool
+  const ownedWithTags = await Promise.all(
+    owned.map(async (pool) => {
+      // Use groupBy to count distinct tags
+      const tagGroups = await prisma.questionTag.groupBy({
+        by: ['tagId'],
+        where: {
+          question: {
+            poolId: pool.id,
+            deletedAt: null,
+          },
+        },
+      });
+      return {
+        ...pool,
+        questionCount: pool._count.questions,
+        tagCount: tagGroups.length,
+      };
+    }),
+  );
 
   const shared = await prisma.questionPoolShare.findMany({
     where: { sharedWithTeacherId: userId },
     orderBy: { createdAt: 'desc' },
     select: {
       permission: true,
-      pool: { select: { id: true, name: true, visibility: true, updatedAt: true } },
+      pool: {
+        select: {
+          id: true,
+          name: true,
+          visibility: true,
+          updatedAt: true,
+          _count: {
+            select: {
+              questions: { where: { deletedAt: null } },
+            },
+          },
+        },
+      },
     },
   });
 
+  const sharedWithTags = await Promise.all(
+    shared.map(async (s) => {
+      // Use groupBy to count distinct tags
+      const tagGroups = await prisma.questionTag.groupBy({
+        by: ['tagId'],
+        where: {
+          question: {
+            poolId: s.pool.id,
+            deletedAt: null,
+          },
+        },
+      });
+      return {
+        ...s.pool,
+        permission: s.permission,
+        questionCount: s.pool._count.questions,
+        tagCount: tagGroups.length,
+      };
+    }),
+  );
+
   return NextResponse.json({
-    owned,
-    shared: shared.map(s => ({ ...s.pool, permission: s.permission })),
+    owned: ownedWithTags,
+    shared: sharedWithTags,
   });
 }
 

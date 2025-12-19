@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
-import { ClassroomPanel } from './ClassroomPanel';
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
@@ -48,8 +47,6 @@ export default async function Dashboard() {
     });
   }
 
-  const classroomIds = rows.map(r => r.classroomId);
-
   // Quiz count: đếm quiz của teacher (quiz không còn gắn với classroom)
   const [quizCount, poolCount, activeSessionCount] = await Promise.all([
     role === 'teacher'
@@ -81,7 +78,7 @@ export default async function Dashboard() {
             </h1>
             <div className="mt-2 text-sm text-text-muted">
               {role === 'teacher'
-                ? 'Quản lý lớp, quiz, session, và question pools.'
+                ? 'Tổng quan và quick access đến các tài nguyên của bạn.'
                 : 'Xem các lớp bạn tham gia và theo dõi các session đang diễn ra.'}
             </div>
           </div>
@@ -90,8 +87,11 @@ export default async function Dashboard() {
             {role === 'teacher'
               ? (
                   <>
+                    <Link href="/dashboard/classes/">
+                      <Button variant="primary">Quản lý Classes</Button>
+                    </Link>
                     <Link href="/dashboard/quizzes/">
-                      <Button variant="primary">Tạo / quản lý Quiz</Button>
+                      <Button variant="ghost">Quản lý Quizzes</Button>
                     </Link>
                     <Link href="/dashboard/question-bank/">
                       <Button variant="ghost">Question Bank</Button>
@@ -123,9 +123,11 @@ export default async function Dashboard() {
                   <li>
                     <span className="font-mono text-text-muted">1.</span>
                     {' '}
-                    Tạo lớp đầu tiên của bạn trong mục
+                    Tạo lớp đầu tiên của bạn trong
                     {' '}
-                    <span className="font-medium">Lớp học &amp; Sessions</span>
+                    <Link href="/dashboard/classes" className="text-primary hover:underline">
+                      Classes
+                    </Link>
                     .
                   </li>
                   <li>
@@ -199,10 +201,10 @@ export default async function Dashboard() {
             <div className="text-sm text-text-muted">Quizzes</div>
             <div className="mt-1 flex items-baseline gap-2">
               <div className="text-3xl font-semibold text-text-heading">{quizCount}</div>
-              <Badge variant="info">in your classes</Badge>
+              <Badge variant="info">total</Badge>
             </div>
             <div className="mt-2 text-xs text-text-muted">
-              Tổng quiz thuộc các lớp bạn tham gia.
+              Tổng quiz bạn đã tạo.
             </div>
           </Card>
         </Link>
@@ -217,7 +219,7 @@ export default async function Dashboard() {
               </Badge>
             </div>
             <div className="mt-2 text-xs text-text-muted">
-              Sessions đang chạy (status=active) trong các lớp của bạn.
+              Sessions đang chạy (status=active).
             </div>
           </Card>
         </Link>
@@ -227,28 +229,74 @@ export default async function Dashboard() {
         <Card className="p-6 lg:col-span-2">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-lg font-semibold text-text-heading">Lớp học &amp; Sessions</div>
+              <div className="text-lg font-semibold text-text-heading">Recent Classes</div>
               <div className="mt-1 text-sm text-text-muted">
-                {role === 'teacher'
-                  ? 'Tạo/join lớp, tạo session, chọn quiz để chạy.'
-                  : 'Join lớp bằng class code và xem danh sách lớp của bạn.'}
+                Các lớp bạn đang tham gia. Click để xem chi tiết.
               </div>
             </div>
+            <Link href="/dashboard/classes">
+              <Button variant="ghost" size="sm">
+                Xem tất cả
+              </Button>
+            </Link>
           </div>
           <div className="mt-4">
-            <ClassroomPanel initial={initial} role={role} />
+            {recentClasses.length === 0
+              ? (
+                  <div className="rounded-md border border-dashed border-border-subtle px-4 py-8 text-center">
+                    <div className="text-sm text-text-muted">
+                      Chưa có lớp nào.
+                    </div>
+                    <div className="mt-2">
+                      <Link href="/dashboard/classes">
+                        <Button variant="primary" size="sm">
+                          Tạo hoặc join lớp
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                )
+              : (
+                  <div className="space-y-2">
+                    {recentClasses.map(c => (
+                      <Link key={c.id} href={`/dashboard/classes/${c.id}`}>
+                        <div className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-colors hover:border-border-strong">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium text-text-heading">{c.name}</div>
+                            <div className="mt-1 text-xs text-text-muted">
+                              <span className="font-mono">{c.classCode}</span>
+                            </div>
+                          </div>
+                          <span className="text-xs text-text-muted">→</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
           </div>
         </Card>
 
         <Card className="p-6">
-          <div className="text-lg font-semibold text-text-heading">Quick view</div>
-          <div className="mt-1 text-sm text-text-muted">Một vài thông tin nhanh.</div>
+          <div className="text-lg font-semibold text-text-heading">Quick Access</div>
+          <div className="mt-1 text-sm text-text-muted">Truy cập nhanh.</div>
 
           <div className="mt-4 grid gap-3">
+            <Link href="/dashboard/classes">
+              <Card interactive className="p-3 text-sm cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <div className="font-medium text-text-heading">Classes</div>
+                  <Badge variant="info">{initial.length}</Badge>
+                </div>
+                <div className="mt-1 text-xs text-text-muted">
+                  Quản lý lớp học của bạn.
+                </div>
+              </Card>
+            </Link>
+
             <Link href="/dashboard/question-bank">
               <Card interactive className="p-3 text-sm cursor-pointer">
                 <div className="flex items-center justify-between">
-                  <div className="font-medium text-text-heading">Question pools (owned)</div>
+                  <div className="font-medium text-text-heading">Question pools</div>
                   <Badge variant="info">{poolCount}</Badge>
                 </div>
                 <div className="mt-1 text-xs text-text-muted">
@@ -256,24 +304,6 @@ export default async function Dashboard() {
                 </div>
               </Card>
             </Link>
-
-            <Card className="p-3 text-sm">
-              <div className="font-medium text-text-heading">Recent classes</div>
-              <div className="mt-2 grid gap-1">
-                {recentClasses.length === 0
-                  ? (
-                      <div className="text-xs text-text-muted">
-                        Chưa có lớp nào. Hãy tạo hoặc join bằng class code.
-                      </div>
-                    )
-                  : recentClasses.map(c => (
-                      <div key={c.id} className="flex items-center justify-between gap-2 text-xs">
-                        <div className="truncate text-text-body">{c.name}</div>
-                        <span className="font-mono text-text-muted">{c.classCode}</span>
-                      </div>
-                    ))}
-              </div>
-            </Card>
           </div>
         </Card>
       </div>
