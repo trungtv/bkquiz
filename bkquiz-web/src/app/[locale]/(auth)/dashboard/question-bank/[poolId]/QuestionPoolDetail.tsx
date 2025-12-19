@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Toast } from '@/components/ui/Toast';
+import { generateQuestionMarkdown } from '@/server/export/markdownPool';
 
 type Pool = {
   id: string;
@@ -62,10 +63,15 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
   const [editPoolName, setEditPoolName] = useState('');
   const [editPoolVisibility, setEditPoolVisibility] = useState<'private' | 'shared'>('private');
 
-  // Markdown editor state
+  // Markdown editor state (for pool export/import)
   const [showMarkdownEditor, setShowMarkdownEditor] = useState(false);
   const [markdownContent, setMarkdownContent] = useState('');
   const [markdownBusy, setMarkdownBusy] = useState(false);
+
+  // Question markdown editor state
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [questionMarkdown, setQuestionMarkdown] = useState('');
+  const [questionMarkdownBusy, setQuestionMarkdownBusy] = useState(false);
 
   // Share state
   const [shareEmail, setShareEmail] = useState('');
@@ -190,6 +196,45 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
       await loadAll();
     } finally {
       setBusy(false);
+    }
+  }
+
+  function openQuestionMarkdownEditor(question: Question) {
+    const markdown = generateQuestionMarkdown({
+      type: question.type,
+      prompt: question.prompt,
+      options: question.options,
+      tags: question.tags.map(t => ({ name: t.name })),
+    });
+    setQuestionMarkdown(markdown);
+    setEditingQuestionId(question.id);
+  }
+
+  async function updateQuestionFromMarkdown() {
+    if (!editingQuestionId) {
+      return;
+    }
+
+    setQuestionMarkdownBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/questions/${editingQuestionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markdown: questionMarkdown }),
+      });
+      const data = await res.json() as { error?: string; message?: string };
+      if (!res.ok) {
+        setError(data.error ?? data.message ?? 'UPDATE_FAILED');
+        setToast({ message: 'Không thể cập nhật câu hỏi', type: 'error' });
+        return;
+      }
+      setToast({ message: 'Đã cập nhật câu hỏi thành công', type: 'success' });
+      setEditingQuestionId(null);
+      setQuestionMarkdown('');
+      await loadAll();
+    } finally {
+      setQuestionMarkdownBusy(false);
     }
   }
 
@@ -565,6 +610,46 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
         </Card>
       )}
 
+      {/* Question Markdown Editor */}
+      {editingQuestionId && (
+        <Card className="mt-4 p-5 md:p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-text-heading">Chỉnh sửa câu hỏi (Markdown)</h2>
+            <div className="flex gap-2">
+              {canEdit && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={updateQuestionFromMarkdown}
+                  disabled={questionMarkdownBusy || !questionMarkdown.trim()}
+                >
+                  {questionMarkdownBusy ? 'Đang cập nhật...' : 'Cập nhật'}
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditingQuestionId(null);
+                  setQuestionMarkdown('');
+                }}
+              >
+                Đóng
+              </Button>
+            </div>
+          </div>
+          <div className="mb-2 text-sm text-text-muted">
+            Chỉnh sửa nội dung Markdown bên dưới, sau đó bấm "Cập nhật" để lưu thay đổi.
+          </div>
+          <textarea
+            value={questionMarkdown}
+            onChange={e => setQuestionMarkdown(e.target.value)}
+            className="w-full min-h-[300px] rounded-sm border border-border-subtle bg-bg-section px-3 py-2 font-mono text-sm text-text-body"
+            placeholder="# QUESTION:\n...\n## TAGS: [...]\n## ANSWER:\n..."
+          />
+        </Card>
+      )}
+
       {/* Questions Section */}
       <Card className="p-5 md:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -804,6 +889,14 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                       </div>
                       {canEdit && (
                         <div className="ml-4 flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openQuestionMarkdownEditor(q)}
+                            disabled={busy}
+                          >
+                            Edit Markdown
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"

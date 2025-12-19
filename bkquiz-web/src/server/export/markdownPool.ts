@@ -74,3 +74,37 @@ export function generatePoolMarkdown(pool: Pool): string {
 
   return fullMarkdown;
 }
+
+/**
+ * Generate Markdown for a single question
+ * Format matches docs/questions.md
+ */
+export function generateQuestionMarkdown(q: Question): string {
+  const blockLines: string[] = [];
+
+  // Question marker
+  blockLines.push('# QUESTION:');
+
+  // Prompt
+  blockLines.push(q.prompt);
+
+  // Tags (inline JSON array)
+  const tagsArray = q.tags.map(t => t.name);
+  blockLines.push(`## TAGS: ${JSON.stringify(tagsArray)}`);
+
+  // Answer section marker
+  blockLines.push('## ANSWER:');
+
+  // Sort options by order
+  const sortedOptions = [...q.options].sort((a, b) => a.order - b.order);
+
+  // Options
+  for (const opt of sortedOptions) {
+    const marker = q.type === 'mcq_single' ? '(x)' : '[x]';
+    const emptyMarker = q.type === 'mcq_single' ? '( )' : '[ ]';
+    const prefix = opt.isCorrect ? marker : emptyMarker;
+    blockLines.push(`${prefix} ${opt.content}`);
+  }
+
+  return blockLines.join('\n');
+}
