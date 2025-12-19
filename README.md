@@ -2,6 +2,8 @@
 
 Hệ thống quiz trên lớp với xác nhận hiện diện bằng token động (TOTP) và checkpoint per-student.
 
+![BKquiz Dashboard](docs/images/dashboard.png)
+
 ## 📋 Tổng quan
 
 BKquiz là nền tảng web fullstack (Next.js) phục vụ việc tổ chức và quản lý quiz trên lớp học, với các tính năng chính:
