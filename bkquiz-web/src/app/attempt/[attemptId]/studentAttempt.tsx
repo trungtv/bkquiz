@@ -334,7 +334,7 @@ export function AttemptClient(props: { attemptId: string }) {
   return (
     <div className="space-y-6">
       {/* Sticky topbar */}
-      <div className="sticky top-[56px] z-40 -mx-4 border-b border-border-subtle bg-bg-page/80 px-4 py-3 backdrop-blur">
+      <div className="sticky top-[56px] z-sticky -mx-4 border-b border-border-subtle bg-bg-page/80 px-4 py-3 backdrop-blur">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
             <div className="truncate text-base font-semibold">{state.session.quiz.title}</div>

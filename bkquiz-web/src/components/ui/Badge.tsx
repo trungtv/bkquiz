@@ -12,6 +12,8 @@ export function Badge(props: HTMLAttributes<HTMLSpanElement> & { variant?: Varia
     warning: 'bg-warning/10 text-warning border border-warning/20',
     danger: 'bg-danger/10 text-danger border border-danger/20',
   }[variant];
+  // Note: /10 and /20 are Tailwind opacity modifiers, not our custom tokens
+  // They work correctly with semantic colors, so we keep them as-is
 
   return (
     <span

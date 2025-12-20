@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -24,6 +25,7 @@ type QuizLite = {
 };
 
 export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
+  const router = useRouter();
   const [quizzes, setQuizzes] = useState<QuizLite[]>([]);
   const [title, setTitle] = useState('');
   const [busy, setBusy] = useState(false);
@@ -61,7 +63,6 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function createQuiz() {
@@ -87,7 +88,7 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
       await load();
       // Delay redirect để user thấy toast
       setTimeout(() => {
-        window.location.href = `/dashboard/quizzes/${json.id}`;
+        router.push(`/dashboard/quizzes/${json.id}`);
       }, 500);
     } finally {
       setBusy(false);
@@ -262,7 +263,7 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
                           size="sm"
                           variant="ghost"
                           onClick={() => {
-                            window.location.href = `/dashboard/quizzes/${q.id}`;
+                            router.push(`/dashboard/quizzes/${q.id}`);
                           }}
                         >
                           Mở

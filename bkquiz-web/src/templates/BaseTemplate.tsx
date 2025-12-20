@@ -10,7 +10,7 @@ export const BaseTemplate = (props: {
 
   return (
     <div className="w-full text-text-body antialiased">
-      <header className="sticky top-0 z-50 border-b border-border-subtle bg-bg-page/70 backdrop-blur">
+      <header className="sticky top-0 z-modal border-b border-border-subtle bg-bg-page/70 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <div className="min-w-0">
             <div className="truncate text-base font-semibold tracking-tight text-text-heading">

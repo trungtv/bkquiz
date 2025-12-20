@@ -143,6 +143,69 @@ const config: Config = {
         normal: '250ms',
         slow: '400ms',
       },
+
+      /* =========================
+         Z-index Scale (Layering)
+      ========================= */
+      zIndex: {
+        base: 0,
+        dropdown: 10,
+        sticky: 20,
+        overlay: 30,
+        modal: 40,
+        popover: 50,
+        tooltip: 60,
+        toast: 70,
+      },
+
+      /* =========================
+         Opacity Scale
+      ========================= */
+      opacity: {
+        disabled: 0.5,
+        hover: 0.8,
+        overlay: 0.4,
+        subtle: 0.1,
+        medium: 0.2,
+        strong: 0.3,
+      },
+
+      /* =========================
+         Container Max-widths
+      ========================= */
+      maxWidth: {
+        container: '1280px',
+        content: '1024px',
+      },
+
+      /* =========================
+         Animation Presets
+      ========================= */
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { transform: 'translateY(10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        slideDown: {
+          '0%': { transform: 'translateY(-10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        scaleIn: {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+      },
+
+      animation: {
+        fadeIn: 'fadeIn 150ms ease-out',
+        slideUp: 'slideUp 200ms ease-out',
+        slideDown: 'slideDown 200ms ease-out',
+        scaleIn: 'scaleIn 150ms ease-out',
+      },
     },
   },
   plugins: [],

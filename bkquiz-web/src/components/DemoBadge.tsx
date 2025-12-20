@@ -1,5 +1,5 @@
 export const DemoBadge = () => (
-  <div className="fixed right-20 bottom-0 z-10">
+  <div className="fixed right-20 bottom-0 z-dropdown">
     <a
       href="https://github.com/ixartz/Next-js-Boilerplate"
     >

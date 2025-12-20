@@ -9,7 +9,7 @@ export const Input = ({ ref, ...props }: InputHTMLAttributes<HTMLInputElement> &
       className={cn(
         'w-full rounded-sm border border-border-subtle bg-bg-section px-3 py-2 text-sm text-text-body outline-none transition-colors duration-fast ease-soft',
         'focus:border-primary focus:shadow-focus',
-        'placeholder:text-text-muted disabled:opacity-60',
+        'placeholder:text-text-muted disabled:opacity-disabled',
         className,
       )}
       {...rest}

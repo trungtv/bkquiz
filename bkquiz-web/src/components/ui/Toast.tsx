@@ -29,7 +29,7 @@ export function Toast({ message, type = 'info', onClose, duration = 3000 }: Toas
   return (
     <div
       className={cn(
-        'fixed bottom-4 right-4 z-50 rounded-md border px-4 py-3 text-sm shadow-lg animate-in slide-in-from-bottom-2',
+        'fixed bottom-4 right-4 z-toast rounded-md border px-4 py-3 text-sm shadow-lg animate-in slide-in-from-bottom-2',
         styles,
       )}
       role="alert"
@@ -38,4 +38,3 @@ export function Toast({ message, type = 'info', onClose, duration = 3000 }: Toas
     </div>
   );
 }
-

@@ -16,7 +16,7 @@ export function Button(props: ButtonHTMLAttributes<HTMLButtonElement> & {
     ...rest
   } = props;
 
-  const base = 'inline-flex items-center justify-center gap-2 rounded-sm font-semibold transition-colors duration-fast ease-soft disabled:opacity-50';
+  const base = 'inline-flex items-center justify-center gap-2 rounded-sm font-semibold transition-colors duration-fast ease-soft disabled:opacity-disabled';
   const sizes = size === 'sm' ? 'px-4 py-2 text-xs' : 'px-5 py-3 text-sm';
   const variants = {
     // Solid orange CTA – giống nút "Get access now"
