@@ -16,7 +16,6 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
         select: {
           id: true,
           title: true,
-          classroom: { select: { id: true, name: true, classCode: true } },
         },
       },
     },

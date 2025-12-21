@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Toast } from '@/components/ui/Toast';
 
 type ClassInfo = {
   id: string;
@@ -36,6 +38,13 @@ type Session = {
   attemptCount: number;
 };
 
+type QuizLite = {
+  id: string;
+  title: string;
+  status: 'draft' | 'published' | 'archived';
+  ruleCount: number;
+};
+
 type ClassDetailPanelProps = {
   classId: string;
   role: 'teacher' | 'student';
@@ -43,10 +52,17 @@ type ClassDetailPanelProps = {
 
 export function ClassDetailPanel(props: ClassDetailPanelProps) {
   const { classId, role } = props;
+  const router = useRouter();
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeTab, setActiveTab] = useState<'members' | 'sessions' | 'settings'>('members');
+  const [showCreateSessionModal, setShowCreateSessionModal] = useState(false);
+  const [quizzes, setQuizzes] = useState<QuizLite[]>([]);
+  const [selectedQuizId, setSelectedQuizId] = useState('');
+  const [createSessionBusy, setCreateSessionBusy] = useState(false);
+  const [createSessionError, setCreateSessionError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   function formatDate(dateString: string) {
     const date = new Date(dateString);
@@ -86,10 +102,63 @@ export function ClassDetailPanel(props: ClassDetailPanelProps) {
     setSessions(json.sessions ?? []);
   }
 
+  async function loadQuizzes() {
+    if (role !== 'teacher') {
+      return;
+    }
+    const res = await fetch('/api/quizzes', { method: 'GET' });
+    const json = await res.json() as { quizzes?: QuizLite[]; error?: string };
+    if (!res.ok) {
+      return;
+    }
+    setQuizzes(json.quizzes ?? []);
+  }
+
+  async function createSession() {
+    if (!selectedQuizId) {
+      setCreateSessionError('Vui lòng chọn quiz');
+      return;
+    }
+    const quiz = quizzes.find(q => q.id === selectedQuizId);
+    if (quiz && quiz.ruleCount === 0) {
+      setCreateSessionError('Quiz này chưa có rule. Vào Quizzes để cấu hình rule trước.');
+      return;
+    }
+    setCreateSessionBusy(true);
+    setCreateSessionError(null);
+    try {
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          classroomId: classId,
+          quizId: selectedQuizId,
+        }),
+      });
+      const json = await res.json() as { sessionId?: string; error?: string };
+      if (!res.ok || !json.sessionId) {
+        setCreateSessionError(json.error ?? 'CREATE_SESSION_FAILED');
+        return;
+      }
+      setShowCreateSessionModal(false);
+      setSelectedQuizId('');
+      setToast({ message: 'Đã tạo session thành công', type: 'success' });
+      await loadSessions();
+      // Redirect to teacher screen after a short delay
+      setTimeout(() => {
+        router.push(`/dashboard/sessions/${json.sessionId}/teacher`);
+      }, 1000);
+    } catch {
+      setCreateSessionError('Không tạo được session. Vui lòng thử lại.');
+    } finally {
+      setCreateSessionBusy(false);
+    }
+  }
+
   useEffect(() => {
-    void Promise.all([loadClassInfo(), loadMembers(), loadSessions()]);
+    void Promise.all([loadClassInfo(), loadMembers(), loadSessions(), loadQuizzes()]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [classId]);
+  }, [classId, role]);
 
   if (!classInfo) {
     return (
@@ -172,11 +241,14 @@ export function ClassDetailPanel(props: ClassDetailPanelProps) {
           </div>
           <div className="flex items-center gap-2">
             {isOwner && (
-              <Link href="/dashboard/classes">
-                <Button variant="primary" size="sm" className="hover:scale-105">
-                  + Tạo Session
-                </Button>
-              </Link>
+              <Button
+                variant="primary"
+                size="sm"
+                className="hover:scale-105"
+                onClick={() => setShowCreateSessionModal(true)}
+              >
+                + Tạo Session
+              </Button>
             )}
             <Link href="/dashboard/classes">
               <Button variant="ghost" size="sm" className="hover:scale-105">
@@ -340,11 +412,14 @@ export function ClassDetailPanel(props: ClassDetailPanelProps) {
                     {' '}
                     sessions
                   </div>
-                  <Link href="/dashboard/classes">
-                    <Button variant="primary" size="sm" className="hover:scale-105">
-                      + Create Session
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="hover:scale-105"
+                    onClick={() => setShowCreateSessionModal(true)}
+                  >
+                    + Create Session
+                  </Button>
                 </div>
               )}
               {sessions.length === 0
@@ -353,11 +428,14 @@ export function ClassDetailPanel(props: ClassDetailPanelProps) {
                       Chưa có session nào.
                       {isOwner && (
                         <div className="mt-2">
-                          <Link href="/dashboard/classes">
-                            <Button variant="primary" size="sm" className="hover:scale-105">
-                              Tạo session đầu tiên
-                            </Button>
-                          </Link>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            className="hover:scale-105"
+                            onClick={() => setShowCreateSessionModal(true)}
+                          >
+                            Tạo session đầu tiên
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -463,6 +541,106 @@ export function ClassDetailPanel(props: ClassDetailPanelProps) {
           )}
         </div>
       </Card>
+
+      {/* Create Session Modal */}
+      {showCreateSessionModal && isOwner && (
+        <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-md p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-text-heading">Tạo Session</h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateSessionModal(false);
+                  setSelectedQuizId('');
+                  setCreateSessionError(null);
+                }}
+                className="rounded-md p-1 text-text-muted transition-colors hover:bg-bg-cardHover hover:text-text-heading"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="quizSelect" className="mb-2 block text-sm font-medium text-text-heading">
+                  Chọn Quiz
+                </label>
+                {quizzes.length === 0
+                  ? (
+                      <div className="rounded-md border border-dashed border-border-subtle px-4 py-8 text-center text-sm text-text-muted">
+                        Chưa có quiz nào.
+                        <div className="mt-2">
+                          <Link href="/dashboard/quizzes">
+                            <Button variant="primary" size="sm" className="hover:scale-105">
+                              Tạo quiz mới
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    )
+                  : (
+                      <select
+                        id="quizSelect"
+                        value={selectedQuizId}
+                        onChange={e => setSelectedQuizId(e.target.value)}
+                        className="w-full rounded-md border border-border-subtle bg-bg-card px-3 py-2 text-sm text-text-body transition-colors hover:border-border-strong focus:border-primary focus:outline-none"
+                      >
+                        <option value="">-- Chọn quiz --</option>
+                        {quizzes.map(q => (
+                          <option key={q.id} value={q.id}>
+                            {q.title}
+                            {' '}
+                            (
+                            {q.status}
+                            )
+                            {q.ruleCount === 0 && ' ⚠️ Chưa có rule'}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+              </div>
+
+              {createSessionError && (
+                <div className="rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
+                  {createSessionError}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowCreateSessionModal(false);
+                    setSelectedQuizId('');
+                    setCreateSessionError(null);
+                  }}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  variant="primary"
+                  className="flex-1"
+                  disabled={createSessionBusy || !selectedQuizId}
+                  onClick={() => void createSession()}
+                >
+                  {createSessionBusy ? 'Đang tạo...' : 'Tạo Session'}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

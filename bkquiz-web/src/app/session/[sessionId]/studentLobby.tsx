@@ -11,7 +11,6 @@ type SessionStatus = {
   quiz: {
     id: string;
     title: string;
-    classroom: { id: string; name: string; classCode: string };
   };
 };
 
@@ -72,14 +71,9 @@ export function Lobby(props: { sessionId: string }) {
   }
 
   return (
-    <div className="space-y-4">
-      <Card className="p-6">
+    <div className="space-y-4 animate-fadeIn">
+      <Card className="p-6 border-indigo-500/30 animate-slideUp">
         <div className="text-lg font-semibold text-text-heading">{data.quiz.title}</div>
-        <div className="mt-1 text-sm text-text-body">
-          Lớp:
-          {' '}
-          <span className="font-medium">{data.quiz.classroom.name}</span>
-        </div>
         <div className="mt-1 text-xs text-text-muted">
           Session ID:
           {' '}
@@ -89,27 +83,77 @@ export function Lobby(props: { sessionId: string }) {
 
       {data.status === 'lobby'
         ? (
-            <Card className="p-6">
-              <div className="text-lg font-semibold text-text-heading">Đang chờ giảng viên bắt đầu</div>
-              <div className="mt-2 text-sm text-text-body">
-                Khi bắt đầu bài, hệ thống sẽ tự chuyển sang màn hình làm bài.
+            <Card className="p-6 border-indigo-500/30 animate-slideUp" style={{ animationDelay: '50ms' }}>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500/20">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-indigo-400"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="text-lg font-semibold text-text-heading">Đang chờ giảng viên bắt đầu</div>
+                  <div className="mt-1 text-sm text-text-body">
+                    Khi bắt đầu bài, hệ thống sẽ tự chuyển sang màn hình làm bài.
+                  </div>
+                </div>
               </div>
             </Card>
           )
         : data.status === 'active'
           ? (
-              <Card className="p-6">
-                <div className="text-lg font-semibold">Session đã bắt đầu</div>
-                <div className="mt-3">
-                  <Button variant="primary" onClick={() => void join()} disabled={busy}>
-                    {busy ? 'Đang vào...' : 'Vào làm bài'}
-                  </Button>
+              <Card className="p-6 border-indigo-500/50 bg-indigo-500/5 animate-slideUp" style={{ animationDelay: '50ms' }}>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500/20">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-indigo-400"
+                    >
+                      <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-lg font-semibold text-text-heading">Session đã bắt đầu</div>
+                    <div className="mt-1 text-sm text-text-body">
+                      Bấm nút bên dưới để vào làm bài.
+                    </div>
+                  </div>
                 </div>
+                <Button
+                  variant="primary"
+                  className="w-full bg-indigo-500 hover:bg-indigo-600 hover:scale-105"
+                  onClick={() => void join()}
+                  disabled={busy}
+                >
+                  {busy ? 'Đang vào...' : 'Vào làm bài →'}
+                </Button>
               </Card>
             )
           : (
-              <Card className="p-6">
-                <div className="text-lg font-semibold">Session đã kết thúc</div>
+              <Card className="p-6 border-border-subtle animate-slideUp" style={{ animationDelay: '50ms' }}>
+                <div className="text-lg font-semibold text-text-heading">Session đã kết thúc</div>
+                <div className="mt-2 text-sm text-text-muted">
+                  Hỏi giảng viên nếu cần xem lại kết quả.
+                </div>
               </Card>
             )}
     </div>
