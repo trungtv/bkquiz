@@ -22,7 +22,7 @@ export async function GET() {
       updatedAt: true,
       _count: {
         select: {
-          questions: { where: { deletedAt: null } },
+          Question: { where: { deletedAt: null } },
         },
       },
     },
@@ -43,7 +43,7 @@ export async function GET() {
       });
       return {
         ...pool,
-        questionCount: pool._count.questions,
+        questionCount: pool._count.Question,
         tagCount: tagGroups.length,
       };
     }),
@@ -62,7 +62,7 @@ export async function GET() {
           updatedAt: true,
           _count: {
             select: {
-              questions: { where: { deletedAt: null } },
+              Question: { where: { deletedAt: null } },
             },
           },
         },

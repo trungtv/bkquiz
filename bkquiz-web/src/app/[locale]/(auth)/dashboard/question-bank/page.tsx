@@ -31,7 +31,7 @@ export default async function QuestionBankPage() {
       updatedAt: true,
       _count: {
         select: {
-          questions: { where: { deletedAt: null } },
+          Question: { where: { deletedAt: null } },
         },
       },
     },
@@ -55,7 +55,7 @@ export default async function QuestionBankPage() {
         name: pool.name,
         visibility: pool.visibility,
         updatedAt: pool.updatedAt,
-        questionCount: pool._count.questions,
+        questionCount: pool._count.Question,
         tagCount: tagGroups.length,
       };
     }),
