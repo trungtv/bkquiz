@@ -10,7 +10,7 @@ export const runtime = 'nodejs';
 export async function POST(req: Request) {
   try {
     const { userId, devRole } = await requireUser();
-    await requireTeacher(userId, devRole);
+    await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
     const form = await req.formData();
     const file = form.get('file');
 
