@@ -189,7 +189,7 @@ export async function StudentDashboard(props: StudentDashboardProps) {
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="text-base font-semibold text-text-heading">
-                        {attempt.session.quiz.title}
+                        {attempt.QuizSession.Quiz.title}
                       </div>
                       <div className="mt-1 text-xs text-text-muted">
                         Bắt đầu:
