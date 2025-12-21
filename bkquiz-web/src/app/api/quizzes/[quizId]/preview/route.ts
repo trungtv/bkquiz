@@ -18,7 +18,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }>
       createdByTeacherId: true,
       title: true,
       settings: true,
-      rules: {
+      QuizRule: {
         orderBy: { updatedAt: 'desc' },
         select: {
           id: true,
@@ -48,7 +48,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }>
   const perTagExtraPercent = variant.perTagExtraPercent ?? {};
 
   const rows = [];
-  for (const rule of quiz.rules) {
+  for (const rule of quiz.QuizRule) {
     const filters = (rule.filters ?? {}) as RuleFilters;
     const poolIds = (filters.poolIds ?? []).filter(Boolean);
 

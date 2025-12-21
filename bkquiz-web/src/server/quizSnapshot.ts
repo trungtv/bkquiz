@@ -60,7 +60,7 @@ export async function buildSessionSnapshotIfNeeded(sessionId: string) {
         select: {
           id: true,
           settings: true,
-          rules: {
+          QuizRule: {
             select: {
               id: true,
               count: true,
@@ -87,7 +87,7 @@ export async function buildSessionSnapshotIfNeeded(sessionId: string) {
   const defaultExtraPercent = typeof variant.defaultExtraPercent === 'number' ? variant.defaultExtraPercent : 0.2;
   const perTagExtraPercent = variant.perTagExtraPercent ?? {};
 
-  for (const rule of session.Quiz.rules) {
+  for (const rule of session.Quiz.QuizRule) {
     const filters = (rule.filters ?? {}) as RuleFilters;
     const poolIds = uniq(filters.poolIds ?? []);
 
@@ -194,7 +194,7 @@ export async function buildSessionSnapshotIfNeeded(sessionId: string) {
   // Variant-set common set (session-level): for each tag, pick commonCount questions deterministically
   // so all students share the same "common" part.
   const commonByTag = new Map<string, number>();
-  for (const rule of session.Quiz.rules) {
+  for (const rule of session.Quiz.QuizRule) {
     const c = rule.commonCount ?? 0;
     if (c > 0) {
       commonByTag.set(rule.tag.id, Math.max(commonByTag.get(rule.tag.id) ?? 0, c));

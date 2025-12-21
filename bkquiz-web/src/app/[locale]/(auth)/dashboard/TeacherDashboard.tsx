@@ -57,7 +57,7 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
     prisma.quiz.count({
       where: {
         createdByTeacherId: userId,
-        rules: { none: {} },
+        QuizRule: { none: {} },
       },
     }),
   ]);
