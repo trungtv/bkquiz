@@ -12,13 +12,15 @@ async function getDevRoleFromCookies() {
 async function getOrCreateDevUserId(role: 'teacher' | 'student') {
   const email = role === 'teacher' ? 'dev.teacher@bkquiz.local' : 'dev.student@bkquiz.local';
   const name = role === 'teacher' ? 'Dev Teacher' : 'Dev Student';
+  const now = new Date();
   const user = await prisma.user.upsert({
     where: { email },
-    update: { name },
+    update: { name, updatedAt: now },
     create: {
       id: nanoid(),
       email,
       name,
+      updatedAt: now,
       roles: { create: [{ role }] },
     },
     select: { id: true },
