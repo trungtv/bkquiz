@@ -48,7 +48,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
   const inCooldown = attempt.cooldownUntil ? attempt.cooldownUntil.getTime() > now.getTime() : false;
   const isLocked = attempt.lockedUntil ? attempt.lockedUntil.getTime() > now.getTime() : attempt.status === 'locked';
 
-  const { Quiz, ...sessionRest } = attempt.session;
+  const { Quiz, ...sessionRest } = attempt.QuizSession;
   return NextResponse.json({
     id: attempt.id,
     status: attempt.status,
