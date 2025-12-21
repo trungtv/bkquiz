@@ -43,11 +43,13 @@ export default async function DashboardLayout(props: {
               <span className="hidden text-xs text-text-muted sm:inline">
                 Dashboard
               </span>
-              <span className={`hidden text-[10px] px-1.5 py-0.5 rounded-sm font-medium sm:inline ${
-                role === 'teacher'
-                  ? 'bg-primary/20 text-primary'
-                  : 'bg-indigo-500/20 text-indigo-400'
-              }`}>
+              <span
+                className={`hidden text-[10px] px-1.5 py-0.5 rounded-sm font-medium sm:inline ${
+                  role === 'teacher'
+                    ? 'bg-primary/20 text-primary'
+                    : 'bg-indigo-500/20 text-indigo-400'
+                }`}
+              >
                 {role === 'teacher' ? 'Teacher' : 'Student'}
               </span>
             </div>

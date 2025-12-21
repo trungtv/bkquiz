@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import { getUserRole, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 import { QuestionBankPanel } from './QuestionBankPanel';
@@ -15,7 +15,7 @@ export async function generateMetadata(props: {
 
 export default async function QuestionBankPage() {
   const { userId, devRole } = await requireUser();
-  const role = await getUserRole(userId, devRole);
+  const role = await getUserRole(userId, devRole as 'teacher' | 'student' | undefined);
 
   if (role !== 'teacher') {
     redirect('/dashboard');
