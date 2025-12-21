@@ -245,7 +245,7 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
   return (
     <div className="fixed inset-0 bg-black text-white overflow-y-auto">
       {/* Breadcrumb - Small, top-left */}
-      <div className="absolute top-4 left-4 z-50 pointer-events-auto">
+      <div className="absolute top-4 left-4 z-[100] pointer-events-auto bg-black/80 backdrop-blur-sm px-3 py-1.5 rounded-md">
         <div className="flex items-center gap-1 text-xs text-white/60">
           <Link
             href={getI18nPath('/dashboard', locale)}
@@ -266,7 +266,7 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
       </div>
 
       {/* Controls - Top-right */}
-      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+      <div className="absolute top-4 right-4 z-[100] flex items-center gap-2 pointer-events-auto">
         {session?.status === 'lobby'
           ? (
               <Button size="md" variant="primary" onClick={() => void startSession()} className="px-6 py-3 text-base">
@@ -287,7 +287,7 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
       </div>
 
       {/* Session Info Bar - Compact, top */}
-      <div className="sticky top-0 z-20 bg-black/80 backdrop-blur-sm border-b border-white/10 px-6 py-3">
+      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-sm border-b border-white/10 px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 text-sm">
             <div className="font-semibold text-white">{session?.quiz?.title ?? 'Loading...'}</div>
