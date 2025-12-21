@@ -35,6 +35,34 @@ export function ClassesPanel(props: ClassesPanelProps) {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [tagFilter, setTagFilter] = useState('');
 
+  // Parse tag filter thành array
+  const activeFilterTags = useMemo(() => {
+    if (!tagFilter.trim()) return [];
+    return tagFilter.split(',').map(t => t.trim()).filter(Boolean);
+  }, [tagFilter]);
+
+  // Helper function để toggle tag trong filter
+  const toggleTagFilter = (tagName: string) => {
+    const normalizedTagName = tagName.trim();
+    const currentTags = activeFilterTags;
+    const isSelected = currentTags.some(t => t.toLowerCase() === normalizedTagName.toLowerCase());
+
+    if (isSelected) {
+      // Remove tag nếu đã được chọn
+      const newTags = currentTags.filter(t => t.toLowerCase() !== normalizedTagName.toLowerCase());
+      setTagFilter(newTags.join(', '));
+    } else {
+      // Add tag nếu chưa được chọn
+      const newTags = [...currentTags, normalizedTagName];
+      setTagFilter(newTags.join(', '));
+    }
+  };
+
+  // Check nếu tag đang được filter
+  const isTagSelected = (tagName: string) => {
+    return activeFilterTags.some(t => t.toLowerCase() === tagName.trim().toLowerCase());
+  };
+
   const stats = useMemo(() => {
     const owned = classes.filter(c => c.roleInClass === 'teacher').length;
     const joined = classes.filter(c => c.roleInClass !== 'teacher').length;
@@ -364,11 +392,36 @@ export function ClassesPanel(props: ClassesPanelProps) {
                           </div>
                           {c.tags && c.tags.length > 0 && (
                             <div className="flex flex-wrap items-center gap-1">
-                              {c.tags.slice(0, 5).map(tag => (
-                                <Badge key={tag.id} variant="neutral" className="text-xs">
-                                  {tag.name}
-                                </Badge>
-                              ))}
+                              {c.tags.slice(0, 5).map((tag) => {
+                                const isSelected = isTagSelected(tag.name);
+                                return (
+                                  <Badge
+                                    key={tag.id}
+                                    variant={isSelected ? 'info' : 'neutral'}
+                                    className={`text-xs cursor-pointer transition-colors ${
+                                      isSelected
+                                        ? 'bg-primary/20 border-primary/40 hover:bg-primary/30'
+                                        : 'hover:bg-primary/10'
+                                    }`}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      toggleTagFilter(tag.name);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        toggleTagFilter(tag.name);
+                                      }
+                                    }}
+                                    role="button"
+                                    tabIndex={0}
+                                  >
+                                    {tag.name}
+                                  </Badge>
+                                );
+                              })}
                               {c.tags.length > 5 && (
                                 <Badge variant="neutral" className="text-xs">
                                   +
