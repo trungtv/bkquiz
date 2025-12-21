@@ -183,13 +183,13 @@ model QuestionTag {
 }
 
 model Quiz {
-  id                 String        @id
+  id                 String        @id @default(cuid())
   title              String
   createdByTeacherId String
   settings           Json          @default("{}")
   status             QuizStatus    @default(draft)
   createdAt          DateTime      @default(now())
-  updatedAt          DateTime
+  updatedAt          DateTime      @updatedAt
   createdBy          User          @relation(fields: [createdByTeacherId], references: [id])
   rules              QuizRule[]
   sessions           QuizSession[]
