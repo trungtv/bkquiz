@@ -261,7 +261,7 @@ model SessionCommonQuestion {
 }
 
 model SessionOptionSnapshot {
-  id                String                  @id
+  id                String                  @id @default(cuid())
   sessionQuestionId String
   order             Int
   content           String
