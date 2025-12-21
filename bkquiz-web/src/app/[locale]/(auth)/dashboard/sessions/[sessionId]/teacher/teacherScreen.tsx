@@ -60,6 +60,7 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
 
   const lastFetchedAt = useRef<number>(0);
+  const hasRefetchedForExpiry = useRef<boolean>(false);
 
   async function fetchStatus() {
     const res = await fetch(`/api/sessions/${props.sessionId}/status`, { method: 'GET' });
@@ -100,6 +101,7 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
     }
     setData(json as TeacherTokenResponse);
     lastFetchedAt.current = Date.now();
+    hasRefetchedForExpiry.current = false; // Reset flag when new token is fetched
   }
 
   useEffect(() => {
@@ -190,19 +192,15 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
       const elapsed = (Date.now() - lastFetchedAt.current) / 1000;
       const left = Math.max(0, Math.ceil(data.expiresInSeconds - elapsed));
       setSecondsLeft(left);
-    }, 250);
+
+      // Auto-refetch token when it expires (only once per expiry)
+      if (left <= 0 && !hasRefetchedForExpiry.current) {
+        hasRefetchedForExpiry.current = true;
+        void fetchToken();
+      }
+    }, 1000); // Changed from 250ms to 1000ms to reduce unnecessary updates
     return () => window.clearInterval(id);
   }, [data]);
-
-  useEffect(() => {
-    if (!data) {
-      return;
-    }
-    if ((secondsLeft ?? 999) <= 1) {
-      void fetchToken();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [secondsLeft, data]);
 
   return (
     <div className="mx-auto max-w-6xl">
