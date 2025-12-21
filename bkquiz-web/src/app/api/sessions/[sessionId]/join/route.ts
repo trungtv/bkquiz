@@ -97,7 +97,12 @@ export async function POST(_: Request, ctx: { params: Promise<{ sessionId: strin
     },
   }).catch(() => null);
 
-  await buildSessionSnapshotIfNeeded(sessionId);
+  try {
+    await buildSessionSnapshotIfNeeded(sessionId);
+  } catch (err) {
+    console.error('Error building session snapshot:', err);
+    // Continue anyway - snapshot might already exist
+  }
 
   const rules = await prisma.quizRule.findMany({
     where: { quizId: session.quizId },

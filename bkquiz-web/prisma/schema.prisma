@@ -76,7 +76,7 @@ model AttemptQuestion {
 }
 
 model CheckpointLog {
-  id           String              @id
+  id           String              @id @default(cuid())
   attemptId    String
   type         CheckpointEventType
   dueAt        DateTime?

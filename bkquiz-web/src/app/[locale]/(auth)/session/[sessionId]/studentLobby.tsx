@@ -37,12 +37,39 @@ export function Lobby(props: { sessionId: string }) {
     setError(null);
     try {
       const res = await fetch(`/api/sessions/${props.sessionId}/join`, { method: 'POST' });
-      const json = await res.json() as { attemptId?: string; error?: string };
-      if (!res.ok || !json.attemptId) {
+      if (!res.ok) {
+        const text = await res.text();
+        let json: { attemptId?: string; error?: string };
+        try {
+          json = JSON.parse(text);
+        } catch {
+          setError(`JOIN_FAILED: ${res.status} ${res.statusText}`);
+          return;
+        }
+        setError(json.error ?? 'JOIN_FAILED');
+        return;
+      }
+      const text = await res.text();
+      if (!text) {
+        setError('JOIN_FAILED: Empty response');
+        return;
+      }
+      let json: { attemptId?: string; error?: string };
+      try {
+        json = JSON.parse(text);
+      } catch (err) {
+        setError('JOIN_FAILED: Invalid JSON response');
+        console.error('Failed to parse response:', text, err);
+        return;
+      }
+      if (!json.attemptId) {
         setError(json.error ?? 'JOIN_FAILED');
         return;
       }
       router.push(`/attempt/${json.attemptId}`);
+    } catch (err) {
+      setError(`JOIN_FAILED: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('Error joining session:', err);
     } finally {
       setBusy(false);
     }
