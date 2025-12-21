@@ -59,12 +59,16 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
   }
 
   async function loadQuizzes() {
-    const res = await fetch('/api/quizzes', { method: 'GET' });
-    const json = await res.json() as { quizzes?: QuizLite[]; error?: string };
-    if (!res.ok) {
-      return;
+    try {
+      const res = await fetch('/api/quizzes', { method: 'GET' });
+      if (!res.ok) {
+        return;
+      }
+      const json = await res.json() as { quizzes?: QuizLite[]; error?: string };
+      setQuizzes(json.quizzes ?? []);
+    } catch (err) {
+      console.error('Failed to load quizzes:', err);
     }
-    setQuizzes(json.quizzes ?? []);
   }
 
   async function createSession() {

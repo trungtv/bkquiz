@@ -35,7 +35,7 @@ export async function GET(_req: Request) {
         },
         _count: {
           select: {
-            attempts: true,
+            Attempt: true,
           },
         },
       },
@@ -50,7 +50,7 @@ export async function GET(_req: Request) {
         endedAt: s.endedAt,
         createdAt: s.createdAt,
         quiz: s.Quiz,
-        attemptCount: s._count.attempts,
+        attemptCount: s._count.Attempt,
       })),
     });
   }

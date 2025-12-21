@@ -8,9 +8,9 @@ const CreateQuizSchema = z.object({
   status: z.enum(['draft', 'published']).optional(),
 });
 
-export async function GET(req: Request) {
+export async function GET(_req: Request) {
   const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
+  await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
 
   // Lấy tất cả quiz của teacher hiện tại
   const quizzes = await prisma.quiz.findMany({
@@ -21,7 +21,7 @@ export async function GET(req: Request) {
       title: true,
       status: true,
       updatedAt: true,
-      _count: { select: { rules: true } },
+      _count: { select: { QuizRule: true } },
     },
   });
 
@@ -31,7 +31,7 @@ export async function GET(req: Request) {
       title: q.title,
       status: q.status,
       updatedAt: q.updatedAt,
-      ruleCount: q._count.rules,
+      ruleCount: q._count.QuizRule,
     })),
   });
 }

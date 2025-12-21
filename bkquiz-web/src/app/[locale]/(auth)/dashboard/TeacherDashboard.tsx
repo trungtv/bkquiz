@@ -34,7 +34,7 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
       },
       _count: {
         select: {
-          attempts: true,
+          Attempt: true,
         },
       },
     },
@@ -247,7 +247,7 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
                         </div>
                         <div className="mt-1 flex items-center justify-between text-xs text-text-muted">
                           <span>
-                            {session._count.attempts}
+                            {session._count.Attempt}
                             {' '}
                             students
                           </span>
