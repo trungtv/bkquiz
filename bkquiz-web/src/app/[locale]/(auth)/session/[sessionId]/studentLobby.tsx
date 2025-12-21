@@ -145,6 +145,13 @@ export function Lobby(props: { sessionId: string }) {
       {/* Breadcrumb */}
       <div className="flex items-center gap-1 text-xs text-text-muted">
         <Link
+          href={getI18nPath('/dashboard', locale)}
+          className="hover:text-text-heading transition-colors"
+        >
+          Dashboard
+        </Link>
+        <span>/</span>
+        <Link
           href={getI18nPath(`/dashboard/classes/${data.classroom.id}`, locale)}
           className="hover:text-text-heading transition-colors"
         >
