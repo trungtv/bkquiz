@@ -36,13 +36,17 @@ type Session = {
   attemptCount: number;
 };
 
-export function ClassDetailPanel(props: { classId: string }) {
+type ClassDetailPanelProps = {
+  classId: string;
+  role: 'teacher' | 'student';
+};
+
+export function ClassDetailPanel(props: ClassDetailPanelProps) {
+  const { classId, role } = props;
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeTab, setActiveTab] = useState<'members' | 'sessions' | 'settings'>('members');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   function formatDate(dateString: string) {
     const date = new Date(dateString);
@@ -56,17 +60,16 @@ export function ClassDetailPanel(props: { classId: string }) {
   }
 
   async function loadClassInfo() {
-    const res = await fetch(`/api/classes/${props.classId}`, { method: 'GET' });
+    const res = await fetch(`/api/classes/${classId}`, { method: 'GET' });
     const json = await res.json() as ClassInfo | { error?: string };
     if (!res.ok) {
-      setError((json as { error?: string }).error ?? 'LOAD_FAILED');
       return;
     }
     setClassInfo(json as ClassInfo);
   }
 
   async function loadMembers() {
-    const res = await fetch(`/api/classes/${props.classId}/members`, { method: 'GET' });
+    const res = await fetch(`/api/classes/${classId}/members`, { method: 'GET' });
     const json = await res.json() as { members?: Member[]; error?: string };
     if (!res.ok) {
       return;
@@ -75,7 +78,7 @@ export function ClassDetailPanel(props: { classId: string }) {
   }
 
   async function loadSessions() {
-    const res = await fetch(`/api/classes/${props.classId}/sessions`, { method: 'GET' });
+    const res = await fetch(`/api/classes/${classId}/sessions`, { method: 'GET' });
     const json = await res.json() as { sessions?: Session[]; error?: string };
     if (!res.ok) {
       return;
@@ -83,19 +86,10 @@ export function ClassDetailPanel(props: { classId: string }) {
     setSessions(json.sessions ?? []);
   }
 
-  async function load() {
-    setBusy(true);
-    setError(null);
-    try {
-      await Promise.all([loadClassInfo(), loadMembers(), loadSessions()]);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   useEffect(() => {
-    void load();
-  }, [props.classId]);
+    void Promise.all([loadClassInfo(), loadMembers(), loadSessions()]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classId]);
 
   if (!classInfo) {
     return (
@@ -112,24 +106,35 @@ export function ClassDetailPanel(props: { classId: string }) {
   const isStudent = classInfo.userRole === 'student';
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-7 animate-fadeIn">
       {/* Breadcrumb */}
-      <nav className="text-sm">
+      <nav className="text-sm animate-slideUp">
         <div className="flex items-center gap-2 text-text-muted">
-          <Link href="/dashboard" className="hover:text-text-heading">
+          <Link href="/dashboard" className="hover:text-text-heading transition-colors">
             Dashboard
           </Link>
           <span>·</span>
-          <Link href="/dashboard/classes" className="hover:text-text-heading">
+          <Link href="/dashboard/classes" className="hover:text-text-heading transition-colors">
             Classes
           </Link>
           <span>·</span>
           <span className="text-text-heading">{classInfo.name}</span>
+          <Badge
+            variant={role === 'teacher' ? 'success' : 'info'}
+            className="text-[10px] px-1.5 py-0.5 ml-2"
+          >
+            {role === 'teacher' ? 'Teacher' : 'Student'}
+          </Badge>
         </div>
       </nav>
 
       {/* Class Header */}
-      <Card className="p-5 md:p-6">
+      <Card
+        className={`p-5 md:p-6 animate-slideUp transition-all duration-200 hover:shadow-lg ${
+          isOwner ? 'border-primary/20' : 'border-indigo-500/20'
+        }`}
+        style={{ animationDelay: '50ms' }}
+      >
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -166,8 +171,15 @@ export function ClassDetailPanel(props: { classId: string }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {isOwner && (
+              <Link href="/dashboard/classes">
+                <Button variant="primary" size="sm" className="hover:scale-105">
+                  + Tạo Session
+                </Button>
+              </Link>
+            )}
             <Link href="/dashboard/classes">
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" className="hover:scale-105">
                 ← Quay lại
               </Button>
             </Link>
@@ -176,37 +188,65 @@ export function ClassDetailPanel(props: { classId: string }) {
       </Card>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="p-4">
+      <div
+        className="grid gap-4 md:grid-cols-4 animate-slideUp"
+        style={{ animationDelay: '100ms' }}
+      >
+        <Card
+          className={`p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${
+            isOwner ? '' : 'border-indigo-500/20'
+          }`}
+        >
           <div className="text-xs text-text-muted">Thành viên</div>
-          <div className="mt-1 text-2xl font-semibold text-text-heading">{members.length}</div>
+          <div className={`mt-1 text-2xl font-semibold ${isOwner ? 'text-text-heading' : 'text-indigo-400'}`}>
+            {members.length}
+          </div>
         </Card>
-        <Card className="p-4">
+        <Card
+          className={`p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${
+            isOwner ? '' : 'border-indigo-500/20'
+          }`}
+        >
           <div className="text-xs text-text-muted">Tổng sessions</div>
-          <div className="mt-1 text-2xl font-semibold text-text-heading">{sessions.length}</div>
+          <div className={`mt-1 text-2xl font-semibold ${isOwner ? 'text-text-heading' : 'text-indigo-400'}`}>
+            {sessions.length}
+          </div>
         </Card>
-        <Card className="p-4">
+        <Card
+          className={`p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${
+            isOwner ? '' : 'border-indigo-500/20'
+          }`}
+        >
           <div className="text-xs text-text-muted">Active sessions</div>
-          <div className="mt-1 text-2xl font-semibold text-text-heading">
+          <div className={`mt-1 text-2xl font-semibold ${isOwner ? 'text-text-heading' : 'text-indigo-400'}`}>
             {sessions.filter(s => s.status === 'active').length}
           </div>
         </Card>
-        <Card className="p-4">
+        <Card
+          className={`p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${
+            isOwner ? '' : 'border-indigo-500/20'
+          }`}
+        >
           <div className="text-xs text-text-muted">Ended sessions</div>
-          <div className="mt-1 text-2xl font-semibold text-text-heading">
+          <div className={`mt-1 text-2xl font-semibold ${isOwner ? 'text-text-heading' : 'text-indigo-400'}`}>
             {sessions.filter(s => s.status === 'ended').length}
           </div>
         </Card>
       </div>
 
       {/* Tabs */}
-      <Card className="p-5 md:p-6">
+      <Card
+        className={`p-5 md:p-6 animate-slideUp ${
+          isOwner ? '' : 'border-indigo-500/20'
+        }`}
+        style={{ animationDelay: '150ms' }}
+      >
         <div className="flex gap-2 border-b border-border-subtle">
           <button
             type="button"
             className={`px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === 'members'
-                ? 'border-b-2 border-primary text-text-heading'
+                ? `border-b-2 text-text-heading ${isOwner ? 'border-primary' : 'border-indigo-500'}`
                 : 'text-text-muted hover:text-text-heading'
             }`}
             onClick={() => setActiveTab('members')}
@@ -217,12 +257,12 @@ export function ClassDetailPanel(props: { classId: string }) {
             type="button"
             className={`px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === 'sessions'
-                ? 'border-b-2 border-primary text-text-heading'
+                ? `border-b-2 text-text-heading ${isOwner ? 'border-primary' : 'border-indigo-500'}`
                 : 'text-text-muted hover:text-text-heading'
             }`}
             onClick={() => setActiveTab('sessions')}
           >
-            Sessions
+            {isStudent ? 'My Sessions' : 'Sessions'}
           </button>
           {isOwner && (
             <button
@@ -243,16 +283,29 @@ export function ClassDetailPanel(props: { classId: string }) {
         <div className="mt-4">
           {activeTab === 'members' && (
             <div className="space-y-2">
+              {isOwner && (
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="text-sm font-medium text-text-heading">
+                    {members.length}
+                    {' '}
+                    thành viên
+                  </div>
+                  <Button variant="primary" size="sm" className="hover:scale-105">
+                    + Add Member
+                  </Button>
+                </div>
+              )}
               {members.length === 0
                 ? (
                     <div className="text-center py-8 text-sm text-text-muted">
                       Chưa có thành viên nào.
                     </div>
                   )
-                : members.map(m => (
+                : members.map((m, idx) => (
                     <div
                       key={m.userId}
-                      className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3"
+                      className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-all duration-200 hover:translate-x-1 hover:shadow-md"
+                      style={{ animationDelay: `${idx * 30}ms` }}
                     >
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-text-heading">
@@ -280,25 +333,52 @@ export function ClassDetailPanel(props: { classId: string }) {
 
           {activeTab === 'sessions' && (
             <div className="space-y-2">
+              {isOwner && sessions.length > 0 && (
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="text-sm font-medium text-text-heading">
+                    {sessions.length}
+                    {' '}
+                    sessions
+                  </div>
+                  <Link href="/dashboard/classes">
+                    <Button variant="primary" size="sm" className="hover:scale-105">
+                      + Create Session
+                    </Button>
+                  </Link>
+                </div>
+              )}
               {sessions.length === 0
                 ? (
                     <div className="text-center py-8 text-sm text-text-muted">
                       Chưa có session nào.
+                      {isOwner && (
+                        <div className="mt-2">
+                          <Link href="/dashboard/classes">
+                            <Button variant="primary" size="sm" className="hover:scale-105">
+                              Tạo session đầu tiên
+                            </Button>
+                          </Link>
+                        </div>
+                      )}
                     </div>
                   )
-                : sessions.map(s => {
+                : sessions.map((s, idx) => {
                     // Student: link to session lobby or attempt
                     // Teacher: link to teacher screen
                     const href = isStudent
                       ? `/session/${s.id}`
                       : `/dashboard/sessions/${s.id}/teacher`;
-                    const label = isStudent
-                      ? (s.status === 'active' ? 'Join' : s.status === 'ended' ? 'View' : 'View Lobby')
-                      : 'View';
 
                     return (
                       <Link key={s.id} href={href}>
-                        <div className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-colors hover:border-border-strong">
+                        <div
+                          className={`flex items-center justify-between gap-4 rounded-md border bg-bg-section px-4 py-3 transition-all duration-200 hover:translate-x-1 hover:shadow-md ${
+                            isStudent
+                              ? 'border-indigo-500/30 hover:border-indigo-500/50'
+                              : 'border-border-subtle hover:border-border-strong'
+                          }`}
+                          style={{ animationDelay: `${idx * 30}ms` }}
+                        >
                           <div className="min-w-0 flex-1">
                             <div className="text-sm font-medium text-text-heading">
                               {s.quiz.title}
@@ -386,4 +466,3 @@ export function ClassDetailPanel(props: { classId: string }) {
     </div>
   );
 }
-

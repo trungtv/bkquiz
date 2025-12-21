@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { requireUser } from '@/server/authz';
+import { getUserRole, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 import { ClassDetailPanel } from './ClassDetailPanel';
 
@@ -16,7 +16,8 @@ export default async function ClassDetailPage(props: {
   params: Promise<{ classId: string }>;
 }) {
   const { classId } = await props.params;
-  const { userId } = await requireUser();
+  const { userId, devRole } = await requireUser();
+  const role = await getUserRole(userId, devRole as 'teacher' | 'student' | undefined);
 
   // Verify user has access to this classroom
   const membership = await prisma.classMembership.findUnique({
@@ -36,7 +37,7 @@ export default async function ClassDetailPage(props: {
 
   return (
     <div className="py-5">
-      <ClassDetailPanel classId={classId} />
+      <ClassDetailPanel classId={classId} role={role} />
     </div>
   );
 }
