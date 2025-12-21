@@ -68,7 +68,7 @@ export async function POST(req: Request) {
       name: body.name,
       classCode,
       ownerTeacherId: userId,
-      memberships: {
+      ClassMembership: {
         create: {
           userId,
           roleInClass: 'teacher',
