@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireUser } from '@/server/authz';
+import { requireTeacher, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 import { generateClassCode } from '@/utils/classCode';
 
@@ -49,7 +49,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const { userId } = await requireUser();
+  const { userId, devRole } = await requireUser();
+  await requireTeacher(userId, devRole);
   const body = CreateClassSchema.parse(await req.json());
 
   // Best effort unique classCode (low collision).

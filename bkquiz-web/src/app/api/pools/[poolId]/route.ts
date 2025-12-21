@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireUser } from '@/server/authz';
+import { requireTeacher, requireUser } from '@/server/authz';
 import { requirePoolPermission } from '@/server/poolAuthz';
 import { prisma } from '@/server/prisma';
 
@@ -10,31 +10,43 @@ const UpdatePoolSchema = z.object({
 });
 
 export async function GET(_: Request, ctx: { params: Promise<{ poolId: string }> }) {
-  const { userId } = await requireUser();
+  const { userId, devRole } = await requireUser();
+  await requireTeacher(userId, devRole);
   const { poolId } = await ctx.params;
 
-  await requirePoolPermission(userId, poolId, 'view');
+  const { pool, permission } = await requirePoolPermission(userId, poolId, 'view');
 
-  const pool = await prisma.questionPool.findUnique({
-    where: { id: poolId },
-    select: {
-      id: true,
-      name: true,
-      visibility: true,
-      ownerTeacherId: true,
-      updatedAt: true,
-    },
+  // Get stats
+  const [questionCount, tagGroups] = await Promise.all([
+    prisma.question.count({
+      where: { poolId, deletedAt: null },
+    }),
+    prisma.questionTag.groupBy({
+      by: ['tagId'],
+      where: {
+        question: {
+          poolId,
+          deletedAt: null,
+        },
+      },
+    }),
+  ]);
+
+  return NextResponse.json({
+    id: pool.id,
+    name: pool.name,
+    visibility: pool.visibility,
+    ownerTeacherId: pool.ownerTeacherId,
+    updatedAt: pool.updatedAt,
+    permission,
+    questionCount,
+    tagCount: tagGroups.length,
   });
-
-  if (!pool) {
-    return NextResponse.json({ error: 'POOL_NOT_FOUND' }, { status: 404 });
-  }
-
-  return NextResponse.json(pool);
 }
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ poolId: string }> }) {
-  const { userId } = await requireUser();
+  const { userId, devRole } = await requireUser();
+  await requireTeacher(userId, devRole);
   const { poolId } = await ctx.params;
   const body = UpdatePoolSchema.parse(await req.json());
 

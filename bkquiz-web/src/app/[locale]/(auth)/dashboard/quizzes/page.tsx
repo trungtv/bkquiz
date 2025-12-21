@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { requireUser } from '@/server/authz';
+import { getUserRole, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 import { QuizzesPanel } from './QuizzesPanel';
 
@@ -18,7 +19,12 @@ export async function generateMetadata(props: {
 }
 
 export default async function QuizzesPage() {
-  const { userId } = await requireUser();
+  const { userId, devRole } = await requireUser();
+  const role = await getUserRole(userId, devRole);
+
+  if (role !== 'teacher') {
+    redirect('/dashboard');
+  }
 
   const classrooms: ClassroomRow[] = await prisma.classMembership.findMany({
     where: { userId, status: 'active' },

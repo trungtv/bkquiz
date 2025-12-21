@@ -45,6 +45,48 @@ export async function requireUser() {
   return { session, userId };
 }
 
+/**
+ * Get user's system role (teacher or student)
+ * Supports DEV_BYPASS_AUTH mode
+ */
+export async function getUserRole(
+  userId: string,
+  devRole?: 'teacher' | 'student',
+): Promise<'teacher' | 'student'> {
+  if (devRole) {
+    return devRole;
+  }
+
+  const userRoles = await prisma.userRole.findMany({
+    where: { userId },
+    select: { role: true },
+  });
+
+  return userRoles.some(r => r.role === 'teacher') ? 'teacher' : 'student';
+}
+
+/**
+ * Require user to have teacher system role
+ * Throws error if user is not a teacher
+ */
+export async function requireTeacher(userId: string, devRole?: 'teacher' | 'student') {
+  const role = await getUserRole(userId, devRole);
+  if (role !== 'teacher') {
+    throw new Error('FORBIDDEN: Teacher role required');
+  }
+}
+
+/**
+ * Require user to have student system role
+ * Throws error if user is not a student
+ */
+export async function requireStudent(userId: string, devRole?: 'teacher' | 'student') {
+  const role = await getUserRole(userId, devRole);
+  if (role !== 'student') {
+    throw new Error('FORBIDDEN: Student role required');
+  }
+}
+
 export async function requireTeacherInClassroom(userId: string, classroomId: string) {
   const membership = await prisma.classMembership.findUnique({
     where: { classroomId_userId: { classroomId, userId } },

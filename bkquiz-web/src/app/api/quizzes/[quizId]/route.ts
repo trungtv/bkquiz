@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { requireUser } from '@/server/authz';
+import { requireTeacher, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 
 export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }> }) {
-  const { userId } = await requireUser();
+  const { userId, devRole } = await requireUser();
+  await requireTeacher(userId, devRole);
   const { quizId } = await ctx.params;
 
   const quiz = await prisma.quiz.findUnique({

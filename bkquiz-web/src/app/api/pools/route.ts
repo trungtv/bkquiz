@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireUser } from '@/server/authz';
+import { requireTeacher, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 
 const CreatePoolSchema = z.object({
@@ -9,7 +9,8 @@ const CreatePoolSchema = z.object({
 });
 
 export async function GET() {
-  const { userId } = await requireUser();
+  const { userId, devRole } = await requireUser();
+  await requireTeacher(userId, devRole);
 
   const owned = await prisma.questionPool.findMany({
     where: { ownerTeacherId: userId },
@@ -97,7 +98,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const { userId } = await requireUser();
+  const { userId, devRole } = await requireUser();
+  await requireTeacher(userId, devRole);
   const body = CreatePoolSchema.parse(await req.json());
 
   const pool = await prisma.questionPool.create({

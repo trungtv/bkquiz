@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireUser } from '@/server/authz';
+import { requireTeacher, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 
 const UpdateStatusSchema = z.object({
@@ -8,7 +8,8 @@ const UpdateStatusSchema = z.object({
 });
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ quizId: string }> }) {
-  const { userId } = await requireUser();
+  const { userId, devRole } = await requireUser();
+  await requireTeacher(userId, devRole);
   const { quizId } = await ctx.params;
   const body = UpdateStatusSchema.parse(await req.json());
 

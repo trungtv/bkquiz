@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 
 type SidebarProps = {
+  role: 'teacher' | 'student';
   dashboardLink: string;
   classesLink: string;
   quizzesLink: string;
@@ -14,19 +15,37 @@ type SidebarProps = {
 
 export function Sidebar(props: SidebarProps) {
   const pathname = usePathname();
-  // Lazy initialization: chỉ chạy một lần khi component mount
-  const [isExpanded, setIsExpanded] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('sidebar-expanded');
-      return saved !== null ? saved === 'true' : true;
-    }
-    return true;
-  });
+  // Always start with true to match server render (avoid hydration mismatch)
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
-  // Save vào localStorage khi state thay đổi
-  useEffect(() => {
-    localStorage.setItem('sidebar-expanded', String(isExpanded));
-  }, [isExpanded]);
+  // Load from localStorage after mount (client-side only)
+  // Use useLayoutEffect to sync before paint to minimize flash
+  useLayoutEffect(() => {
+    try {
+      const saved = localStorage.getItem('sidebar-expanded');
+      if (saved !== null) {
+        setIsExpanded(saved === 'true');
+      }
+    } catch {
+      // Ignore localStorage errors
+    } finally {
+      setHasLoaded(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Save vào localStorage khi state thay đổi (chỉ sau khi đã load)
+  useLayoutEffect(() => {
+    if (hasLoaded) {
+      try {
+        localStorage.setItem('sidebar-expanded', String(isExpanded));
+      } catch {
+        // Ignore localStorage errors
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isExpanded, hasLoaded]);
 
   const toggle = () => {
     setIsExpanded(prev => !prev);
@@ -43,6 +62,7 @@ export function Sidebar(props: SidebarProps) {
 
   return (
     <aside
+      suppressHydrationWarning
       className={`hidden border-r border-border-subtle bg-bg-section/95 transition-all duration-300 lg:block ${
         isExpanded ? 'w-64 px-4' : 'w-16 px-2'
       }`}
@@ -188,68 +208,104 @@ export function Sidebar(props: SidebarProps) {
             {isExpanded && <span>{props.classesLink}</span>}
           </Link>
 
-          <Link
-            href="/dashboard/quizzes/"
-            onClick={e => e.stopPropagation()}
-            className={`flex items-center rounded-md py-2 transition-colors ${
-              isExpanded ? 'gap-3 px-3' : 'justify-center px-2'
-            } ${
-              isActive('/dashboard/quizzes')
-                ? 'bg-bg-card text-text-heading'
-                : 'text-text-muted hover:bg-bg-card hover:text-text-heading'
-            }`}
-            title={isExpanded ? undefined : 'Quizzes'}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-file-question flex-shrink-0"
-            >
-              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-              <path d="M10 10.3c.2-.4.5-.8.9-1a2.1 2.1 0 0 1 2.6.4c.3.2.5.5.6.9a2.1 2.1 0 0 1-1.5 2.5c-.4 0-.8.1-1.2.3" />
-              <path d="M12 17h.01" />
-            </svg>
-            {isExpanded && <span>{props.quizzesLink}</span>}
-          </Link>
+          {props.role === 'teacher'
+            ? (
+                <>
+                  <Link
+                    href="/dashboard/quizzes/"
+                    onClick={e => e.stopPropagation()}
+                    className={`flex items-center rounded-md py-2 transition-colors ${
+                      isExpanded ? 'gap-3 px-3' : 'justify-center px-2'
+                    } ${
+                      isActive('/dashboard/quizzes')
+                        ? 'bg-bg-card text-text-heading'
+                        : 'text-text-muted hover:bg-bg-card hover:text-text-heading'
+                    }`}
+                    title={isExpanded ? undefined : 'Quizzes'}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-file-question flex-shrink-0"
+                    >
+                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                      <path d="M10 10.3c.2-.4.5-.8.9-1a2.1 2.1 0 0 1 2.6.4c.3.2.5.5.6.9a2.1 2.1 0 0 1-1.5 2.5c-.4 0-.8.1-1.2.3" />
+                      <path d="M12 17h.01" />
+                    </svg>
+                    {isExpanded && <span>{props.quizzesLink}</span>}
+                  </Link>
 
-          <Link
-            href="/dashboard/question-bank/"
-            onClick={e => e.stopPropagation()}
-            className={`flex items-center rounded-md py-2 transition-colors ${
-              isExpanded ? 'gap-3 px-3' : 'justify-center px-2'
-            } ${
-              isActive('/dashboard/question-bank')
-                ? 'bg-bg-card text-text-heading'
-                : 'text-text-muted hover:bg-bg-card hover:text-text-heading'
-            }`}
-            title={isExpanded ? undefined : 'Question Bank'}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="lucide lucide-library flex-shrink-0"
-            >
-              <path d="m16 6 4 14" />
-              <path d="M12 6v14" />
-              <path d="M8 8v12" />
-              <path d="M4 4v16" />
-            </svg>
-            {isExpanded && <span>{props.questionBankLink}</span>}
-          </Link>
+                  <Link
+                    href="/dashboard/question-bank/"
+                    onClick={e => e.stopPropagation()}
+                    className={`flex items-center rounded-md py-2 transition-colors ${
+                      isExpanded ? 'gap-3 px-3' : 'justify-center px-2'
+                    } ${
+                      isActive('/dashboard/question-bank')
+                        ? 'bg-bg-card text-text-heading'
+                        : 'text-text-muted hover:bg-bg-card hover:text-text-heading'
+                    }`}
+                    title={isExpanded ? undefined : 'Question Bank'}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="lucide lucide-library flex-shrink-0"
+                    >
+                      <path d="m16 6 4 14" />
+                      <path d="M12 6v14" />
+                      <path d="M8 8v12" />
+                      <path d="M4 4v16" />
+                    </svg>
+                    {isExpanded && <span>{props.questionBankLink}</span>}
+                  </Link>
+                </>
+              )
+            : (
+                <Link
+                  href="/dashboard/sessions/"
+                  onClick={e => e.stopPropagation()}
+                  className={`flex items-center rounded-md py-2 transition-colors ${
+                    isExpanded ? 'gap-3 px-3' : 'justify-center px-2'
+                  } ${
+                    isActive('/dashboard/sessions')
+                      ? 'bg-bg-card text-text-heading'
+                      : 'text-text-muted hover:bg-bg-card hover:text-text-heading'
+                  }`}
+                  title={isExpanded ? undefined : 'My Sessions'}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-play-circle flex-shrink-0"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <polygon points="10 8 16 12 10 16 10 8" />
+                  </svg>
+                  {isExpanded && <span>My Sessions</span>}
+                </Link>
+              )}
 
           <Link
             href="/dashboard/user-profile/"

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireUser } from '@/server/authz';
+import { requireTeacher, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 
 const CreateQuizSchema = z.object({
@@ -9,7 +9,8 @@ const CreateQuizSchema = z.object({
 });
 
 export async function GET(req: Request) {
-  const { userId } = await requireUser();
+  const { userId, devRole } = await requireUser();
+  await requireTeacher(userId, devRole);
 
   // Lấy tất cả quiz của teacher hiện tại
   const quizzes = await prisma.quiz.findMany({
@@ -36,7 +37,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const { userId } = await requireUser();
+  const { userId, devRole } = await requireUser();
+  await requireTeacher(userId, devRole);
   const body = CreateQuizSchema.parse(await req.json());
 
   const quiz = await prisma.quiz.create({

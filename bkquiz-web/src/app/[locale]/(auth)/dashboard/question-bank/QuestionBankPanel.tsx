@@ -301,49 +301,51 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
                   </div>
                 )
               : sorted.map(p => (
-                  <Card
+                  <Link
                     key={p.id}
-                    interactive
-                    className="flex cursor-pointer items-center justify-between gap-4 px-4 py-3"
-                    onClick={() => {
-                      window.location.href = `/dashboard/question-bank/${p.id}`;
-                    }}
+                    href={`/dashboard/question-bank/${p.id}`}
+                    className="block"
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium text-text-heading">{p.name}</div>
-                      <div className="mt-1.5 flex items-center gap-3 text-xs text-text-muted">
-                        <span>
-                          {p.questionCount ?? 0}
-                          {' '}
-                          câu
-                        </span>
-                        <span>·</span>
-                        <span>
-                          {p.tagCount ?? 0}
-                          {' '}
-                          tags
-                        </span>
-                        <span>·</span>
-                        <Badge variant="neutral" className="text-xs">
-                          {p.visibility}
-                        </Badge>
-                        <span>·</span>
-                        <span className="font-mono text-[10px]">
-                          {new Date(p.updatedAt).toLocaleDateString('vi-VN')}
-                        </span>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.location.href = `/dashboard/question-bank/${p.id}`;
-                      }}
+                    <Card
+                      interactive
+                      className="flex cursor-pointer items-center justify-between gap-4 px-4 py-3"
                     >
-                      Mở
-                    </Button>
-                  </Card>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium text-text-heading">{p.name}</div>
+                        <div className="mt-1.5 flex items-center gap-3 text-xs text-text-muted">
+                          <span>
+                            {p.questionCount ?? 0}
+                            {' '}
+                            câu
+                          </span>
+                          <span>·</span>
+                          <span>
+                            {p.tagCount ?? 0}
+                            {' '}
+                            tags
+                          </span>
+                          <span>·</span>
+                          <Badge variant="neutral" className="text-xs">
+                            {p.visibility}
+                          </Badge>
+                          <span>·</span>
+                          <span className="font-mono text-[10px]">
+                            {new Date(p.updatedAt).toLocaleDateString('vi-VN')}
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                      >
+                        Mở
+                      </Button>
+                    </Card>
+                  </Link>
                 ))}
         </div>
       </Card>

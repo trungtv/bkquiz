@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireUser } from '@/server/authz';
+import { requireTeacher, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 
 type VariantSettings = {
@@ -21,7 +21,8 @@ const PatchSettingsSchema = z.object({
 });
 
 export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }> }) {
-  const { userId } = await requireUser();
+  const { userId, devRole } = await requireUser();
+  await requireTeacher(userId, devRole);
   const { quizId } = await ctx.params;
 
   const quiz = await prisma.quiz.findUnique({
@@ -50,7 +51,8 @@ export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }>
 }
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ quizId: string }> }) {
-  const { userId } = await requireUser();
+  const { userId, devRole } = await requireUser();
+  await requireTeacher(userId, devRole);
   const { quizId } = await ctx.params;
   const body = PatchSettingsSchema.parse(await req.json());
 

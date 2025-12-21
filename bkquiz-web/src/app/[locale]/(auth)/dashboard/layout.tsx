@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { signOut } from '@/auth';
 import { LocaleSwitcher } from '@/components/LocaleSwitcher';
+import { getUserRole, requireUser } from '@/server/authz';
 import { AppConfig } from '@/utils/AppConfig';
 import { Sidebar } from './Sidebar';
 
@@ -15,11 +16,15 @@ export default async function DashboardLayout(props: {
     namespace: 'DashboardLayout',
   });
 
+  const { userId, devRole } = await requireUser();
+  const role = await getUserRole(userId, devRole as 'teacher' | 'student' | undefined);
+
   return (
     <div className="min-h-screen bg-bg-page text-text-body antialiased">
       <div className="flex">
         {/* Sidebar – Framer-style, hidden on mobile, với expand/collapse */}
         <Sidebar
+          role={role}
           dashboardLink={t('dashboard_link')}
           classesLink={t('classes_link')}
           quizzesLink={t('quizzes_link')}

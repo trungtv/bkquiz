@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { requireUser } from '@/server/authz';
+import { getUserRole, requireUser } from '@/server/authz';
 import { QuestionPoolDetail } from './QuestionPoolDetail';
 
 export async function generateMetadata(props: {
@@ -14,7 +15,13 @@ export async function generateMetadata(props: {
 export default async function PoolDetailPage(props: {
   params: Promise<{ poolId: string }>;
 }) {
-  const { userId } = await requireUser();
+  const { userId, devRole } = await requireUser();
+  const role = await getUserRole(userId, devRole);
+
+  if (role !== 'teacher') {
+    redirect('/dashboard');
+  }
+
   const { poolId } = await props.params;
 
   return (

@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import { NextResponse } from 'next/server';
-import { requireUser } from '@/server/authz';
+import { requireTeacher, requireUser } from '@/server/authz';
 import { extractQuestionsMdFromZip, parsePoolMarkdown } from '@/server/import/markdownPool';
 import { prisma } from '@/server/prisma';
 import { normalizeTagName } from '@/utils/tags';
@@ -9,7 +9,8 @@ export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await requireUser();
+    const { userId, devRole } = await requireUser();
+    await requireTeacher(userId, devRole);
     const form = await req.formData();
     const file = form.get('file');
 
@@ -30,26 +31,75 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'UNSUPPORTED_FILE' }, { status: 400 });
     }
 
-    const parsed = parsePoolMarkdown(md);
+    if (!md || md.trim().length === 0) {
+      return NextResponse.json({ error: 'EMPTY_FILE' }, { status: 400 });
+    }
 
-    // Upsert pool (1 md = 1 pool). If same owner already has a pool with same name, reuse it.
-    const existing = await prisma.questionPool.findFirst({
-      where: { ownerTeacherId: userId, name: parsed.poolName },
-      select: { id: true },
-    });
+    let parsed;
+    try {
+      parsed = parsePoolMarkdown(md);
+    } catch (parseError) {
+      const msg = parseError instanceof Error ? parseError.message : String(parseError);
+      const stack = parseError instanceof Error ? parseError.stack : undefined;
+      console.error('Parse error:', { msg, stack, mdPreview: md.substring(0, 500) });
+      return NextResponse.json({ error: 'PARSE_ERROR', message: msg }, { status: 400 });
+    }
 
-    const pool = existing
-      ? await prisma.questionPool.update({
-          where: { id: existing.id },
-          data: { visibility: parsed.visibility },
-        })
-      : await prisma.questionPool.create({
-          data: {
-            name: parsed.poolName,
-            visibility: parsed.visibility,
-            ownerTeacherId: userId,
-          },
-        });
+    // Check if poolId is provided (for updating existing pool)
+    const poolIdParam = form.get('poolId');
+    let pool;
+    let wasExisting = false;
+
+    if (poolIdParam && typeof poolIdParam === 'string') {
+      // Import into existing pool
+      const existing = await prisma.questionPool.findUnique({
+        where: { id: poolIdParam },
+        select: { id: true, ownerTeacherId: true },
+      });
+
+      if (!existing) {
+        return NextResponse.json({ error: 'POOL_NOT_FOUND' }, { status: 404 });
+      }
+
+      if (existing.ownerTeacherId !== userId) {
+        return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+      }
+
+      wasExisting = true;
+
+      // Update pool metadata
+      pool = await prisma.questionPool.update({
+        where: { id: poolIdParam },
+        data: { visibility: parsed.visibility },
+      });
+
+      // Delete all existing questions in this pool (soft delete)
+      await prisma.question.updateMany({
+        where: { poolId: poolIdParam, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+    } else {
+      // Create new pool or find existing by name
+      const existing = await prisma.questionPool.findFirst({
+        where: { ownerTeacherId: userId, name: parsed.poolName },
+        select: { id: true },
+      });
+
+      wasExisting = !!existing;
+
+      pool = existing
+        ? await prisma.questionPool.update({
+            where: { id: existing.id },
+            data: { visibility: parsed.visibility },
+          })
+        : await prisma.questionPool.create({
+            data: {
+              name: parsed.poolName,
+              visibility: parsed.visibility,
+              ownerTeacherId: userId,
+            },
+          });
+    }
 
     let createdTags = 0;
     let importedQuestions = 0;
@@ -97,7 +147,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       poolId: pool.id,
-      createdPool: !existing,
+      createdPool: !wasExisting,
       createdTags,
       importedQuestions,
       skippedQuestions: parsed.warnings.length,

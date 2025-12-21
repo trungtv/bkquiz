@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { requireUser } from '@/server/authz';
+import { getUserRole, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 
 export async function generateMetadata(props: {
@@ -23,14 +23,7 @@ export async function generateMetadata(props: {
 
 export default async function Dashboard() {
   const { userId, devRole } = await requireUser();
-
-  // Xác định system role: ưu tiên devRole (DEV_BYPASS_AUTH), fallback vào UserRole trong DB
-  const userRoles = await prisma.userRole.findMany({
-    where: { userId },
-    select: { role: true },
-  });
-  const hasTeacherRole = devRole === 'teacher' || userRoles.some(r => r.role === 'teacher');
-  const role: 'teacher' | 'student' = hasTeacherRole ? 'teacher' : 'student';
+  const role = await getUserRole(userId, devRole as 'teacher' | 'student' | undefined);
 
   const initial: Array<{ id: string; name: string; classCode: string }> = [];
   const rows = await prisma.classMembership.findMany({
@@ -47,20 +40,39 @@ export default async function Dashboard() {
     });
   }
 
-  // Quiz count: đếm quiz của teacher (quiz không còn gắn với classroom)
-  const [quizCount, poolCount, activeSessionCount] = await Promise.all([
+  // KPIs based on role
+  const [quizCount, poolCount, activeSessionCount, myActiveSessionsCount, myAttemptsCount] = await Promise.all([
+    // Teacher: quiz count
     role === 'teacher'
       ? prisma.quiz.count({ where: { createdByTeacherId: userId } })
       : Promise.resolve(0),
-    prisma.questionPool.count({ where: { ownerTeacherId: userId } }),
-    // Active sessions: đếm tất cả active sessions của quiz mà teacher sở hữu
-    // (không filter theo classroom vì session không có classroomId trực tiếp)
+    // Teacher: pool count
+    role === 'teacher'
+      ? prisma.questionPool.count({ where: { ownerTeacherId: userId } })
+      : Promise.resolve(0),
+    // Teacher: active sessions count (sessions của teacher)
     role === 'teacher'
       ? prisma.quizSession.count({
           where: {
             status: 'active',
             quiz: { createdByTeacherId: userId },
           },
+        })
+      : Promise.resolve(0),
+    // Student: active sessions count (sessions mà student đang tham gia)
+    role === 'student'
+      ? prisma.attempt.count({
+          where: {
+            userId,
+            status: 'active',
+            session: { status: 'active' },
+          },
+        })
+      : Promise.resolve(0),
+    // Student: total attempts count
+    role === 'student'
+      ? prisma.attempt.count({
+          where: { userId },
         })
       : Promise.resolve(0),
   ]);
@@ -191,38 +203,76 @@ export default async function Dashboard() {
               <Badge variant="neutral">active</Badge>
             </div>
             <div className="mt-2 text-xs text-text-muted">
-              Số lớp bạn đang tham gia (active membership).
+              {role === 'teacher'
+                ? 'Số lớp bạn đang quản lý.'
+                : 'Số lớp bạn đang tham gia (active membership).'}
             </div>
           </Card>
         </Link>
 
-        <Link href="/dashboard/quizzes">
-          <Card interactive className="p-6 cursor-pointer">
-            <div className="text-sm text-text-muted">Quizzes</div>
-            <div className="mt-1 flex items-baseline gap-2">
-              <div className="text-3xl font-semibold text-text-heading">{quizCount}</div>
-              <Badge variant="info">total</Badge>
-            </div>
-            <div className="mt-2 text-xs text-text-muted">
-              Tổng quiz bạn đã tạo.
-            </div>
-          </Card>
-        </Link>
+        {role === 'teacher'
+          ? (
+              <Link href="/dashboard/quizzes">
+                <Card interactive className="p-6 cursor-pointer">
+                  <div className="text-sm text-text-muted">Quizzes</div>
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <div className="text-3xl font-semibold text-text-heading">{quizCount}</div>
+                    <Badge variant="info">total</Badge>
+                  </div>
+                  <div className="mt-2 text-xs text-text-muted">
+                    Tổng quiz bạn đã tạo.
+                  </div>
+                </Card>
+              </Link>
+            )
+          : (
+              <Link href="/dashboard/sessions">
+                <Card interactive className="p-6 cursor-pointer">
+                  <div className="text-sm text-text-muted">My Active Sessions</div>
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <div className="text-3xl font-semibold text-text-heading">{myActiveSessionsCount}</div>
+                    <Badge variant={myActiveSessionsCount > 0 ? 'success' : 'neutral'}>
+                      {myActiveSessionsCount > 0 ? 'active' : 'none'}
+                    </Badge>
+                  </div>
+                  <div className="mt-2 text-xs text-text-muted">
+                    Sessions bạn đang tham gia.
+                  </div>
+                </Card>
+              </Link>
+            )}
 
-        <Link href="/dashboard/sessions">
-          <Card interactive className="p-6 cursor-pointer">
-            <div className="text-sm text-text-muted">Active sessions</div>
-            <div className="mt-1 flex items-baseline gap-2">
-              <div className="text-3xl font-semibold text-text-heading">{activeSessionCount}</div>
-              <Badge variant={activeSessionCount > 0 ? 'success' : 'neutral'}>
-                {activeSessionCount > 0 ? 'running' : 'idle'}
-              </Badge>
-            </div>
-            <div className="mt-2 text-xs text-text-muted">
-              Sessions đang chạy (status=active).
-            </div>
-          </Card>
-        </Link>
+        {role === 'teacher'
+          ? (
+              <Link href="/dashboard/sessions">
+                <Card interactive className="p-6 cursor-pointer">
+                  <div className="text-sm text-text-muted">Active sessions</div>
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <div className="text-3xl font-semibold text-text-heading">{activeSessionCount}</div>
+                    <Badge variant={activeSessionCount > 0 ? 'success' : 'neutral'}>
+                      {activeSessionCount > 0 ? 'running' : 'idle'}
+                    </Badge>
+                  </div>
+                  <div className="mt-2 text-xs text-text-muted">
+                    Sessions đang chạy (status=active).
+                  </div>
+                </Card>
+              </Link>
+            )
+          : (
+              <Link href="/dashboard/sessions">
+                <Card interactive className="p-6 cursor-pointer">
+                  <div className="text-sm text-text-muted">My Attempts</div>
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <div className="text-3xl font-semibold text-text-heading">{myAttemptsCount}</div>
+                    <Badge variant="info">total</Badge>
+                  </div>
+                  <div className="mt-2 text-xs text-text-muted">
+                    Tổng số bài bạn đã làm.
+                  </div>
+                </Card>
+              </Link>
+            )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -288,22 +338,38 @@ export default async function Dashboard() {
                   <Badge variant="info">{initial.length}</Badge>
                 </div>
                 <div className="mt-1 text-xs text-text-muted">
-                  Quản lý lớp học của bạn.
+                  {role === 'teacher' ? 'Quản lý lớp học của bạn.' : 'Các lớp bạn đang tham gia.'}
                 </div>
               </Card>
             </Link>
 
-            <Link href="/dashboard/question-bank">
-              <Card interactive className="p-3 text-sm cursor-pointer">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium text-text-heading">Question pools</div>
-                  <Badge variant="info">{poolCount}</Badge>
-                </div>
-                <div className="mt-1 text-xs text-text-muted">
-                  Pools bạn sở hữu (teacher).
-                </div>
-              </Card>
-            </Link>
+            {role === 'teacher'
+              ? (
+                  <Link href="/dashboard/question-bank">
+                    <Card interactive className="p-3 text-sm cursor-pointer">
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-text-heading">Question pools</div>
+                        <Badge variant="info">{poolCount}</Badge>
+                      </div>
+                      <div className="mt-1 text-xs text-text-muted">
+                        Pools bạn sở hữu (teacher).
+                      </div>
+                    </Card>
+                  </Link>
+                )
+              : (
+                  <Link href="/dashboard/sessions">
+                    <Card interactive className="p-3 text-sm cursor-pointer">
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium text-text-heading">My Sessions</div>
+                        <Badge variant="info">{myActiveSessionsCount}</Badge>
+                      </div>
+                      <div className="mt-1 text-xs text-text-muted">
+                        Sessions bạn đang tham gia.
+                      </div>
+                    </Card>
+                  </Link>
+                )}
           </div>
         </Card>
       </div>
