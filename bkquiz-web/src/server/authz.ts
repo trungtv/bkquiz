@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { nanoid } from 'nanoid';
 import { auth } from '@/auth';
 import { prisma } from '@/server/prisma';
 
@@ -15,6 +16,7 @@ async function getOrCreateDevUserId(role: 'teacher' | 'student') {
     where: { email },
     update: { name },
     create: {
+      id: nanoid(),
       email,
       name,
       roles: { create: [{ role }] },
