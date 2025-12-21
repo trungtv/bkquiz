@@ -21,7 +21,6 @@ async function getOrCreateDevUserId(role: 'teacher' | 'student') {
       email,
       name,
       updatedAt: now,
-      roles: { create: [{ role }] },
     },
     select: { id: true },
   });
