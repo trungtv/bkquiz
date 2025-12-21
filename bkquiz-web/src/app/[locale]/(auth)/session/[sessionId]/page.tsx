@@ -1,7 +1,7 @@
 import { Lobby } from './studentLobby';
 
 export default async function SessionLobbyPage(props: {
-  params: Promise<{ sessionId: string }>;
+  params: Promise<{ locale: string; sessionId: string }>;
 }) {
   const { sessionId } = await props.params;
   return (
