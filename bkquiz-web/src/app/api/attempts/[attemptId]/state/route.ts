@@ -18,7 +18,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
       failedCount: true,
       cooldownUntil: true,
       lockedUntil: true,
-      session: {
+      QuizSession: {
         select: {
           id: true,
           status: true,

@@ -94,7 +94,7 @@ export async function POST(_: Request, ctx: { params: Promise<{ attemptId: strin
       userId: true,
       status: true,
       sessionId: true,
-      session: { select: { Quiz: { select: { settings: true } } } },
+      QuizSession: { select: { Quiz: { select: { settings: true } } } },
     },
   });
   if (!attempt) {
@@ -123,7 +123,7 @@ export async function POST(_: Request, ctx: { params: Promise<{ attemptId: strin
   });
   const answerByQ = new Map((answers as AnswerRow[]).map(a => [a.sessionQuestionId, a.selected]));
 
-  const scoring = ((attempt.session.Quiz.settings as any)?.scoring ?? {}) as ScoringSettings;
+  const scoring = ((attempt.QuizSession.Quiz.settings as any)?.scoring ?? {}) as ScoringSettings;
   const mode = scoring.mode ?? 'all_or_nothing';
   const rounding = scoring.rounding ?? 'round_2';
   const partialMethod = scoring.partialCreditMethod ?? 'edc';

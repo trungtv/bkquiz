@@ -26,7 +26,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ attemptId: str
       failedCount: true,
       cooldownUntil: true,
       lockedUntil: true,
-      session: { select: { id: true, status: true, totpSecret: true, totpStepSeconds: true } },
+      QuizSession: { select: { id: true, status: true, totpSecret: true, totpStepSeconds: true } },
     },
   });
 
@@ -36,7 +36,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ attemptId: str
   if (attempt.userId !== userId) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
-  if (attempt.session.status !== 'active') {
+  if (attempt.QuizSession.status !== 'active') {
     return NextResponse.json({ error: 'SESSION_NOT_ACTIVE' }, { status: 400 });
   }
 
@@ -51,8 +51,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ attemptId: str
   }
 
   const ok = verifyTotp({
-    secret: attempt.session.totpSecret,
-    stepSeconds: attempt.session.totpStepSeconds,
+    secret: attempt.QuizSession.totpSecret,
+    stepSeconds: attempt.QuizSession.totpStepSeconds,
     token: body.token,
     window: 1,
   });

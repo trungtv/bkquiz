@@ -13,7 +13,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
       id: true,
       userId: true,
       sessionId: true,
-      session: { select: { status: true } },
+      QuizSession: { select: { status: true } },
     },
   });
 
