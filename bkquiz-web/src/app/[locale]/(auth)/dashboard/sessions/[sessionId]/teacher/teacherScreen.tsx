@@ -244,52 +244,53 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
 
   return (
     <div className="fixed inset-0 bg-black text-white overflow-y-auto">
-      {/* Breadcrumb - Small, top-left */}
-      <div className="absolute top-4 left-4 z-[100] pointer-events-auto bg-black/80 backdrop-blur-sm px-3 py-1.5 rounded-md">
-        <div className="flex items-center gap-1 text-xs text-white/60">
-          <Link
-            href={getI18nPath('/dashboard', locale)}
-            className="hover:text-white/80 transition-colors cursor-pointer"
-          >
-            Dashboard
-          </Link>
-          <span>/</span>
-          <Link
-            href={getI18nPath('/dashboard/sessions', locale)}
-            className="hover:text-white/80 transition-colors cursor-pointer"
-          >
-            Sessions
-          </Link>
-          <span>/</span>
-          <span className="text-white/40">Session</span>
+      {/* Session Info Bar - Compact, top (sticky) */}
+      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-sm border-b border-white/10 px-6 py-3 relative">
+        {/* Breadcrumb - Inside info bar, left */}
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 z-[100] pointer-events-auto">
+          <div className="flex items-center gap-1 text-xs text-white/60 bg-black/60 backdrop-blur-sm px-2 py-1 rounded">
+            <Link
+              href={getI18nPath('/dashboard', locale)}
+              className="hover:text-white/80 transition-colors cursor-pointer"
+            >
+              Dashboard
+            </Link>
+            <span>/</span>
+            <Link
+              href={getI18nPath('/dashboard/sessions', locale)}
+              className="hover:text-white/80 transition-colors cursor-pointer"
+            >
+              Sessions
+            </Link>
+            <span>/</span>
+            <span className="text-white/40">Session</span>
+          </div>
         </div>
-      </div>
 
-      {/* Controls - Top-right */}
-      <div className="absolute top-4 right-4 z-[100] flex items-center gap-2 pointer-events-auto">
-        {session?.status === 'lobby'
-          ? (
-              <Button size="md" variant="primary" onClick={() => void startSession()} className="px-6 py-3 text-base">
-                Start Session
-              </Button>
-            )
-          : null}
-        {session?.status === 'active'
-          ? (
-              <Button size="md" variant="danger" onClick={() => void endSession()} className="px-6 py-3 text-base">
-                End Session
-              </Button>
-            )
-          : null}
-        <Button size="sm" variant="ghost" onClick={() => void fetchToken()} className="text-white/80 border-white/20 hover:bg-white/10">
-          Refresh Token
-        </Button>
-      </div>
+        {/* Controls - Inside info bar, right */}
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 z-[100] flex items-center gap-2 pointer-events-auto">
+          {session?.status === 'lobby'
+            ? (
+                <Button size="md" variant="primary" onClick={() => void startSession()} className="px-6 py-3 text-base">
+                  Start Session
+                </Button>
+              )
+            : null}
+          {session?.status === 'active'
+            ? (
+                <Button size="md" variant="danger" onClick={() => void endSession()} className="px-6 py-3 text-base">
+                  End Session
+                </Button>
+              )
+            : null}
+          <Button size="sm" variant="ghost" onClick={() => void fetchToken()} className="text-white/80 border-white/20 hover:bg-white/10">
+            Refresh Token
+          </Button>
+        </div>
 
-      {/* Session Info Bar - Compact, top */}
-      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-sm border-b border-white/10 px-6 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 text-sm">
+        {/* Session Info - Center, with padding for breadcrumb and controls */}
+        <div className="flex items-center justify-center text-sm pl-32 pr-32">
+          <div className="flex items-center gap-4">
             <div className="font-semibold text-white">{session?.quiz?.title ?? 'Loading...'}</div>
             <span className="text-white/40">·</span>
             <div className="text-white/60">{session?.classroom?.name ?? '...'}</div>
@@ -313,7 +314,7 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
           </div>
           {error
             ? (
-                <div className="text-xs text-red-400">
+                <div className="absolute right-32 top-1/2 -translate-y-1/2 text-xs text-red-400">
                   {error}
                 </div>
               )
