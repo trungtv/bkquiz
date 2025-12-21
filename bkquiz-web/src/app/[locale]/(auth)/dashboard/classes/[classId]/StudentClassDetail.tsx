@@ -31,12 +31,16 @@ export function StudentClassDetail(props: StudentClassDetailProps) {
   }
 
   async function loadMembers() {
-    const res = await fetch(`/api/classes/${classId}/members`, { method: 'GET' });
-    const json = await res.json() as { members?: Member[]; error?: string };
-    if (!res.ok) {
-      return;
+    try {
+      const res = await fetch(`/api/classes/${classId}/members`, { method: 'GET' });
+      if (!res.ok) {
+        return;
+      }
+      const json = await res.json() as { members?: Member[]; error?: string };
+      setMembers(json.members ?? []);
+    } catch (err) {
+      console.error('Failed to load members:', err);
     }
-    setMembers(json.members ?? []);
   }
 
   async function loadSessions() {
