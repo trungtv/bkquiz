@@ -90,6 +90,7 @@ export function AttemptClient(props: { attemptId: string }) {
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [answeredCount, setAnsweredCount] = useState(0);
   const localAnswersRef = useRef<LocalAnswerStore>({});
   const syncTimerRef = useRef<number | null>(null);
 
@@ -229,6 +230,10 @@ export function AttemptClient(props: { attemptId: string }) {
     localAnswersRef.current = store;
     await writeLocalAnswers(props.attemptId, store);
     setPendingCount(computePending(store));
+    setAnsweredCount(questions.filter(q => {
+      const answer = store[q.id];
+      return answer && answer.selected.length > 0;
+    }).length);
     if (current) {
       setSelected(store[current.id]?.selected ?? []);
     }
@@ -334,13 +339,6 @@ export function AttemptClient(props: { attemptId: string }) {
   const blocked = state.isLocked || (state.due && state.session.status === 'active') || (!isOnline && state.session.status === 'active' && state.nextDueAt !== null);
   const q = questions[idx] ?? null;
   const progressPct = questions.length > 0 ? Math.round(((idx + 1) / questions.length) * 100) : 0;
-
-  const answeredCount = useMemo(() => {
-    return questions.filter(q => {
-      const answer = localAnswersRef.current[q.id];
-      return answer && answer.selected.length > 0;
-    }).length;
-  }, [questions]);
 
   const getQuestionStatus = (questionId: string, questionIdx: number) => {
     if (questionIdx === idx) return 'current';
