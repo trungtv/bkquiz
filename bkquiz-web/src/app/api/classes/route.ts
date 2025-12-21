@@ -17,7 +17,7 @@ export async function GET(_req: Request) {
     select: {
       roleInClass: true,
       joinedAt: true,
-      classroom: {
+      Classroom: {
         select: {
           id: true,
           name: true,
@@ -36,14 +36,14 @@ export async function GET(_req: Request) {
 
   return NextResponse.json({
     classes: memberships.map(m => ({
-      id: m.classroom.id,
-      name: m.classroom.name,
-      classCode: m.classroom.classCode,
-      createdAt: m.classroom.createdAt,
-      ownerTeacherId: m.classroom.ownerTeacherId,
+      id: m.Classroom.id,
+      name: m.Classroom.name,
+      classCode: m.Classroom.classCode,
+      createdAt: m.Classroom.createdAt,
+      ownerTeacherId: m.Classroom.ownerTeacherId,
       roleInClass: m.roleInClass,
       joinedAt: m.joinedAt,
-      memberCount: m.classroom._count.memberships,
+      memberCount: m.Classroom._count.memberships,
     })),
   });
 }
