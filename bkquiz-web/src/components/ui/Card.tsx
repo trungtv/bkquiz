@@ -10,9 +10,9 @@ export function Card(props: HTMLAttributes<HTMLDivElement> & { interactive?: boo
   return (
     <div
       className={cn(
-        // Spec: không viền “gắt”; dùng overlay sáng nhẹ (ring) + shadow
-        'relative bg-bg-card rounded-md shadow-card transition-all duration-normal before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:ring-1 before:ring-white/5',
-        interactive && 'hover:shadow-hover hover:-translate-y-px cursor-pointer',
+        // Spec: không viền "gắt"; dùng overlay sáng nhẹ (ring) + shadow
+        'relative bg-bg-card rounded-md shadow-card transition-all duration-200 ease-out before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:ring-1 before:ring-white/5',
+        interactive && 'hover:shadow-hover hover:-translate-y-0.5 cursor-pointer',
         className,
       )}
       {...rest}

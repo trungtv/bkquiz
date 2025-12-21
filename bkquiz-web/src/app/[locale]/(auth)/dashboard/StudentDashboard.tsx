@@ -83,12 +83,16 @@ export async function StudentDashboard(props: StudentDashboardProps) {
   const averageScore = scores.length > 0
     ? scores.reduce((sum, s) => sum + s, 0) / scores.length
     : null;
-  const highestScore = scores.length > 0 ? Math.max(...scores) : null;
+  const highestScore = scores.length > 0
+    ? Math.max(...scores)
+    : null;
 
   const recentClasses = classes.slice(0, 3);
 
   function formatDate(date: Date | null) {
-    if (!date) return '—';
+    if (!date) {
+      return '—';
+    }
     return new Intl.DateTimeFormat('vi-VN', {
       day: 'numeric',
       month: 'short',
@@ -98,9 +102,9 @@ export async function StudentDashboard(props: StudentDashboardProps) {
   }
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-7 animate-fadeIn">
       {/* Header */}
-      <Card className="p-6 border-indigo-500/30">
+      <Card className="p-6 border-indigo-500/30 animate-slideUp">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="text-sm text-indigo-400 uppercase tracking-wide">BKquiz Dashboard</div>
@@ -114,7 +118,7 @@ export async function StudentDashboard(props: StudentDashboardProps) {
 
           <div className="flex flex-wrap gap-2">
             <Link href="/dashboard/sessions">
-              <Button variant="primary" className="bg-indigo-500 hover:bg-indigo-600">
+              <Button variant="primary" className="bg-indigo-500 hover:bg-indigo-600 hover:scale-105">
                 Xem các session của bạn
               </Button>
             </Link>
@@ -123,9 +127,9 @@ export async function StudentDashboard(props: StudentDashboardProps) {
       </Card>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3 animate-slideUp" style={{ animationDelay: '50ms' }}>
         <Link href="/dashboard/classes">
-          <Card interactive className="p-6 cursor-pointer border-indigo-500/20">
+          <Card interactive className="p-6 cursor-pointer border-indigo-500/20 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-indigo-500/40">
             <div className="text-sm text-text-muted">Classes</div>
             <div className="mt-1 flex items-baseline gap-2">
               <div className="text-3xl font-semibold text-indigo-400">{classes.length}</div>
@@ -138,7 +142,7 @@ export async function StudentDashboard(props: StudentDashboardProps) {
         </Link>
 
         <Link href="/dashboard/sessions">
-          <Card interactive className="p-6 cursor-pointer border-indigo-500/20">
+          <Card interactive className="p-6 cursor-pointer border-indigo-500/20 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-indigo-500/40">
             <div className="text-sm text-text-muted">My Active Sessions</div>
             <div className="mt-1 flex items-baseline gap-2">
               <div className="text-3xl font-semibold text-indigo-400">{myActiveSessionsCount}</div>
@@ -153,7 +157,7 @@ export async function StudentDashboard(props: StudentDashboardProps) {
         </Link>
 
         <Link href="/dashboard/sessions">
-          <Card interactive className="p-6 cursor-pointer border-indigo-500/20">
+          <Card interactive className="p-6 cursor-pointer border-indigo-500/20 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-indigo-500/40">
             <div className="text-sm text-text-muted">My Attempts</div>
             <div className="mt-1 flex items-baseline gap-2">
               <div className="text-3xl font-semibold text-indigo-400">{myAttemptsCount}</div>
@@ -168,21 +172,29 @@ export async function StudentDashboard(props: StudentDashboardProps) {
 
       {/* Active Sessions Priority */}
       {activeSessions.length > 0 && (
-        <Card className="p-6 border-indigo-500/30">
+        <Card className="p-6 border-indigo-500/30 animate-slideUp" style={{ animationDelay: '100ms' }}>
           <div className="text-lg font-semibold text-text-heading mb-4">
-            Đang làm bài ({activeSessions.length})
+            Đang làm bài (
+            {activeSessions.length}
+            )
           </div>
           <div className="space-y-3">
-            {activeSessions.map(attempt => (
+            {activeSessions.map((attempt, idx) => (
               <Link key={attempt.id} href={`/attempt/${attempt.id}`}>
-                <Card interactive className="p-5 cursor-pointer border-indigo-500/50 bg-indigo-500/5 hover:bg-indigo-500/10">
+                <Card
+                  interactive
+                  className="p-5 cursor-pointer border-indigo-500/50 bg-indigo-500/5 transition-all duration-200 hover:bg-indigo-500/10 hover:border-indigo-500/70 hover:scale-[1.02] hover:shadow-lg"
+                  style={{ animationDelay: `${idx * 100}ms` }}
+                >
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="text-base font-semibold text-text-heading">
                         {attempt.session.quiz.title}
                       </div>
                       <div className="mt-1 text-xs text-text-muted">
-                        Bắt đầu: {formatDate(attempt.session.startedAt)}
+                        Bắt đầu:
+                        {' '}
+                        {formatDate(attempt.session.startedAt)}
                       </div>
                     </div>
                     <Button variant="primary" size="sm" className="bg-indigo-500 hover:bg-indigo-600">
@@ -197,7 +209,7 @@ export async function StudentDashboard(props: StudentDashboardProps) {
       )}
 
       {/* Main Content Grid */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3 animate-slideUp" style={{ animationDelay: '150ms' }}>
         {/* My Classes */}
         <Card className="p-6 lg:col-span-2 border-indigo-500/20">
           <div className="flex items-center justify-between">
@@ -231,9 +243,12 @@ export async function StudentDashboard(props: StudentDashboardProps) {
                 )
               : (
                   <div className="space-y-2">
-                    {recentClasses.map(c => (
+                    {recentClasses.map((c, idx) => (
                       <Link key={c.id} href={`/dashboard/classes/${c.id}`}>
-                        <div className="flex items-center justify-between gap-4 rounded-md border border-indigo-500/30 bg-bg-section px-4 py-3 transition-colors hover:border-indigo-500/50">
+                        <div
+                          className="flex items-center justify-between gap-4 rounded-md border border-indigo-500/30 bg-bg-section px-4 py-3 transition-all duration-200 hover:border-indigo-500/50 hover:translate-x-1 hover:shadow-md"
+                          style={{ animationDelay: `${idx * 30}ms` }}
+                        >
                           <div className="min-w-0 flex-1">
                             <div className="text-sm font-medium text-text-heading">{c.name}</div>
                             <div className="mt-1 text-xs text-text-muted">
@@ -293,20 +308,27 @@ export async function StudentDashboard(props: StudentDashboardProps) {
 
       {/* Upcoming Sessions */}
       {upcomingSessions.length > 0 && (
-        <Card className="p-6 border-indigo-500/20">
+        <Card className="p-6 border-indigo-500/20 animate-slideUp" style={{ animationDelay: '200ms' }}>
           <div className="text-lg font-semibold text-text-heading mb-4">
-            Chờ bắt đầu ({upcomingSessions.length})
+            Chờ bắt đầu (
+            {upcomingSessions.length}
+            )
           </div>
           <div className="space-y-2">
-            {upcomingSessions.map(attempt => (
+            {upcomingSessions.map((attempt, idx) => (
               <Link key={attempt.id} href={`/session/${attempt.session.id}`}>
-                <div className="flex items-center justify-between gap-4 rounded-md border border-indigo-500/30 bg-bg-section px-4 py-3 transition-colors hover:border-indigo-500/50">
+                <div
+                  className="flex items-center justify-between gap-4 rounded-md border border-indigo-500/30 bg-bg-section px-4 py-3 transition-all duration-200 hover:border-indigo-500/50 hover:translate-x-1 hover:shadow-md"
+                  style={{ animationDelay: `${idx * 50}ms` }}
+                >
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-text-heading">
                       {attempt.session.quiz.title}
                     </div>
                     <div className="mt-1 text-xs text-text-muted">
-                      Tạo lúc: {formatDate(attempt.session.createdAt)}
+                      Tạo lúc:
+                      {' '}
+                      {formatDate(attempt.session.createdAt)}
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" className="border-indigo-500/30 text-indigo-400">
@@ -320,15 +342,15 @@ export async function StudentDashboard(props: StudentDashboardProps) {
       )}
 
       {/* Getting Started (Collapsible) */}
-      <Card className="p-5 border-dashed border-indigo-500/30">
+      <Card className="p-5 border-dashed border-indigo-500/30 animate-slideUp transition-all duration-300" style={{ animationDelay: '250ms' }}>
         <details className="group">
-          <summary className="cursor-pointer text-xs font-medium uppercase tracking-wide text-indigo-400 list-none">
+          <summary className="cursor-pointer text-xs font-medium uppercase tracking-wide text-indigo-400 list-none transition-colors hover:text-indigo-300">
             <div className="flex items-center justify-between">
               <span>Getting started</span>
-              <span className="text-indigo-400 group-open:rotate-180 transition-transform">▼</span>
+              <span className="text-indigo-400 group-open:rotate-180 transition-transform duration-200">▼</span>
             </div>
           </summary>
-          <ol className="mt-3 space-y-1 text-xs text-text-body">
+          <ol className="mt-3 space-y-1 text-xs text-text-body animate-fadeIn">
             <li>
               <span className="font-mono text-text-muted">1.</span>
               {' '}
@@ -373,4 +395,3 @@ export async function StudentDashboard(props: StudentDashboardProps) {
     </div>
   );
 }
-

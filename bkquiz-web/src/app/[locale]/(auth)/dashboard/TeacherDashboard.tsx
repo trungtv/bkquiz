@@ -13,7 +13,7 @@ type TeacherDashboardProps = {
 };
 
 export async function TeacherDashboard(props: TeacherDashboardProps) {
-  const { userId, classes, quizCount, poolCount, activeSessionCount } = props;
+  const { userId, classes, quizCount, activeSessionCount } = props;
 
   // Fetch active sessions for widget
   const activeSessions = await prisma.quizSession.findMany({
@@ -75,9 +75,9 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
   }
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-7 animate-fadeIn">
       {/* Header */}
-      <Card className="p-6">
+      <Card className="p-6 animate-slideUp">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="text-sm text-text-muted">BKquiz Dashboard</div>
@@ -104,21 +104,21 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
       </Card>
 
       {/* Quick Actions Bar */}
-      <Card className="p-5 md:p-6 bg-bg-card/50">
+      <Card className="p-5 md:p-6 bg-bg-card/50 animate-slideUp" style={{ animationDelay: '50ms' }}>
         <div className="text-sm font-semibold text-text-heading mb-3">Quick Actions</div>
         <div className="flex flex-wrap gap-2">
           <Link href="/dashboard/classes">
-            <Button variant="primary" size="sm">
+            <Button variant="primary" size="sm" className="hover:scale-105">
               + Tạo Class
             </Button>
           </Link>
           <Link href="/dashboard/quizzes">
-            <Button variant="primary" size="sm">
+            <Button variant="primary" size="sm" className="hover:scale-105">
               + Tạo Quiz
             </Button>
           </Link>
           <Link href="/dashboard/question-bank">
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="hover:scale-105">
               + Import Pool
             </Button>
           </Link>
@@ -126,9 +126,9 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
       </Card>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3 animate-slideUp" style={{ animationDelay: '100ms' }}>
         <Link href="/dashboard/classes">
-          <Card interactive className="p-6 cursor-pointer">
+          <Card interactive className="p-6 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg">
             <div className="text-sm text-text-muted">Classes</div>
             <div className="mt-1 flex items-baseline gap-2">
               <div className="text-3xl font-semibold text-text-heading">{classes.length}</div>
@@ -141,7 +141,7 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
         </Link>
 
         <Link href="/dashboard/quizzes">
-          <Card interactive className="p-6 cursor-pointer">
+          <Card interactive className="p-6 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg">
             <div className="text-sm text-text-muted">Quizzes</div>
             <div className="mt-1 flex items-baseline gap-2">
               <div className="text-3xl font-semibold text-text-heading">{quizCount}</div>
@@ -154,7 +154,7 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
         </Link>
 
         <Link href="/dashboard/sessions">
-          <Card interactive className="p-6 cursor-pointer">
+          <Card interactive className="p-6 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg">
             <div className="text-sm text-text-muted">Active sessions</div>
             <div className="mt-1 flex items-baseline gap-2">
               <div className="text-3xl font-semibold text-text-heading">{activeSessionCount}</div>
@@ -170,7 +170,7 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3 animate-slideUp" style={{ animationDelay: '150ms' }}>
         {/* Recent Classes */}
         <Card className="p-6 lg:col-span-2">
           <div className="flex items-center justify-between">
@@ -204,9 +204,12 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
                 )
               : (
                   <div className="space-y-2">
-                    {recentClasses.map(c => (
+                    {recentClasses.map((c, idx) => (
                       <Link key={c.id} href={`/dashboard/classes/${c.id}`}>
-                        <div className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-colors hover:border-border-strong">
+                        <div
+                          className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-all duration-200 hover:border-border-strong hover:translate-x-1 hover:shadow-md"
+                          style={{ animationDelay: `${idx * 30}ms` }}
+                        >
                           <div className="min-w-0 flex-1">
                             <div className="text-sm font-medium text-text-heading">{c.name}</div>
                             <div className="mt-1 text-xs text-text-muted">
@@ -233,9 +236,12 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
               )
             : (
                 <div className="space-y-3">
-                  {activeSessions.map(session => (
+                  {activeSessions.map((session, idx) => (
                     <Link key={session.id} href={`/dashboard/sessions/${session.id}/teacher`}>
-                      <div className="rounded-md border border-border-subtle bg-bg-section px-3 py-2.5 transition-colors hover:border-primary/50">
+                      <div
+                        className="rounded-md border border-border-subtle bg-bg-section px-3 py-2.5 transition-all duration-200 hover:border-primary/50 hover:bg-primary/5 hover:scale-[1.02]"
+                        style={{ animationDelay: `${idx * 50}ms` }}
+                      >
                         <div className="text-sm font-medium text-text-heading truncate">
                           {session.quiz.title}
                         </div>
@@ -266,7 +272,7 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
 
       {/* Quiz Status Overview */}
       {(draftQuizzes > 0 || publishedQuizzes > 0 || quizzesWithoutRules > 0) && (
-        <Card className="p-6">
+        <Card className="p-6 animate-slideUp" style={{ animationDelay: '200ms' }}>
           <div className="text-lg font-semibold text-text-heading mb-4">Quiz Status</div>
           <div className="grid gap-3 md:grid-cols-3">
             <div className="rounded-md border border-border-subtle bg-bg-section px-4 py-3">
@@ -288,15 +294,15 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
       )}
 
       {/* Getting Started (Collapsible) */}
-      <Card className="p-5 border-dashed">
+      <Card className="p-5 border-dashed animate-slideUp transition-all duration-300" style={{ animationDelay: '250ms' }}>
         <details className="group">
-          <summary className="cursor-pointer text-xs font-medium uppercase tracking-wide text-text-muted list-none">
+          <summary className="cursor-pointer text-xs font-medium uppercase tracking-wide text-text-muted list-none transition-colors hover:text-text-heading">
             <div className="flex items-center justify-between">
               <span>Getting started</span>
-              <span className="text-text-muted group-open:rotate-180 transition-transform">▼</span>
+              <span className="text-text-muted group-open:rotate-180 transition-transform duration-200">▼</span>
             </div>
           </summary>
-          <ol className="mt-3 space-y-1 text-xs text-text-body">
+          <ol className="mt-3 space-y-1 text-xs text-text-body animate-fadeIn">
             <li>
               <span className="font-mono text-text-muted">1.</span>
               {' '}
