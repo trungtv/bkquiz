@@ -8,7 +8,7 @@ const CreateClassSchema = z.object({
   name: z.string().trim().min(1).max(120),
 });
 
-export async function GET(req: Request) {
+export async function GET(_req: Request) {
   const { userId } = await requireUser();
 
   const memberships = await prisma.classMembership.findMany({
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     select: {
       roleInClass: true,
       joinedAt: true,
-      classroom: {
+      Classroom: {
         select: {
           id: true,
           name: true,
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
           ownerTeacherId: true,
           _count: {
             select: {
-              memberships: true,
+              ClassMembership: true,
             },
           },
         },
@@ -36,21 +36,21 @@ export async function GET(req: Request) {
 
   return NextResponse.json({
     classes: memberships.map(m => ({
-      id: m.classroom.id,
-      name: m.classroom.name,
-      classCode: m.classroom.classCode,
-      createdAt: m.classroom.createdAt,
-      ownerTeacherId: m.classroom.ownerTeacherId,
+      id: m.Classroom.id,
+      name: m.Classroom.name,
+      classCode: m.Classroom.classCode,
+      createdAt: m.Classroom.createdAt,
+      ownerTeacherId: m.Classroom.ownerTeacherId,
       roleInClass: m.roleInClass,
       joinedAt: m.joinedAt,
-      memberCount: m.classroom._count.memberships,
+      memberCount: m.Classroom._count.ClassMembership,
     })),
   });
 }
 
 export async function POST(req: Request) {
   const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
+  await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
   const body = CreateClassSchema.parse(await req.json());
 
   // Best effort unique classCode (low collision).
