@@ -185,8 +185,20 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
           poolIds: selectedPoolIds,
         }),
       });
-      const json = await res.json() as { error?: string };
       if (!res.ok) {
+        let errorMessage = 'SAVE_FAILED';
+        try {
+          const errorJson = await res.json() as { error?: string };
+          errorMessage = errorJson.error ?? 'SAVE_FAILED';
+        } catch {
+          // Response không phải JSON, dùng message mặc định
+        }
+        setError(errorMessage);
+        setToast({ message: 'Không thể lưu lượt chọn câu', type: 'error' });
+        return;
+      }
+      const json = await res.json() as { ok?: boolean; rule?: any; error?: string };
+      if (!json.ok) {
         setError(json.error ?? 'SAVE_FAILED');
         setToast({ message: 'Không thể lưu lượt chọn câu', type: 'error' });
         return;

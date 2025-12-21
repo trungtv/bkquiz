@@ -293,11 +293,11 @@ model SessionQuestionSnapshot {
 }
 
 model Tag {
-  id                       String                    @id
+  id                       String                    @id @default(cuid())
   name                     String
   normalizedName           String                    @unique
   createdAt                DateTime                  @default(now())
-  updatedAt                DateTime
+  updatedAt                DateTime                  @updatedAt
   questionTags             QuestionTag[]
   quizRules                QuizRule[]
   sessionCommonQuestions   SessionCommonQuestion[]
