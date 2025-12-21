@@ -78,8 +78,19 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ title, status: 'draft' }),
       });
+      if (!res.ok) {
+        let errorMessage = 'CREATE_FAILED';
+        try {
+          const errorJson = await res.json() as { error?: string };
+          errorMessage = errorJson.error ?? 'CREATE_FAILED';
+        } catch {
+          // Response không phải JSON, dùng message mặc định
+        }
+        setError(errorMessage);
+        return;
+      }
       const json = await res.json() as { id?: string; error?: string };
-      if (!res.ok || !json.id) {
+      if (!json.id) {
         setError(json.error ?? 'CREATE_FAILED');
         return;
       }

@@ -37,19 +37,27 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
-  const body = CreateQuizSchema.parse(await req.json());
+  try {
+    const { userId, devRole } = await requireUser();
+    await requireTeacher(userId, devRole);
+    const body = CreateQuizSchema.parse(await req.json());
 
-  const quiz = await prisma.quiz.create({
-    data: {
-      title: body.title,
-      createdByTeacherId: userId,
-      status: body.status ?? 'draft',
-    },
-    select: { id: true, title: true, status: true },
-  });
+    const quiz = await prisma.quiz.create({
+      data: {
+        title: body.title,
+        createdByTeacherId: userId,
+        status: body.status ?? 'draft',
+      },
+      select: { id: true, title: true, status: true },
+    });
 
-  return NextResponse.json(quiz);
+    return NextResponse.json(quiz);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'INVALID_INPUT', details: error.errors }, { status: 400 });
+    }
+    console.error('Error creating quiz:', error);
+    return NextResponse.json({ error: 'CREATE_FAILED' }, { status: 500 });
+  }
 }
 // EOF
