@@ -347,9 +347,9 @@ export function Lobby(props: { sessionId: string }) {
                   <div className="mt-6">
                     <Button
                       variant="ghost"
-                      onClick={() => router.push(getI18nPath('/dashboard', locale))}
+                      onClick={() => router.push(getI18nPath(`/dashboard/classes/${data.classroom.id}`, locale))}
                     >
-                      Quay lại Dashboard
+                      Quay lại lớp học
                     </Button>
                   </div>
                 </div>
