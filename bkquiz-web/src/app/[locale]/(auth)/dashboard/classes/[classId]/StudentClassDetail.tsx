@@ -40,12 +40,17 @@ export function StudentClassDetail(props: StudentClassDetailProps) {
   }
 
   async function loadSessions() {
-    const res = await fetch(`/api/classes/${classId}/sessions`, { method: 'GET' });
-    const json = await res.json() as { sessions?: Session[]; error?: string };
-    if (!res.ok) {
-      return;
+    try {
+      const res = await fetch(`/api/classes/${classId}/sessions`, { method: 'GET' });
+      const json = await res.json() as { sessions?: Session[]; error?: string };
+      if (!res.ok) {
+        console.error('Failed to load sessions:', json.error);
+        return;
+      }
+      setSessions(json.sessions ?? []);
+    } catch (err) {
+      console.error('Error loading sessions:', err);
     }
-    setSessions(json.sessions ?? []);
   }
 
   useEffect(() => {
