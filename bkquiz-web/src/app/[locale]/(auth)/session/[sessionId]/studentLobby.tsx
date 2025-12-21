@@ -115,6 +115,13 @@ export function Lobby(props: { sessionId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.sessionId]);
 
+  const waitDuration = useMemo(() => {
+    if (!data || data.status !== 'lobby') {
+      return null;
+    }
+    return formatDuration(data.createdAt);
+  }, [data?.status, data?.createdAt]);
+
   if (error) {
     return (
       <Card className="p-6">
@@ -123,13 +130,6 @@ export function Lobby(props: { sessionId: string }) {
       </Card>
     );
   }
-
-  const waitDuration = useMemo(() => {
-    if (!data || data.status !== 'lobby') {
-      return null;
-    }
-    return formatDuration(data.createdAt);
-  }, [data]);
 
   if (!data) {
     return (
