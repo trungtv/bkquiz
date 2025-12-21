@@ -198,7 +198,7 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
         hasRefetchedForExpiry.current = true;
         void fetchToken();
       }
-    }, 1000); // Changed from 250ms to 1000ms to reduce unnecessary updates
+    }, 3000); // Update countdown every 3 seconds
     return () => window.clearInterval(id);
   }, [data]);
 
