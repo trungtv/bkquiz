@@ -526,7 +526,7 @@ export function AttemptClient(props: { attemptId: string }) {
                     <MathRenderer content={q.prompt} />
                   </div>
                   <div className="mt-4 grid gap-2">
-                    {q.options.map(o => {
+                    {q.options.map((o) => {
                       const optionLabel = String.fromCharCode(65 + o.order); // A, B, C, D...
                       const isSelected = selected.includes(o.order);
                       return (
