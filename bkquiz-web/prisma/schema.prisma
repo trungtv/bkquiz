@@ -112,6 +112,7 @@ model Classroom {
   memberships    ClassMembership[]
   ownerTeacher   User              @relation(fields: [ownerTeacherId], references: [id])
   sessions       QuizSession[]
+  tags           ClassroomTag[]
 }
 
 model Option {
@@ -156,6 +157,7 @@ model QuestionPool {
   questions      Question[]
   owner          User                @relation(fields: [ownerTeacherId], references: [id])
   shares         QuestionPoolShare[]
+  tags           QuestionPoolTag[]
 
   @@index([ownerTeacherId])
 }
@@ -182,6 +184,39 @@ model QuestionTag {
   @@index([tagId, questionId])
 }
 
+model ClassroomTag {
+  classroomId String
+  tagId       String
+  createdAt   DateTime @default(now())
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  tag         Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([classroomId, tagId])
+  @@index([tagId, classroomId])
+}
+
+model QuizTag {
+  quizId    String
+  tagId     String
+  createdAt DateTime @default(now())
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([quizId, tagId])
+  @@index([tagId, quizId])
+}
+
+model QuestionPoolTag {
+  poolId    String
+  tagId     String
+  createdAt DateTime @default(now())
+  pool      QuestionPool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  tag       Tag          @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([poolId, tagId])
+  @@index([tagId, poolId])
+}
+
 model Quiz {
   id                 String        @id @default(cuid())
   title              String
@@ -193,6 +228,7 @@ model Quiz {
   createdBy          User          @relation(fields: [createdByTeacherId], references: [id])
   rules              QuizRule[]
   sessions           QuizSession[]
+  tags               QuizTag[]
 
   @@index([createdByTeacherId])
 }
@@ -302,6 +338,9 @@ model Tag {
   quizRules                QuizRule[]
   sessionCommonQuestions   SessionCommonQuestion[]
   sessionQuestionSnapshots SessionQuestionSnapshot[]
+  classroomTags             ClassroomTag[]
+  quizTags                 QuizTag[]
+  poolTags                 QuestionPoolTag[]
 }
 
 model User {

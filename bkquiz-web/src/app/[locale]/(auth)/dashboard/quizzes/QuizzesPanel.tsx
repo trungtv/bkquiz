@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { TagFilter } from '@/components/ui/TagFilter';
 import { Toast } from '@/components/ui/Toast';
 
 type ClassroomLite = {
@@ -22,6 +23,7 @@ type QuizLite = {
   status: 'draft' | 'published' | 'archived';
   updatedAt: string;
   ruleCount?: number;
+  tags?: Array<{ id: string; name: string; normalizedName: string }>;
 };
 
 export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
@@ -31,6 +33,7 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [tagFilter, setTagFilter] = useState('');
 
   const stats = useMemo(() => {
     const draft = quizzes.filter(q => q.status === 'draft').length;
@@ -51,19 +54,49 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
   }
 
   async function load() {
-    const res = await fetch('/api/quizzes', { method: 'GET' });
-    const json = await res.json() as { quizzes?: QuizLite[]; error?: string };
-    if (!res.ok) {
-      setError(json.error ?? 'LOAD_FAILED');
-      return;
+    const url = new URL('/api/quizzes', window.location.origin);
+    if (tagFilter.trim()) {
+      url.searchParams.set('tags', tagFilter.trim());
     }
-    setError(null);
-    setQuizzes(json.quizzes ?? []);
+    try {
+      const res = await fetch(url.toString(), { method: 'GET' });
+      if (!res.ok) {
+        const text = await res.text();
+        let json: { quizzes?: QuizLite[]; error?: string };
+        try {
+          json = JSON.parse(text);
+        } catch {
+          setError(`LOAD_FAILED: ${res.status} ${res.statusText}`);
+          return;
+        }
+        setError(json.error ?? 'LOAD_FAILED');
+        return;
+      }
+      const text = await res.text();
+      if (!text) {
+        setError('LOAD_FAILED: Empty response');
+        return;
+      }
+      let json: { quizzes?: QuizLite[]; error?: string };
+      try {
+        json = JSON.parse(text);
+      } catch (err) {
+        setError('LOAD_FAILED: Invalid JSON response');
+        console.error('Failed to parse response:', text, err);
+        return;
+      }
+      setError(null);
+      setQuizzes(json.quizzes ?? []);
+    } catch (err) {
+      setError(`LOAD_FAILED: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('Error loading quizzes:', err);
+    }
   }
 
   useEffect(() => {
     void load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tagFilter]);
 
   async function createQuiz() {
     if (title.trim().length === 0) {
@@ -206,8 +239,17 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
         </div>
       )}
 
-      {/* Quiz List */}
+      {/* Tag Filter */}
       <Card className="p-5 md:p-6">
+        <TagFilter
+          value={tagFilter}
+          onChange={setTagFilter}
+          onClear={() => setTagFilter('')}
+        />
+      </Card>
+
+      {/* Quiz List */}
+      <Card className="p-5 md:p-6 animate-slideUp" style={{ animationDelay: '100ms' }}>
         <div className="flex items-center justify-between">
           <div>
             <div className="text-lg font-semibold text-text-heading">Danh sách quiz</div>
@@ -221,7 +263,7 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
           ? (
               <div className="mt-6 rounded-md border border-dashed border-border-subtle px-4 py-8 text-center">
                 <div className="text-sm text-text-muted">
-                  Chưa có quiz nào cho lớp này.
+                  Chưa có quiz nào.
                 </div>
                 <div className="mt-2 text-xs text-text-muted">
                   Tạo quiz draft ở phía trên để bắt đầu.
@@ -230,58 +272,81 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
             )
           : (
               <div className="mt-4 space-y-2">
-                {quizzes.map(q => (
-                  <div
-                    key={q.id}
-                    className="rounded-md border border-border-subtle bg-bg-section transition-colors hover:border-border-strong"
-                  >
-                    <div className="flex items-center justify-between gap-4 px-4 py-3">
-                      <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_auto] items-center gap-4 md:grid-cols-[2fr_120px_100px]">
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-medium text-text-heading">{q.title}</div>
-                          {typeof q.ruleCount === 'number' && (
-                            <div className="mt-1 text-xs text-text-muted">
-                              {q.ruleCount}
-                              {' '}
-                              lượt chọn câu
+                {quizzes.map((q, idx) => (
+                  <Link key={q.id} href={`/dashboard/quizzes/${q.id}`}>
+                    <div
+                      className="rounded-md border border-border-subtle bg-bg-section transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-primary/30"
+                      style={{ animationDelay: `${idx * 30}ms` }}
+                    >
+                      <div className="flex items-center justify-between gap-4 px-4 py-3">
+                        <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_auto_auto] items-center gap-4 md:grid-cols-[2fr_auto_120px_100px]">
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium text-text-heading">{q.title}</div>
+                            {typeof q.ruleCount === 'number' && (
+                              <div className="mt-1 text-xs text-text-muted">
+                                {q.ruleCount}
+                                {' '}
+                                lượt chọn câu
+                              </div>
+                            )}
+                          </div>
+                          {q.tags && q.tags.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1">
+                              {q.tags.slice(0, 5).map(tag => (
+                                <Badge key={tag.id} variant="neutral" className="text-xs">
+                                  {tag.name}
+                                </Badge>
+                              ))}
+                              {q.tags.length > 5 && (
+                                <Badge variant="neutral" className="text-xs">
+                                  +
+                                  {q.tags.length - 5}
+                                </Badge>
+                              )}
                             </div>
                           )}
+                          <Badge
+                            variant={q.status === 'published' ? 'success' : (q.status === 'archived' ? 'neutral' : 'warning')}
+                            className="text-xs"
+                          >
+                            {q.status}
+                          </Badge>
+                          <div className="text-xs text-text-muted">
+                            {formatDate(q.updatedAt)}
+                          </div>
                         </div>
-                        <Badge
-                          variant={q.status === 'published' ? 'success' : (q.status === 'archived' ? 'neutral' : 'warning')}
-                          className="text-xs"
-                        >
-                          {q.status}
-                        </Badge>
-                        <div className="text-xs text-text-muted">
-                          {formatDate(q.updatedAt)}
+                        <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                          {q.status === 'draft'
+                            ? (
+                                <Button
+                                  size="sm"
+                                  variant="primary"
+                                  disabled={busy}
+                                  onClick={e => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    void updateQuizStatus(q.id, 'published');
+                                  }}
+                                >
+                                  Publish
+                                </Button>
+                              )
+                            : null}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={e => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              router.push(`/dashboard/quizzes/${q.id}`);
+                            }}
+                          >
+                            Mở
+                          </Button>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {q.status === 'draft'
-                          ? (
-                              <Button
-                                size="sm"
-                                variant="primary"
-                                disabled={busy}
-                                onClick={() => void updateQuizStatus(q.id, 'published')}
-                              >
-                                Publish
-                              </Button>
-                            )
-                          : null}
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            router.push(`/dashboard/quizzes/${q.id}`);
-                          }}
-                        >
-                          Mở
-                        </Button>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

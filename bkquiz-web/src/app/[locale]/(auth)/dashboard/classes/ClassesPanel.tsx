@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { TagFilter } from '@/components/ui/TagFilter';
 import { Toast } from '@/components/ui/Toast';
 
 type ClassroomLite = {
@@ -17,6 +18,7 @@ type ClassroomLite = {
   roleInClass: 'student' | 'ta' | 'teacher';
   joinedAt: string;
   memberCount: number;
+  tags?: Array<{ id: string; name: string; normalizedName: string }>;
 };
 
 type ClassesPanelProps = {
@@ -31,6 +33,7 @@ export function ClassesPanel(props: ClassesPanelProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [tagFilter, setTagFilter] = useState('');
 
   const stats = useMemo(() => {
     const owned = classes.filter(c => c.roleInClass === 'teacher').length;
@@ -38,29 +41,50 @@ export function ClassesPanel(props: ClassesPanelProps) {
     return { total: classes.length, owned, joined };
   }, [classes]);
 
-  function formatDate(dateString: string) {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('vi-VN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }).format(date);
-  }
-
   async function load() {
-    const res = await fetch('/api/classes', { method: 'GET' });
-    const json = await res.json() as { classes?: ClassroomLite[]; error?: string };
-    if (!res.ok) {
-      setError(json.error ?? 'LOAD_FAILED');
-      return;
+    const url = new URL('/api/classes', window.location.origin);
+    if (tagFilter.trim()) {
+      url.searchParams.set('tags', tagFilter.trim());
     }
-    setError(null);
-    setClasses(json.classes ?? []);
+    try {
+      const res = await fetch(url.toString(), { method: 'GET' });
+      if (!res.ok) {
+        const text = await res.text();
+        let json: { classes?: ClassroomLite[]; error?: string };
+        try {
+          json = JSON.parse(text);
+        } catch {
+          setError(`LOAD_FAILED: ${res.status} ${res.statusText}`);
+          return;
+        }
+        setError(json.error ?? 'LOAD_FAILED');
+        return;
+      }
+      const text = await res.text();
+      if (!text) {
+        setError('LOAD_FAILED: Empty response');
+        return;
+      }
+      let json: { classes?: ClassroomLite[]; error?: string };
+      try {
+        json = JSON.parse(text);
+      } catch (err) {
+        setError('LOAD_FAILED: Invalid JSON response');
+        console.error('Failed to parse response:', text, err);
+        return;
+      }
+      setError(null);
+      setClasses(json.classes ?? []);
+    } catch (err) {
+      setError(`LOAD_FAILED: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('Error loading classes:', err);
+    }
   }
 
   useEffect(() => {
     void load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tagFilter]);
 
   async function createClass() {
     if (newClassName.trim().length === 0) {
@@ -283,6 +307,15 @@ export function ClassesPanel(props: ClassesPanelProps) {
         </div>
       )}
 
+      {/* Tag Filter */}
+      <Card className="p-5 md:p-6">
+        <TagFilter
+          value={tagFilter}
+          onChange={setTagFilter}
+          onClear={() => setTagFilter('')}
+        />
+      </Card>
+
       {/* Classes List */}
       <Card className="p-5 md:p-6 animate-slideUp" style={{ animationDelay: '100ms' }}>
         <div className="flex items-center justify-between">
@@ -324,7 +357,7 @@ export function ClassesPanel(props: ClassesPanelProps) {
                       style={{ animationDelay: `${idx * 30}ms` }}
                     >
                       <div className="flex items-center justify-between gap-4 px-4 py-3">
-                        <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_auto] items-center gap-4 md:grid-cols-[2fr_120px_100px]">
+                        <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_auto_auto] items-center gap-4 md:grid-cols-[2fr_auto_120px_100px]">
                           <div className="min-w-0">
                             <div className="truncate text-sm font-medium text-text-heading">{c.name}</div>
                             <div className="mt-1 text-xs text-text-muted">
@@ -333,6 +366,21 @@ export function ClassesPanel(props: ClassesPanelProps) {
                               thành viên
                             </div>
                           </div>
+                          {c.tags && c.tags.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1">
+                              {c.tags.slice(0, 5).map(tag => (
+                                <Badge key={tag.id} variant="neutral" className="text-xs">
+                                  {tag.name}
+                                </Badge>
+                              ))}
+                              {c.tags.length > 5 && (
+                                <Badge variant="neutral" className="text-xs">
+                                  +
+                                  {c.tags.length - 5}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
                           <Badge
                             variant={c.roleInClass === 'teacher' ? 'success' : (c.roleInClass === 'ta' ? 'info' : 'neutral')}
                             className="text-xs"
@@ -365,4 +413,3 @@ export function ClassesPanel(props: ClassesPanelProps) {
     </div>
   );
 }
-

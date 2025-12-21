@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Table, TableWrap } from '@/components/ui/Table';
 import { Toast } from '@/components/ui/Toast';
+import { TagInput } from '@/components/ui/TagInput';
 
 type PoolLite = { id: string; name: string; visibility: 'private' | 'shared'; permission?: 'view' | 'use' | 'edit' };
 type RuleRow = {
@@ -66,6 +67,11 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
   const [showDefaultExtra, setShowDefaultExtra] = useState(false);
   const [poolSearchQuery, setPoolSearchQuery] = useState('');
   const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
+
+  // Tags state
+  const [tagsInput, setTagsInput] = useState('');
+  const [tags, setTags] = useState<Array<{ id: string; name: string; normalizedName: string }>>([]);
+  const [tagsBusy, setTagsBusy] = useState(false);
 
   const poolById = useMemo(() => new Map(pools.map(p => [p.id, p])), [pools]);
   const selectedTagInfo = useMemo(
@@ -162,9 +168,46 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
     }
   }
 
+  async function loadTags() {
+    try {
+      const res = await fetch(`/api/quizzes/${props.quizId}/tags`);
+      const json = await res.json() as { tags?: Array<{ id: string; name: string; normalizedName: string }>; error?: string };
+      if (res.ok) {
+        setTags(json.tags ?? []);
+        setTagsInput(json.tags?.map(t => t.name).join(', ') ?? '');
+      }
+    } catch (err) {
+      console.error('Error loading tags:', err);
+    }
+  }
+
+  async function saveTags() {
+    setTagsBusy(true);
+    try {
+      const res = await fetch(`/api/quizzes/${props.quizId}/tags`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tags: tagsInput }),
+      });
+      const json = await res.json() as { tags?: Array<{ id: string; name: string; normalizedName: string }>; error?: string };
+      if (res.ok) {
+        setTags(json.tags ?? []);
+        setToast({ message: 'Đã lưu tags thành công', type: 'success' });
+      } else {
+        setToast({ message: json.error ?? 'Lỗi khi lưu tags', type: 'error' });
+      }
+    } catch (err) {
+      console.error('Error saving tags:', err);
+      setToast({ message: 'Lỗi khi lưu tags', type: 'error' });
+    } finally {
+      setTagsBusy(false);
+    }
+  }
+
   useEffect(() => {
     void load();
     void fetchTagSuggestions('');
+    void loadTags();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.quizId]);
 
@@ -400,6 +443,26 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
                 </div>
               )
             : null}
+        </Card>
+      )}
+
+      {/* Tags Section */}
+      {quizInfo && (
+        <Card className="p-5 md:p-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text-heading">
+              Tags (comma-separated)
+            </label>
+            <TagInput
+              value={tagsInput}
+              onChange={setTagsInput}
+              onSave={saveTags}
+              tags={tags}
+              showSaveButton={true}
+              disabled={tagsBusy}
+              placeholder="midterm, 2025, practice..."
+            />
+          </div>
         </Card>
       )}
 

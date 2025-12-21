@@ -83,10 +83,15 @@
   }
 
   /* Global focus styles cho accessibility */
-  :where(a, button, input, select, textarea):focus-visible {
+  :where(a, button, select, textarea):focus-visible {
     outline: none;
     box-shadow: 0 0 0 3px rgba(91, 124, 250, 0.22);
     border-radius: 0.5rem;
+  }
+
+  /* Input elements sử dụng focus style riêng từ component */
+  input:focus-visible {
+    outline: none;
   }
 
   /* Selection highlight */

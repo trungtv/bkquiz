@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Toast } from '@/components/ui/Toast';
+import { TagInput } from '@/components/ui/TagInput';
 import { ClassHeader } from './shared/ClassHeader';
 import { MembersList } from './shared/MembersList';
 import { SessionsList } from './shared/SessionsList';
@@ -30,6 +31,11 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
   const [createSessionBusy, setCreateSessionBusy] = useState(false);
   const [createSessionError, setCreateSessionError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  // Tags state
+  const [tagsInput, setTagsInput] = useState('');
+  const [tags, setTags] = useState<Array<{ id: string; name: string; normalizedName: string }>>([]);
+  const [tagsBusy, setTagsBusy] = useState(false);
 
   async function loadClassInfo() {
     const res = await fetch(`/api/classes/${classId}`, { method: 'GET' });
@@ -65,6 +71,42 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
       return;
     }
     setQuizzes(json.quizzes ?? []);
+  }
+
+  async function loadTags() {
+    try {
+      const res = await fetch(`/api/classes/${classId}/tags`);
+      const json = await res.json() as { tags?: Array<{ id: string; name: string; normalizedName: string }>; error?: string };
+      if (res.ok) {
+        setTags(json.tags ?? []);
+        setTagsInput(json.tags?.map(t => t.name).join(', ') ?? '');
+      }
+    } catch (err) {
+      console.error('Error loading tags:', err);
+    }
+  }
+
+  async function saveTags() {
+    setTagsBusy(true);
+    try {
+      const res = await fetch(`/api/classes/${classId}/tags`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tags: tagsInput }),
+      });
+      const json = await res.json() as { tags?: Array<{ id: string; name: string; normalizedName: string }>; error?: string };
+      if (res.ok) {
+        setTags(json.tags ?? []);
+        setToast({ message: 'Đã lưu tags thành công', type: 'success' });
+      } else {
+        setToast({ message: json.error ?? 'Lỗi khi lưu tags', type: 'error' });
+      }
+    } catch (err) {
+      console.error('Error saving tags:', err);
+      setToast({ message: 'Lỗi khi lưu tags', type: 'error' });
+    } finally {
+      setTagsBusy(false);
+    }
   }
 
   async function createSession() {
@@ -108,7 +150,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
   }
 
   useEffect(() => {
-    void Promise.all([loadClassInfo(), loadMembers(), loadSessions(), loadQuizzes()]);
+    void Promise.all([loadClassInfo(), loadMembers(), loadSessions(), loadQuizzes(), loadTags()]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId]);
 
@@ -236,6 +278,26 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                   Share class code này để học sinh join lớp.
                 </div>
               </div>
+
+              <Card className="p-5 md:p-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-heading">
+                    Tags
+                  </label>
+                  <TagInput
+                    value={tagsInput}
+                    onChange={setTagsInput}
+                    onSave={saveTags}
+                    tags={tags}
+                    showSaveButton={true}
+                    disabled={tagsBusy}
+                    placeholder="2025, IT, HCM..."
+                  />
+                  <p className="text-xs text-text-muted">
+                    Gắn tags để phân loại và tìm kiếm lớp học dễ dàng hơn
+                  </p>
+                </div>
+              </Card>
 
               <div className="rounded-md border border-dashed border-border-subtle p-4">
                 <div className="text-sm font-medium text-text-heading">Danger Zone</div>

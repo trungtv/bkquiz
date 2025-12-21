@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { TagFilter } from '@/components/ui/TagFilter';
 
 type Pool = {
   id: string;
@@ -15,6 +16,7 @@ type Pool = {
   updatedAt: string | Date;
   questionCount?: number;
   tagCount?: number;
+  tags?: Array<{ id: string; name: string; normalizedName: string }>;
 };
 
 export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
@@ -25,6 +27,7 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newPoolName, setNewPoolName] = useState('');
   const [createBusy, setCreateBusy] = useState(false);
+  const [tagFilter, setTagFilter] = useState('');
 
   const sorted = useMemo(
     () => [...owned].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
@@ -32,13 +35,36 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
   );
 
   async function refresh() {
-    const res = await fetch('/api/pools', { method: 'GET' });
-    if (!res.ok) {
-      return;
+    const url = new URL('/api/pools', window.location.origin);
+    if (tagFilter.trim()) {
+      url.searchParams.set('tags', tagFilter.trim());
     }
-    const data = await res.json() as { owned: Pool[] };
-    setOwned(data.owned);
+    try {
+      const res = await fetch(url.toString(), { method: 'GET' });
+      if (!res.ok) {
+        return;
+      }
+      const text = await res.text();
+      if (!text) {
+        return;
+      }
+      let data: { owned: Pool[]; shared: Pool[] };
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        console.error('Failed to parse pools response:', text, err);
+        return;
+      }
+      setOwned(data.owned);
+    } catch (err) {
+      console.error('Error loading pools:', err);
+    }
   }
+
+  useEffect(() => {
+    void refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tagFilter]);
 
   async function createPool() {
     if (!newPoolName.trim()) {
@@ -257,6 +283,15 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
           : null}
       </Card>
 
+      {/* Tag Filter */}
+      <Card className="p-5 md:p-6">
+        <TagFilter
+          value={tagFilter}
+          onChange={setTagFilter}
+          onClear={() => setTagFilter('')}
+        />
+      </Card>
+
       <Card className="p-5 md:p-6">
         <div className="text-lg font-semibold text-text-heading">Pools của bạn</div>
         <div className="mt-1 text-sm text-text-muted">
@@ -333,6 +368,21 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
                             {new Date(p.updatedAt).toLocaleDateString('vi-VN')}
                           </span>
                         </div>
+                        {p.tags && p.tags.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {p.tags.slice(0, 5).map(tag => (
+                              <Badge key={tag.id} variant="neutral" className="text-xs">
+                                {tag.name}
+                              </Badge>
+                            ))}
+                            {p.tags.length > 5 && (
+                              <Badge variant="neutral" className="text-xs">
+                                +
+                                {p.tags.length - 5}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <Button
                         size="sm"

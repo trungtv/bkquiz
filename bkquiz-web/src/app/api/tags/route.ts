@@ -22,7 +22,14 @@ export async function GET(req: Request) {
       id: true,
       name: true,
       normalizedName: true,
-      _count: { select: { questionTags: true } },
+      _count: {
+        select: {
+          questionTags: true,
+          classroomTags: true,
+          quizTags: true,
+          poolTags: true,
+        },
+      },
     },
   });
 
@@ -32,6 +39,9 @@ export async function GET(req: Request) {
       name: t.name,
       normalizedName: t.normalizedName,
       questionCount: t._count.questionTags,
+      classroomCount: t._count.classroomTags,
+      quizCount: t._count.quizTags,
+      poolCount: t._count.poolTags,
     })),
   });
 }

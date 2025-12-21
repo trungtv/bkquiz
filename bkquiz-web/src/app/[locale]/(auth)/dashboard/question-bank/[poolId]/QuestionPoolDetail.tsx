@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Toast } from '@/components/ui/Toast';
+import { TagInput } from '@/components/ui/TagInput';
 import { generateQuestionMarkdown } from '@/server/export/markdownPool';
 
 type Pool = {
@@ -81,6 +82,11 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTag, setFilterTag] = useState<string | null>(null);
 
+  // Pool tags state
+  const [poolTagsInput, setPoolTagsInput] = useState('');
+  const [poolTags, setPoolTags] = useState<Array<{ id: string; name: string; normalizedName: string }>>([]);
+  const [poolTagsBusy, setPoolTagsBusy] = useState(false);
+
   const filteredQuestions = useMemo(() => {
     let filtered = questions;
     if (searchQuery.trim()) {
@@ -124,8 +130,45 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
     }
   }
 
+  async function loadPoolTags() {
+    try {
+      const res = await fetch(`/api/pools/${props.poolId}/tags`);
+      const json = await res.json() as { tags?: Array<{ id: string; name: string; normalizedName: string }>; error?: string };
+      if (res.ok) {
+        setPoolTags(json.tags ?? []);
+        setPoolTagsInput(json.tags?.map(t => t.name).join(', ') ?? '');
+      }
+    } catch (err) {
+      console.error('Error loading pool tags:', err);
+    }
+  }
+
+  async function savePoolTags() {
+    setPoolTagsBusy(true);
+    try {
+      const res = await fetch(`/api/pools/${props.poolId}/tags`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tags: poolTagsInput }),
+      });
+      const json = await res.json() as { tags?: Array<{ id: string; name: string; normalizedName: string }>; error?: string };
+      if (res.ok) {
+        setPoolTags(json.tags ?? []);
+        setToast({ message: 'Đã lưu tags thành công', type: 'success' });
+      } else {
+        setToast({ message: json.error ?? 'Lỗi khi lưu tags', type: 'error' });
+      }
+    } catch (err) {
+      console.error('Error saving pool tags:', err);
+      setToast({ message: 'Lỗi khi lưu tags', type: 'error' });
+    } finally {
+      setPoolTagsBusy(false);
+    }
+  }
+
   useEffect(() => {
     void loadAll();
+    void loadPoolTags();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.poolId]);
 
@@ -819,10 +862,30 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                 {busy ? 'Đang lưu...' : 'Thêm câu hỏi'}
               </Button>
             </div>
-          </Card>
-        )}
+        </Card>
+      )}
 
-        {/* Questions List */}
+      {/* Pool Tags Section */}
+      {pool && canEdit && (
+        <Card className="p-5 md:p-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text-heading">
+              Tags (comma-separated)
+            </label>
+            <TagInput
+              value={poolTagsInput}
+              onChange={setPoolTagsInput}
+              onSave={savePoolTags}
+              tags={poolTags}
+              showSaveButton={true}
+              disabled={poolTagsBusy}
+              placeholder="basic, advanced, chapter1..."
+            />
+          </div>
+        </Card>
+      )}
+
+      {/* Questions List */}
         <div className="mt-4 space-y-3">
           {filteredQuestions.length === 0
             ? (
