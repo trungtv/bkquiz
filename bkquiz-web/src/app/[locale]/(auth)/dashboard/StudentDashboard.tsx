@@ -246,7 +246,7 @@ export async function StudentDashboard(props: StudentDashboardProps) {
                     {recentClasses.map((c, idx) => (
                       <Link key={c.id} href={`/dashboard/classes/${c.id}`}>
                         <div
-                          className="flex items-center justify-between gap-4 rounded-md border border-indigo-500/30 bg-bg-section px-4 py-3 transition-all duration-200 hover:border-indigo-500/50 hover:translate-x-1 hover:shadow-md"
+                          className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-primary/30"
                           style={{ animationDelay: `${idx * 30}ms` }}
                         >
                           <div className="min-w-0 flex-1">
@@ -318,7 +318,7 @@ export async function StudentDashboard(props: StudentDashboardProps) {
             {upcomingSessions.map((attempt, idx) => (
               <Link key={attempt.id} href={`/session/${attempt.quizSession.id}`}>
                 <div
-                  className="flex items-center justify-between gap-4 rounded-md border border-indigo-500/30 bg-bg-section px-4 py-3 transition-all duration-200 hover:border-indigo-500/50 hover:translate-x-1 hover:shadow-md"
+                  className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-primary/30"
                   style={{ animationDelay: `${idx * 50}ms` }}
                 >
                   <div className="min-w-0 flex-1">

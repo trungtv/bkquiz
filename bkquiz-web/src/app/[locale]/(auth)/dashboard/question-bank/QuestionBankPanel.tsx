@@ -143,7 +143,7 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       {/* Breadcrumb */}
       <nav className="text-sm text-text-muted">
         <Link href="/dashboard" className="hover:text-text-heading transition-colors">
@@ -292,112 +292,90 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
         />
       </Card>
 
-      <Card className="p-5 md:p-6">
-        <div className="text-lg font-semibold text-text-heading">Pools của bạn</div>
-        <div className="mt-1 text-sm text-text-muted">
-          Bao gồm các pools bạn sở hữu; có thể dùng trong quiz rules và sessions.
+      <Card className="p-5 md:p-6 animate-slideUp" style={{ animationDelay: '100ms' }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-lg font-semibold text-text-heading">Pools của bạn</div>
+            <div className="mt-1 text-sm text-text-muted">
+              {sorted.length}
+              {' '}
+              pools
+            </div>
+          </div>
         </div>
-        <div className="mt-4 space-y-2">
-          {busy && sorted.length === 0
+
+        {busy && sorted.length === 0
+          ? (
+              <div className="mt-4 space-y-2">
+                <Skeleton className="h-16" />
+                <Skeleton className="h-16" />
+              </div>
+            )
+          : sorted.length === 0
             ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-16" />
-                  <Skeleton className="h-16" />
+                <div className="mt-6 rounded-md border border-dashed border-border-subtle px-4 py-8 text-center">
+                  <div className="text-sm text-text-muted">
+                    Chưa có question pool nào.
+                  </div>
+                  <div className="mt-2 text-xs text-text-muted">
+                    Bắt đầu bằng cách import từ Markdown/ZIP hoặc tạo pool mới.
+                  </div>
                 </div>
               )
-            : sorted.length === 0
-              ? (
-                  <div className="rounded-md border border-dashed border-border-subtle px-4 py-12 text-center">
-                    <div className="mb-2 text-base font-medium text-text-heading">
-                      Chưa có question pool nào
-                    </div>
-                    <div className="mb-6 text-sm text-text-muted">
-                      Bắt đầu bằng cách import từ Markdown/ZIP hoặc tạo pool mới
-                    </div>
-                    <div className="flex justify-center gap-3">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => {
-                          const input = document.querySelector('input[type="file"]') as HTMLInputElement | null;
-                          input?.click();
-                        }}
+            : (
+                <div className="mt-4 space-y-2">
+                  {sorted.map((p, idx) => (
+                    <Link key={p.id} href={`/dashboard/question-bank/${p.id}`}>
+                      <div
+                        className="rounded-md border border-border-subtle bg-bg-section transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-primary/30"
+                        style={{ animationDelay: `${idx * 30}ms` }}
                       >
-                        Import từ file
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowCreateForm(true)}
-                      >
-                        Tạo pool mới
-                      </Button>
-                    </div>
-                  </div>
-                )
-              : sorted.map(p => (
-                  <Link
-                    key={p.id}
-                    href={`/dashboard/question-bank/${p.id}`}
-                    className="block"
-                  >
-                    <Card
-                      interactive
-                      className="flex cursor-pointer items-center justify-between gap-4 px-4 py-3"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium text-text-heading">{p.name}</div>
-                        <div className="mt-1.5 flex items-center gap-3 text-xs text-text-muted">
-                          <span>
-                            {p.questionCount ?? 0}
-                            {' '}
-                            câu
-                          </span>
-                          <span>·</span>
-                          <span>
-                            {p.tagCount ?? 0}
-                            {' '}
-                            tags
-                          </span>
-                          <span>·</span>
-                          <Badge variant="neutral" className="text-xs">
-                            {p.visibility}
-                          </Badge>
-                          <span>·</span>
-                          <span className="font-mono text-[10px]">
-                            {new Date(p.updatedAt).toLocaleDateString('vi-VN')}
-                          </span>
-                        </div>
-                        {p.tags && p.tags.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {p.tags.slice(0, 5).map(tag => (
-                              <Badge key={tag.id} variant="neutral" className="text-xs">
-                                {tag.name}
-                              </Badge>
-                            ))}
-                            {p.tags.length > 5 && (
-                              <Badge variant="neutral" className="text-xs">
-                                +
-                                {p.tags.length - 5}
-                              </Badge>
+                        <div className="flex items-center justify-between gap-4 px-4 py-3">
+                          <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_auto_auto] items-center gap-4 md:grid-cols-[2fr_auto_120px_100px]">
+                            <div className="min-w-0">
+                              <div className="truncate text-sm font-medium text-text-heading">{p.name}</div>
+                              <div className="mt-1 text-xs text-text-muted">
+                                {p.questionCount ?? 0}
+                                {' '}
+                                câu
+                              </div>
+                            </div>
+                            {p.tags && p.tags.length > 0 && (
+                              <div className="flex flex-wrap items-center gap-1">
+                                {p.tags.slice(0, 5).map(tag => (
+                                  <Badge key={tag.id} variant="neutral" className="text-xs">
+                                    {tag.name}
+                                  </Badge>
+                                ))}
+                                {p.tags.length > 5 && (
+                                  <Badge variant="neutral" className="text-xs">
+                                    +
+                                    {p.tags.length - 5}
+                                  </Badge>
+                                )}
+                              </div>
                             )}
+                            <Badge
+                              variant={p.visibility === 'shared' ? 'info' : 'neutral'}
+                              className="text-xs"
+                            >
+                              {p.visibility}
+                            </Badge>
+                            <div className="text-xs text-text-muted">
+                              <span className="font-mono">
+                                {new Date(p.updatedAt).toLocaleDateString('vi-VN')}
+                              </span>
+                            </div>
                           </div>
-                        )}
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-text-muted">→</span>
+                          </div>
+                        </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                      >
-                        Mở
-                      </Button>
-                    </Card>
-                  </Link>
-                ))}
-        </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
       </Card>
     </div>
   );

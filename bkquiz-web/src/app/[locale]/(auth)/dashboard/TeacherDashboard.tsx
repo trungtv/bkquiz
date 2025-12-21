@@ -207,7 +207,7 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
                     {recentClasses.map((c, idx) => (
                       <Link key={c.id} href={`/dashboard/classes/${c.id}`}>
                         <div
-                          className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-all duration-200 hover:border-border-strong hover:translate-x-1 hover:shadow-md"
+                          className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-primary/30"
                           style={{ animationDelay: `${idx * 30}ms` }}
                         >
                           <div className="min-w-0 flex-1">
@@ -239,7 +239,7 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
                   {activeSessions.map((session, idx) => (
                     <Link key={session.id} href={`/dashboard/sessions/${session.id}/teacher`}>
                       <div
-                        className="rounded-md border border-border-subtle bg-bg-section px-3 py-2.5 transition-all duration-200 hover:border-primary/50 hover:bg-primary/5 hover:scale-[1.02]"
+                        className="rounded-md border border-border-subtle bg-bg-section px-3 py-2.5 transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-primary/30 hover:bg-primary/5"
                         style={{ animationDelay: `${idx * 50}ms` }}
                       >
                         <div className="text-sm font-medium text-text-heading truncate">

@@ -349,11 +349,7 @@ export function ClassesPanel(props: ClassesPanelProps) {
                 {classes.map((c, idx) => (
                   <Link key={c.id} href={`/dashboard/classes/${c.id}`}>
                     <div
-                      className={`rounded-md border bg-bg-section transition-all duration-200 hover:translate-x-1 hover:shadow-md ${
-                        c.roleInClass === 'teacher'
-                          ? 'border-primary/30 hover:border-primary/50'
-                          : 'border-indigo-500/30 hover:border-indigo-500/50'
-                      }`}
+                      className="rounded-md border border-border-subtle bg-bg-section transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-primary/30"
                       style={{ animationDelay: `${idx * 30}ms` }}
                     >
                       <div className="flex items-center justify-between gap-4 px-4 py-3">
