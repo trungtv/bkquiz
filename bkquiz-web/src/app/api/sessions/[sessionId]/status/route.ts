@@ -12,10 +12,17 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
       startedAt: true,
       endedAt: true,
       totpStepSeconds: true,
+      createdAt: true,
       quiz: {
         select: {
           id: true,
           title: true,
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
       classroom: {
@@ -37,6 +44,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
     status: session.status,
     startedAt: session.startedAt,
     endedAt: session.endedAt,
+    createdAt: session.createdAt,
     totpStepSeconds: session.totpStepSeconds,
     quiz: session.quiz,
     classroom: session.classroom,
