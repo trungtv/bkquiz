@@ -8,9 +8,9 @@ const CreateQuizSchema = z.object({
   status: z.enum(['draft', 'published']).optional(),
 });
 
-export async function GET(req: Request) {
+export async function GET() {
   const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
+  await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
 
   // Lấy tất cả quiz của teacher hiện tại
   const quizzes = await prisma.quiz.findMany({
@@ -39,7 +39,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const { userId, devRole } = await requireUser();
-    await requireTeacher(userId, devRole);
+    await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
     const body = CreateQuizSchema.parse(await req.json());
 
     const quiz = await prisma.quiz.create({
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     return NextResponse.json(quiz);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'INVALID_INPUT', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'INVALID_INPUT', details: error.issues }, { status: 400 });
     }
     console.error('Error creating quiz:', error);
     return NextResponse.json({ error: 'CREATE_FAILED' }, { status: 500 });
