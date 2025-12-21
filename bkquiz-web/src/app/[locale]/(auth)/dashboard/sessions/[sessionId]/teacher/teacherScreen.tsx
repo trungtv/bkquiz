@@ -1,15 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
 import { useLocale } from 'next-intl';
+import { useEffect, useRef, useState } from 'react';
 import QRCode from 'react-qr-code';
-import { getI18nPath } from '@/utils/Helpers';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Table, TableWrap } from '@/components/ui/Table';
+import { getI18nPath } from '@/utils/Helpers';
 
 type TeacherTokenResponse = {
   sessionId: string;
