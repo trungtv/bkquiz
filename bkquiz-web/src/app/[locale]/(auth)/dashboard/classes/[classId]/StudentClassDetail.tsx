@@ -22,12 +22,16 @@ export function StudentClassDetail(props: StudentClassDetailProps) {
   const [activeTab, setActiveTab] = useState<'members' | 'sessions'>('members');
 
   async function loadClassInfo() {
-    const res = await fetch(`/api/classes/${classId}`, { method: 'GET' });
-    const json = await res.json() as ClassInfo | { error?: string };
-    if (!res.ok) {
-      return;
+    try {
+      const res = await fetch(`/api/classes/${classId}`, { method: 'GET' });
+      if (!res.ok) {
+        return;
+      }
+      const json = await res.json() as ClassInfo | { error?: string };
+      setClassInfo(json as ClassInfo);
+    } catch (err) {
+      console.error('Failed to load class info:', err);
     }
-    setClassInfo(json as ClassInfo);
   }
 
   async function loadMembers() {
@@ -44,12 +48,16 @@ export function StudentClassDetail(props: StudentClassDetailProps) {
   }
 
   async function loadSessions() {
-    const res = await fetch(`/api/classes/${classId}/sessions`, { method: 'GET' });
-    const json = await res.json() as { sessions?: Session[]; error?: string };
-    if (!res.ok) {
-      return;
+    try {
+      const res = await fetch(`/api/classes/${classId}/sessions`, { method: 'GET' });
+      if (!res.ok) {
+        return;
+      }
+      const json = await res.json() as { sessions?: Session[]; error?: string };
+      setSessions(json.sessions ?? []);
+    } catch (err) {
+      console.error('Failed to load sessions:', err);
     }
-    setSessions(json.sessions ?? []);
   }
 
   useEffect(() => {
