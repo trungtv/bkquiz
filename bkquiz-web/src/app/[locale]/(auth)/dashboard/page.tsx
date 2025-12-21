@@ -63,7 +63,7 @@ export default async function Dashboard() {
           where: {
             userId,
             status: 'active',
-            session: { status: 'active' },
+            QuizSession: { status: 'active' },
           },
         })
       : Promise.resolve(0),
