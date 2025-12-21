@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLayoutEffect, useState } from 'react';
+import { Badge } from '@/components/ui/Badge';
 
 type SidebarProps = {
   role: 'teacher' | 'student';
@@ -80,12 +81,20 @@ export function Sidebar(props: SidebarProps) {
           {isExpanded
             ? (
                 <>
-                  <div>
+                  <div className="flex-1">
                     <div className="text-sm font-semibold uppercase tracking-wide text-text-muted">
                       BKquiz
                     </div>
-                    <div className="mt-1 text-xs text-text-muted">
-                      Dashboard
+                    <div className="mt-1 flex items-center gap-2">
+                      <div className="text-xs text-text-muted">
+                        Dashboard
+                      </div>
+                      <Badge
+                        variant={props.role === 'teacher' ? 'success' : 'info'}
+                        className="text-[10px] px-1.5 py-0.5"
+                      >
+                        {props.role === 'teacher' ? 'Teacher' : 'Student'}
+                      </Badge>
                     </div>
                   </div>
                   <button

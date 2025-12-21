@@ -191,7 +191,53 @@ export default async function Dashboard() {
                 </ol>
               </Card>
             )
-          : null}
+          : (
+              <Card className="mt-5 border-dashed px-4 py-3 border-indigo-500/30">
+                <div className="text-xs font-medium uppercase tracking-wide text-indigo-400">
+                  Getting started
+                </div>
+                <ol className="mt-2 space-y-1 text-xs text-text-body">
+                  <li>
+                    <span className="font-mono text-text-muted">1.</span>
+                    {' '}
+                    Tham gia lớp học bằng
+                    {' '}
+                    <span className="font-mono">class code</span>
+                    {' '}
+                    trong
+                    {' '}
+                    <Link href="/dashboard/classes" className="text-indigo-400 hover:underline">
+                      Classes
+                    </Link>
+                    .
+                  </li>
+                  <li>
+                    <span className="font-mono text-text-muted">2.</span>
+                    {' '}
+                    Xem các
+                    {' '}
+                    <span className="font-medium">session đang diễn ra</span>
+                    {' '}
+                    trong
+                    {' '}
+                    <Link href="/dashboard/sessions" className="text-indigo-400 hover:underline">
+                      My Sessions
+                    </Link>
+                    .
+                  </li>
+                  <li>
+                    <span className="font-mono text-text-muted">3.</span>
+                    {' '}
+                    Join session và làm bài quiz theo hướng dẫn của giáo viên.
+                  </li>
+                  <li>
+                    <span className="font-mono text-text-muted">4.</span>
+                    {' '}
+                    Xem kết quả và điểm số sau khi nộp bài.
+                  </li>
+                </ol>
+              </Card>
+            )}
       </Card>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -358,17 +404,30 @@ export default async function Dashboard() {
                   </Link>
                 )
               : (
-                  <Link href="/dashboard/sessions">
-                    <Card interactive className="p-3 text-sm cursor-pointer">
-                      <div className="flex items-center justify-between">
-                        <div className="font-medium text-text-heading">My Sessions</div>
-                        <Badge variant="info">{myActiveSessionsCount}</Badge>
-                      </div>
-                      <div className="mt-1 text-xs text-text-muted">
-                        Sessions bạn đang tham gia.
-                      </div>
-                    </Card>
-                  </Link>
+                  <>
+                    <Link href="/dashboard/sessions">
+                      <Card interactive className="p-3 text-sm cursor-pointer">
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium text-text-heading">My Sessions</div>
+                          <Badge variant="info">{myActiveSessionsCount}</Badge>
+                        </div>
+                        <div className="mt-1 text-xs text-text-muted">
+                          Sessions bạn đang tham gia.
+                        </div>
+                      </Card>
+                    </Link>
+                    <Link href="/dashboard/performance">
+                      <Card interactive className="p-3 text-sm cursor-pointer border-indigo-500/30">
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium text-text-heading text-indigo-400">My Performance</div>
+                          <Badge variant="info">View</Badge>
+                        </div>
+                        <div className="mt-1 text-xs text-text-muted">
+                          Xem điểm số và thống kê của bạn.
+                        </div>
+                      </Card>
+                    </Link>
+                  </>
                 )}
           </div>
         </Card>
