@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { useLocale } from 'next-intl';
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'react-qr-code';
 import { Badge } from '@/components/ui/Badge';
