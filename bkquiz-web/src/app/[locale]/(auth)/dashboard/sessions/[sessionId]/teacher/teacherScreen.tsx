@@ -430,42 +430,22 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
 
           {/* Token Log - Collapsible */}
           <Card className="bg-white/5 border-white/10">
-            <button
-              type="button"
-              onClick={() => setShowLogs(!showLogs)}
-              className="w-full flex items-center justify-between p-4 text-left hover:bg-white/5 transition-colors"
-            >
-              <div className="text-base font-semibold text-white">
-                Token Log
-                {' '}
-                <span className="text-xs font-normal text-white/40">
-                  (
-                  {logs.length}
+            <div className="w-full flex items-center justify-between p-4">
+              <button
+                type="button"
+                onClick={() => setShowLogs(!showLogs)}
+                className="flex-1 flex items-center justify-between text-left hover:bg-white/5 transition-colors rounded-md p-2 -m-2"
+              >
+                <div className="text-base font-semibold text-white">
+                  Token Log
                   {' '}
-                  entries)
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <a
-                  className="rounded-md border border-white/20 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10 transition-colors"
-                  href={`/api/sessions/${props.sessionId}/report/tokenLog?format=csv`}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={e => e.stopPropagation()}
-                >
-                  Download CSV
-                </a>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void fetchLogs();
-                  }}
-                  className="text-white/80 border-white/20 hover:bg-white/10"
-                >
-                  Refresh
-                </Button>
+                  <span className="text-xs font-normal text-white/40">
+                    (
+                    {logs.length}
+                    {' '}
+                    entries)
+                  </span>
+                </div>
                 <svg
                   className={`w-5 h-5 text-white/60 transition-transform ${showLogs ? 'rotate-180' : ''}`}
                   fill="none"
@@ -474,8 +454,26 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
+              </button>
+              <div className="flex items-center gap-2 ml-4">
+                <a
+                  className="rounded-md border border-white/20 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10 transition-colors"
+                  href={`/api/sessions/${props.sessionId}/report/tokenLog?format=csv`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Download CSV
+                </a>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => void fetchLogs()}
+                  className="text-white/80 border-white/20 hover:bg-white/10"
+                >
+                  Refresh
+                </Button>
               </div>
-            </button>
+            </div>
             {showLogs
               ? (
                   <div className="px-4 pb-4">
@@ -522,42 +520,22 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
 
           {/* Scoreboard - Collapsible */}
           <Card className="bg-white/5 border-white/10">
-            <button
-              type="button"
-              onClick={() => setShowScoreboard(!showScoreboard)}
-              className="w-full flex items-center justify-between p-4 text-left hover:bg-white/5 transition-colors"
-            >
-              <div className="text-base font-semibold text-white">
-                Scoreboard
-                {' '}
-                <span className="text-xs font-normal text-white/40">
-                  (
-                  {scores.length}
+            <div className="w-full flex items-center justify-between p-4">
+              <button
+                type="button"
+                onClick={() => setShowScoreboard(!showScoreboard)}
+                className="flex-1 flex items-center justify-between text-left hover:bg-white/5 transition-colors rounded-md p-2 -m-2"
+              >
+                <div className="text-base font-semibold text-white">
+                  Scoreboard
                   {' '}
-                  students)
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <a
-                  className="rounded-md border border-white/20 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10 transition-colors"
-                  href={`/api/sessions/${props.sessionId}/report/scoreboard?format=csv`}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={e => e.stopPropagation()}
-                >
-                  Download CSV
-                </a>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void fetchScoreboard();
-                  }}
-                  className="text-white/80 border-white/20 hover:bg-white/10"
-                >
-                  Refresh
-                </Button>
+                  <span className="text-xs font-normal text-white/40">
+                    (
+                    {scores.length}
+                    {' '}
+                    students)
+                  </span>
+                </div>
                 <svg
                   className={`w-5 h-5 text-white/60 transition-transform ${showScoreboard ? 'rotate-180' : ''}`}
                   fill="none"
@@ -566,8 +544,26 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
+              </button>
+              <div className="flex items-center gap-2 ml-4">
+                <a
+                  className="rounded-md border border-white/20 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10 transition-colors"
+                  href={`/api/sessions/${props.sessionId}/report/scoreboard?format=csv`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Download CSV
+                </a>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => void fetchScoreboard()}
+                  className="text-white/80 border-white/20 hover:bg-white/10"
+                >
+                  Refresh
+                </Button>
               </div>
-            </button>
+            </div>
             {showScoreboard
               ? (
                   <div className="px-4 pb-4">
