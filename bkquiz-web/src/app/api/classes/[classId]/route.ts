@@ -42,16 +42,15 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
   }
 
   return NextResponse.json({
-    id: membership.Classroom.id,
-    name: membership.Classroom.name,
-    classCode: membership.Classroom.classCode,
-    createdAt: membership.Classroom.createdAt,
-    updatedAt: membership.Classroom.updatedAt,
-    ownerTeacherId: membership.Classroom.ownerTeacherId,
-    ownerTeacher: membership.Classroom.ownerTeacher,
-    memberCount: membership.Classroom._count.ClassMembership,
+    id: membership.classroom.id,
+    name: membership.classroom.name,
+    classCode: membership.classroom.classCode,
+    createdAt: membership.classroom.createdAt,
+    updatedAt: membership.classroom.updatedAt,
+    ownerTeacherId: membership.classroom.ownerTeacherId,
+    ownerTeacher: membership.classroom.ownerTeacher,
+    memberCount: membership.classroom._count.memberships,
     userRole: membership.roleInClass,
     joinedAt: membership.joinedAt,
   });
 }
-
