@@ -35,7 +35,7 @@ export async function GET() {
       const tagGroups = await prisma.questionTag.groupBy({
         by: ['tagId'],
         where: {
-          question: {
+          Question: {
             poolId: pool.id,
             deletedAt: null,
           },

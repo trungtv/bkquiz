@@ -44,7 +44,7 @@ export default async function QuestionBankPage() {
       const tagGroups = await prisma.questionTag.groupBy({
         by: ['tagId'],
         where: {
-          question: {
+          Question: {
             poolId: pool.id,
             deletedAt: null,
           },
