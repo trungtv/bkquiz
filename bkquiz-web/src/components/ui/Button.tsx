@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes } from 'react';
 import { cn } from '@/utils/cn';
 
 type Variant = 'primary' | 'ghost' | 'danger';
-type Size = 'sm' | 'md';
+type Size = 'sm' | 'md' | 'lg';
 
 export function Button(props: ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
@@ -17,7 +17,11 @@ export function Button(props: ButtonHTMLAttributes<HTMLButtonElement> & {
   } = props;
 
   const base = 'inline-flex items-center justify-center gap-2 rounded-sm font-semibold transition-all duration-200 ease-out disabled:opacity-disabled disabled:cursor-not-allowed';
-  const sizes = size === 'sm' ? 'px-4 py-2 text-xs' : 'px-5 py-3 text-sm';
+  const sizes = size === 'sm'
+    ? 'px-4 py-2 text-xs'
+    : size === 'lg'
+      ? 'px-6 py-4 text-base'
+      : 'px-5 py-3 text-sm';
   const variants = {
     // Solid orange CTA – giống nút "Get access now"
     primary: 'bg-primary text-white hover:bg-primary-hover active:scale-[0.98] hover:shadow-md',
