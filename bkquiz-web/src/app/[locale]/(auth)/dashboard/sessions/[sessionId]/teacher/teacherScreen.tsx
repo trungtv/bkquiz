@@ -123,6 +123,10 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
   }
 
   async function fetchToken() {
+    // Không fetch token nếu session đã ended
+    if (session?.status === 'ended') {
+      return;
+    }
     setError(null);
     const res = await fetch(`/api/sessions/${props.sessionId}/teacherToken`, { method: 'GET' });
     const json = await res.json() as Partial<TeacherTokenResponse> & { error?: string };
@@ -136,12 +140,20 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
   }
 
   useEffect(() => {
-    void fetchToken();
     void fetchStatus();
     void fetchLogs();
     void fetchScoreboard();
+    void fetchToken();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.sessionId]);
+
+  // Fetch token khi session status thay đổi từ ended sang active/lobby
+  useEffect(() => {
+    if (session?.status !== 'ended') {
+      void fetchToken();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.status]);
 
   useEffect(() => {
     const id = window.setInterval(() => void fetchStatus(), 3000);
@@ -219,6 +231,11 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
 
   // Local countdown tick (no extra server calls).
   useEffect(() => {
+    // Không chạy countdown nếu session đã ended
+    if (session?.status === 'ended') {
+      setSecondsLeft(null);
+      return;
+    }
     const id = window.setInterval(() => {
       if (!data) {
         setSecondsLeft(null);
@@ -229,14 +246,14 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
       setSecondsLeft(left);
 
       // Auto-refetch token when it expires (only once per expiry)
-      if (left <= 0 && !hasRefetchedForExpiry.current) {
+      if (left <= 0 && !hasRefetchedForExpiry.current && session?.status !== 'ended') {
         hasRefetchedForExpiry.current = true;
         void fetchToken();
       }
     }, 3000);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [data, session?.status]);
 
   const progressPercent = data && secondsLeft !== null
     ? Math.max(0, Math.min(100, (secondsLeft / data.stepSeconds) * 100))
@@ -283,9 +300,13 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
                 </Button>
               )
             : null}
-          <Button size="sm" variant="ghost" onClick={() => void fetchToken()} className="text-white/80 border-white/20 hover:bg-white/10">
-            Refresh Token
-          </Button>
+          {session?.status !== 'ended'
+            ? (
+                <Button size="sm" variant="ghost" onClick={() => void fetchToken()} className="text-white/80 border-white/20 hover:bg-white/10">
+                  Refresh Token
+                </Button>
+              )
+            : null}
         </div>
 
         {/* Session Info - Center, with padding for breadcrumb and controls */}
@@ -322,78 +343,179 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
         </div>
       </div>
 
-      {/* Main Content - Full-screen QR + Token */}
+      {/* Main Content - Full-screen QR + Token hoặc Ended Summary */}
       <div className="min-h-screen flex items-center justify-center px-6 py-20">
-        <div className="w-full max-w-7xl grid gap-8 lg:grid-cols-2">
-          {/* QR Code Section */}
-          <div className="flex flex-col items-center justify-center">
-            <div className="text-sm font-medium text-white/60 mb-4">QR để sinh viên vào bài</div>
-            <div className="flex items-center justify-center">
-              {data?.joinUrl
-                ? (
-                    <div className="rounded-lg bg-white p-6 shadow-2xl">
-                      <QRCode value={data.joinUrl} size={480} />
+        {session?.status === 'ended'
+          ? (
+              /* Session Ended - Summary View */
+              <div className="w-full max-w-4xl space-y-6">
+                {/* Banner đỏ */}
+                <Card className="bg-red-500/20 border-red-500/40 p-6">
+                  <div className="flex items-center gap-3">
+                    <svg
+                      className="w-6 h-6 text-red-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+                    <div>
+                      <div className="text-lg font-semibold text-red-400">Session đã kết thúc</div>
+                      <div className="text-sm text-red-300/80 mt-1">
+                        {session.endedAt
+                          ? `Kết thúc lúc ${new Date(session.endedAt).toLocaleString('vi-VN')}`
+                          : 'Session này đã được kết thúc'}
+                      </div>
                     </div>
-                  )
-                : (
-                    <div className="w-[480px]">
-                      <Skeleton className="mx-auto h-[480px] w-[480px]" />
-                      <div className="mt-3 text-center text-sm text-white/40">Đang tải QR...</div>
+                  </div>
+                </Card>
+
+                {/* Summary Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="bg-white/5 border-white/10 p-6">
+                    <div className="text-sm text-white/60 mb-2">Tổng số attempts</div>
+                    <div className="text-3xl font-bold text-white">{scores.length}</div>
+                  </Card>
+                  <Card className="bg-white/5 border-white/10 p-6">
+                    <div className="text-sm text-white/60 mb-2">Đã submit</div>
+                    <div className="text-3xl font-bold text-white">
+                      {scores.filter(s => s.status === 'submitted').length}
                     </div>
-                  )}
-            </div>
-            <div className="mt-6 max-w-md text-center">
-              <div className="rounded-md bg-white/5 border border-white/10 p-3 break-all text-xs text-white/60 font-mono">
-                {data?.joinUrl ? shortenUrl(data.joinUrl) : '...'}
-              </div>
-              <div className="mt-2 text-xs text-white/40">
-                Sinh viên quét QR hoặc mở link này để join session
-              </div>
-            </div>
-          </div>
+                  </Card>
+                  <Card className="bg-white/5 border-white/10 p-6">
+                    <div className="text-sm text-white/60 mb-2">Thời lượng</div>
+                    <div className="text-3xl font-bold text-white font-mono">
+                      {session.startedAt && session.endedAt
+                        ? (() => {
+                            const start = new Date(session.startedAt);
+                            const end = new Date(session.endedAt);
+                            const diff = Math.floor((end.getTime() - start.getTime()) / 1000);
+                            const minutes = Math.floor(diff / 60);
+                            const seconds = diff % 60;
+                            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                          })()
+                        : '-'}
+                    </div>
+                  </Card>
+                </div>
 
-          {/* Token Section */}
-          <div className="flex flex-col items-center justify-center">
-            <div className="text-sm font-medium text-white/60 mb-4">Token (TOTP)</div>
-            <div className="text-center w-full">
-              <div className="text-8xl font-bold tracking-[0.3em] text-primary mb-6 font-mono">
-                {data?.token ?? '------'}
+                {/* Quick Actions */}
+                <Card className="bg-white/5 border-white/10 p-6">
+                  <div className="text-base font-semibold text-white mb-4">Xem báo cáo chi tiết</div>
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      variant="primary"
+                      onClick={() => setShowScoreboard(true)}
+                      className="px-6 py-3"
+                    >
+                      Xem Scoreboard
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowLogs(true)}
+                      className="px-6 py-3 text-white/80 border-white/20 hover:bg-white/10"
+                    >
+                      Xem Token Log
+                    </Button>
+                    <a
+                      href={`/api/sessions/${props.sessionId}/report/scoreboard?format=csv`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-md border border-white/20 px-6 py-3 text-sm text-white/80 hover:bg-white/10 transition-colors inline-flex items-center"
+                    >
+                      Download Scoreboard CSV
+                    </a>
+                    <a
+                      href={`/api/sessions/${props.sessionId}/report/tokenLog?format=csv`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-md border border-white/20 px-6 py-3 text-sm text-white/80 hover:bg-white/10 transition-colors inline-flex items-center"
+                    >
+                      Download Token Log CSV
+                    </a>
+                  </div>
+                </Card>
               </div>
+            )
+          : (
+              /* Active/Lobby - QR + Token View */
+              <div className="w-full max-w-7xl grid gap-8 lg:grid-cols-2">
+                {/* QR Code Section */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="text-sm font-medium text-white/60 mb-4">QR để sinh viên vào bài</div>
+                  <div className="flex items-center justify-center">
+                    {data?.joinUrl
+                      ? (
+                          <div className="rounded-lg bg-white p-6 shadow-2xl">
+                            <QRCode value={data.joinUrl} size={480} />
+                          </div>
+                        )
+                      : (
+                          <div className="w-[480px]">
+                            <Skeleton className="mx-auto h-[480px] w-[480px]" />
+                            <div className="mt-3 text-center text-sm text-white/40">Đang tải QR...</div>
+                          </div>
+                        )}
+                  </div>
+                  <div className="mt-6 max-w-md text-center">
+                    <div className="rounded-md bg-white/5 border border-white/10 p-3 break-all text-xs text-white/60 font-mono">
+                      {data?.joinUrl ? shortenUrl(data.joinUrl) : '...'}
+                    </div>
+                    <div className="mt-2 text-xs text-white/40">
+                      Sinh viên quét QR hoặc mở link này để join session
+                    </div>
+                  </div>
+                </div>
 
-              {/* Progress Bar */}
-              <div className="w-full max-w-md mx-auto mb-4">
-                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary transition-all duration-300 ease-linear"
-                    style={{ width: `${progressPercent}%` }}
-                  />
+                {/* Token Section */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="text-sm font-medium text-white/60 mb-4">Token (TOTP)</div>
+                  <div className="text-center w-full">
+                    <div className="text-8xl font-bold tracking-[0.3em] text-primary mb-6 font-mono">
+                      {data?.token ?? '------'}
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full max-w-md mx-auto mb-4">
+                      <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all duration-300 ease-linear"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="text-lg text-white/80 font-mono mb-2">
+                      {secondsLeft === null
+                        ? '...'
+                        : `${secondsLeft}s`}
+                    </div>
+                    <div className="text-xs text-white/40">
+                      Token đổi sau
+                      {' '}
+                      {secondsLeft === null
+                        ? '...'
+                        : `${secondsLeft}s`}
+                      {' '}
+                      (step=
+                      {data?.stepSeconds ?? 45}
+                      s)
+                    </div>
+                  </div>
+                  <div className="mt-8 max-w-md text-center">
+                    <div className="rounded-md bg-white/5 border border-white/10 p-3 text-xs text-white/60">
+                      Gợi ý: Chiếu màn hình này lên projector. Sinh viên scan QR để vào link, khi tới checkpoint sẽ nhập token hiện tại.
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              <div className="text-lg text-white/80 font-mono mb-2">
-                {secondsLeft === null
-                  ? '...'
-                  : `${secondsLeft}s`}
-              </div>
-              <div className="text-xs text-white/40">
-                Token đổi sau
-                {' '}
-                {secondsLeft === null
-                  ? '...'
-                  : `${secondsLeft}s`}
-                {' '}
-                (step=
-                {data?.stepSeconds ?? 45}
-                s)
-              </div>
-            </div>
-            <div className="mt-8 max-w-md text-center">
-              <div className="rounded-md bg-white/5 border border-white/10 p-3 text-xs text-white/60">
-                Gợi ý: Chiếu màn hình này lên projector. Sinh viên scan QR để vào link, khi tới checkpoint sẽ nhập token hiện tại.
-              </div>
-            </div>
-          </div>
-        </div>
+            )}
       </div>
 
       {/* Collapsible Sections */}

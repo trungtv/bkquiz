@@ -242,7 +242,7 @@ export async function StudentDashboard(props: StudentDashboardProps) {
                   </div>
                 )
               : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {recentClasses.map((c, idx) => (
                       <Link key={c.id} href={`/dashboard/classes/${c.id}`}>
                         <div
@@ -314,7 +314,7 @@ export async function StudentDashboard(props: StudentDashboardProps) {
             {upcomingSessions.length}
             )
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {upcomingSessions.map((attempt, idx) => (
               <Link key={attempt.id} href={`/session/${attempt.quizSession.id}`}>
                 <div

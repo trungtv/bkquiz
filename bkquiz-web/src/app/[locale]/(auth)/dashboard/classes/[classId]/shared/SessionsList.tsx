@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
 import type { Session } from '../types';
 import { formatDate } from '../types';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 
 type SessionsListProps = {
   sessions: Session[];
@@ -36,7 +36,7 @@ export function SessionsList(props: SessionsListProps) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {onCreateSession && sessions.length > 0 && (
         <div className="mb-4 flex items-center justify-between">
           <div className="text-sm font-medium text-text-heading">
@@ -57,57 +57,50 @@ export function SessionsList(props: SessionsListProps) {
       {sessions.map((s, idx) => {
         if (isStudent) {
           return (
-            <div
-              key={s.id}
-              className={`flex items-center justify-between gap-4 rounded-md border bg-bg-section px-4 py-3 transition-all duration-200 hover:translate-x-1 hover:shadow-md ${
-                s.status === 'active'
-                  ? 'border-indigo-500/50 bg-indigo-500/5 hover:border-indigo-500/70'
-                  : 'border-indigo-500/30 hover:border-indigo-500/50'
-              }`}
-              style={{ animationDelay: `${idx * 30}ms` }}
-            >
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-text-heading">
-                  {s.quiz.title}
-                </div>
-                <div className="mt-1 text-xs text-text-muted">
-                  {s.status === 'active' && 'Đang diễn ra'}
-                  {s.status === 'ended' && 'Đã kết thúc'}
-                  {s.status === 'lobby' && 'Chờ bắt đầu'}
-                  {' '}
-                  ·
-                  {' '}
-                  {formatDate(s.createdAt)}
+            <Link key={s.id} href={`/session/${s.id}`}>
+              <div
+                className={`rounded-md border bg-bg-section transition-all duration-200 hover:translate-x-1 hover:shadow-md ${
+                  s.status === 'active'
+                    ? 'border-indigo-500/50 bg-indigo-500/5 hover:border-indigo-500/70'
+                    : 'border-indigo-500/30 hover:border-indigo-500/50'
+                }`}
+                style={{ animationDelay: `${idx * 30}ms` }}
+              >
+                <div className="flex items-center justify-between gap-4 px-4 py-3">
+                  <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_auto_auto] items-center gap-4 md:grid-cols-[2fr_auto_120px_100px]">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-text-heading">
+                        {s.quiz.title}
+                      </div>
+                      <div className="mt-1 text-xs text-text-muted">
+                        {s.status === 'active' && 'Đang diễn ra'}
+                        {s.status === 'ended' && 'Đã kết thúc'}
+                        {s.status === 'lobby' && 'Chờ bắt đầu'}
+                        {' '}
+                        ·
+                        {' '}
+                        {formatDate(s.createdAt)}
+                      </div>
+                    </div>
+                    <Badge
+                      variant={s.status === 'active' ? 'success' : (s.status === 'ended' ? 'neutral' : 'info')}
+                      className="text-xs"
+                    >
+                      {s.status}
+                    </Badge>
+                    <div className="text-xs text-text-muted">
+                      <span>-</span>
+                    </div>
+                    <div className="text-xs text-text-muted">
+                      <span>-</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-text-muted">→</span>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <Badge
-                  variant={s.status === 'active' ? 'success' : (s.status === 'ended' ? 'neutral' : 'info')}
-                  className="text-xs"
-                >
-                  {s.status}
-                </Badge>
-                {s.status === 'active'
-                  ? (
-                      <Link href={`/session/${s.id}`}>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          className="bg-indigo-500 hover:bg-indigo-600 hover:scale-105"
-                        >
-                          Join →
-                        </Button>
-                      </Link>
-                    )
-                  : (
-                      <Link href={`/session/${s.id}`}>
-                        <Button variant="ghost" size="sm" className="hover:scale-105">
-                          Xem
-                        </Button>
-                      </Link>
-                    )}
-              </div>
-            </div>
+            </Link>
           );
         }
 
@@ -115,43 +108,55 @@ export function SessionsList(props: SessionsListProps) {
         return (
           <div
             key={s.id}
-            className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-border-strong"
+            className="rounded-md border border-border-subtle bg-bg-section transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-primary/30"
             style={{ animationDelay: `${idx * 30}ms` }}
           >
-            <Link href={`/dashboard/sessions/${s.id}/teacher`} className="min-w-0 flex-1">
-              <div className="text-sm font-medium text-text-heading">
-                {s.quiz.title}
-              </div>
-              <div className="mt-1 text-xs text-text-muted">
-                {s.attemptCount}
-                {' '}
-                attempts
-                {' '}
-                ·
-                {' '}
-                {formatDate(s.createdAt)}
-              </div>
-            </Link>
-            <div className="flex items-center gap-3">
-              <Badge
-                variant={s.status === 'active' ? 'success' : (s.status === 'ended' ? 'neutral' : 'info')}
-                className="text-xs"
-              >
-                {s.status}
-              </Badge>
-              {(s.status === 'lobby' || s.status === 'ended') && (
-                <Link
-                  href={`/dashboard/sessions/${s.id}/questions`}
-                  onClick={e => e.stopPropagation()}
+            <div className="flex items-center justify-between gap-4 px-4 py-3">
+              <Link href={`/dashboard/sessions/${s.id}/teacher`} className="grid min-w-0 flex-1 grid-cols-[1fr_auto_auto_auto] items-center gap-4 md:grid-cols-[2fr_auto_120px_100px]">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium text-text-heading">
+                    {s.quiz.title}
+                  </div>
+                  <div className="mt-1 text-xs text-text-muted">
+                    {s.attemptCount}
+                    {' '}
+                    attempts
+                    {' '}
+                    ·
+                    {' '}
+                    {formatDate(s.createdAt)}
+                  </div>
+                </div>
+                <Badge
+                  variant={s.status === 'active' ? 'success' : (s.status === 'ended' ? 'neutral' : 'info')}
+                  className="text-xs"
                 >
-                  <Button variant="ghost" size="sm" className="hover:scale-105">
-                    View Questions
-                  </Button>
-                </Link>
-              )}
-              <Link href={`/dashboard/sessions/${s.id}/teacher`}>
-                <span className="text-xs text-text-muted">→</span>
+                  {s.status}
+                </Badge>
+                <div className="text-xs text-text-muted">
+                  {s.status === 'lobby' || s.status === 'ended' ? '' : <span className="font-mono">-</span>}
+                </div>
+                <div className="text-xs text-text-muted">
+                  <span>-</span>
+                </div>
               </Link>
+              <div className="flex items-center gap-2">
+                {(s.status === 'lobby' || s.status === 'ended') && (
+                  <Link
+                    href={`/dashboard/sessions/${s.id}/questions`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
+                    <Button variant="ghost" size="sm" className="hover:scale-105">
+                      View Questions
+                    </Button>
+                  </Link>
+                )}
+                <Link href={`/dashboard/sessions/${s.id}/teacher`}>
+                  <span className="text-xs text-text-muted">→</span>
+                </Link>
+              </div>
             </div>
           </div>
         );

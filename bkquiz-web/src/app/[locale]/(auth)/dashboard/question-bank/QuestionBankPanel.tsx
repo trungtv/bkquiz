@@ -336,7 +336,7 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
 
         {busy && sorted.length === 0
           ? (
-              <div className="mt-4 space-y-2">
+              <div className="mt-4 space-y-3">
                 <Skeleton className="h-16" />
                 <Skeleton className="h-16" />
               </div>
@@ -353,7 +353,7 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
                 </div>
               )
             : (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-3">
                   {sorted.map((p, idx) => (
                     <Link key={p.id} href={`/dashboard/question-bank/${p.id}`}>
                       <div

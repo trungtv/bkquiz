@@ -301,7 +301,7 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
               </div>
             )
           : (
-              <div className="mt-4 space-y-2">
+              <div className="mt-4 space-y-3">
                 {quizzes.map((q, idx) => (
                   <Link key={q.id} href={`/dashboard/quizzes/${q.id}`}>
                     <div

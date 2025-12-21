@@ -492,7 +492,7 @@ export function QuizRulesPanel(props: { quizId: string; userId: string | null })
               </div>
             )
           : (
-              <div className="mt-4 space-y-2">
+              <div className="mt-4 space-y-3">
                 {rules.map((r) => {
                   const ruleMode: 'same' | 'variant' = (r.commonCount ?? 0) > 0 || (r.variantCount ?? 0) > 0 ? 'variant' : 'same';
                   const questionCount = ruleMode === 'same' ? (r.count ?? 0) : ((r.commonCount ?? 0) + (r.variantCount ?? 0));

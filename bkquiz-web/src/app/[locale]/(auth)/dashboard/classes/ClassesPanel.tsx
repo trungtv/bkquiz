@@ -373,7 +373,7 @@ export function ClassesPanel(props: ClassesPanelProps) {
               </div>
             )
           : (
-              <div className="mt-4 space-y-2">
+              <div className="mt-4 space-y-3">
                 {classes.map((c, idx) => (
                   <Link key={c.id} href={`/dashboard/classes/${c.id}`}>
                     <div

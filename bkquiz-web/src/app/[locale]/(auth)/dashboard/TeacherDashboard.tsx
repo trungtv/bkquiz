@@ -203,7 +203,7 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
                   </div>
                 )
               : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {recentClasses.map((c, idx) => (
                       <Link key={c.id} href={`/dashboard/classes/${c.id}`}>
                         <div
