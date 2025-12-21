@@ -224,7 +224,7 @@ model QuizSession {
   totpSecret        String
   totpStepSeconds   Int                       @default(45)
   createdAt         DateTime                  @default(now())
-  updatedAt         DateTime
+  updatedAt         DateTime                  @updatedAt
   classroomId       String
   attempts          Attempt[]
   classroom         Classroom                 @relation(fields: [classroomId], references: [id], onDelete: Cascade)
