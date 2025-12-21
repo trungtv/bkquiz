@@ -56,7 +56,7 @@ export async function buildSessionSnapshotIfNeeded(sessionId: string) {
     where: { id: sessionId },
     select: {
       id: true,
-      quiz: {
+      Quiz: {
         select: {
           id: true,
           settings: true,
@@ -82,12 +82,12 @@ export async function buildSessionSnapshotIfNeeded(sessionId: string) {
   // Build same-set/variant-set by rules: for each tag, select N questions into session pool (snapshot)
   const pickedQuestionIds: string[] = [];
   const perRule: Array<{ tagId: string; tagNormalizedName: string; requested: number; picked: number; poolSize: number }> = [];
-  const settings = (session.quiz.settings ?? {}) as QuizSettings;
+  const settings = (session.Quiz.settings ?? {}) as QuizSettings;
   const variant = (settings.variant ?? {}) as VariantSettings;
   const defaultExtraPercent = typeof variant.defaultExtraPercent === 'number' ? variant.defaultExtraPercent : 0.2;
   const perTagExtraPercent = variant.perTagExtraPercent ?? {};
 
-  for (const rule of session.quiz.rules) {
+  for (const rule of session.Quiz.rules) {
     const filters = (rule.filters ?? {}) as RuleFilters;
     const poolIds = uniq(filters.poolIds ?? []);
 
@@ -194,7 +194,7 @@ export async function buildSessionSnapshotIfNeeded(sessionId: string) {
   // Variant-set common set (session-level): for each tag, pick commonCount questions deterministically
   // so all students share the same "common" part.
   const commonByTag = new Map<string, number>();
-  for (const rule of session.quiz.rules) {
+  for (const rule of session.Quiz.rules) {
     const c = rule.commonCount ?? 0;
     if (c > 0) {
       commonByTag.set(rule.tag.id, Math.max(commonByTag.get(rule.tag.id) ?? 0, c));

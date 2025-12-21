@@ -20,7 +20,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ sessionId: stri
       id: true,
       totpSecret: true,
       totpStepSeconds: true,
-      quiz: { select: { createdByTeacherId: true } },
+      Quiz: { select: { createdByTeacherId: true } },
     },
   });
 
@@ -29,7 +29,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ sessionId: stri
   }
 
   // Chỉ teacher sở hữu quiz mới được xem token
-  if (session.quiz.createdByTeacherId !== userId) {
+  if (session.Quiz.createdByTeacherId !== userId) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 

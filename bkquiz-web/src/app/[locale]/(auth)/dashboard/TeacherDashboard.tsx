@@ -19,14 +19,14 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
   const activeSessions = await prisma.quizSession.findMany({
     where: {
       status: 'active',
-      quiz: { createdByTeacherId: userId },
+      Quiz: { createdByTeacherId: userId },
     },
     orderBy: { startedAt: 'desc' },
     take: 5,
     select: {
       id: true,
       startedAt: true,
-      quiz: {
+      Quiz: {
         select: {
           id: true,
           title: true,
@@ -243,7 +243,7 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
                         style={{ animationDelay: `${idx * 50}ms` }}
                       >
                         <div className="text-sm font-medium text-text-heading truncate">
-                          {session.quiz.title}
+                          {session.Quiz.title}
                         </div>
                         <div className="mt-1 flex items-center justify-between text-xs text-text-muted">
                           <span>

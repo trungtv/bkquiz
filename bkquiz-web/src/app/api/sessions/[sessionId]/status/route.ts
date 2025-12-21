@@ -12,7 +12,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
       startedAt: true,
       endedAt: true,
       totpStepSeconds: true,
-      quiz: {
+      Quiz: {
         select: {
           id: true,
           title: true,
@@ -31,7 +31,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
     startedAt: session.startedAt,
     endedAt: session.endedAt,
     totpStepSeconds: session.totpStepSeconds,
-    quiz: session.quiz,
+    quiz: session.Quiz,
   });
 }
 // EOF

@@ -8,7 +8,7 @@ export async function POST(_: Request, ctx: { params: Promise<{ sessionId: strin
 
   const session = await prisma.quizSession.findUnique({
     where: { id: sessionId },
-    select: { id: true, quiz: { select: { createdByTeacherId: true } } },
+    select: { id: true, Quiz: { select: { createdByTeacherId: true } } },
   });
 
   if (!session) {
@@ -16,7 +16,7 @@ export async function POST(_: Request, ctx: { params: Promise<{ sessionId: strin
   }
 
   // Chỉ teacher sở hữu quiz mới được end session
-  if (session.quiz.createdByTeacherId !== userId) {
+  if (session.Quiz.createdByTeacherId !== userId) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 

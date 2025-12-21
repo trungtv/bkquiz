@@ -22,7 +22,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
         select: {
           id: true,
           status: true,
-          quiz: { select: { title: true } },
+          Quiz: { select: { title: true } },
         },
       },
     },

@@ -53,7 +53,7 @@ export default async function Dashboard() {
       ? prisma.quizSession.count({
           where: {
             status: 'active',
-            quiz: { createdByTeacherId: userId },
+            Quiz: { createdByTeacherId: userId },
           },
         })
       : Promise.resolve(0),

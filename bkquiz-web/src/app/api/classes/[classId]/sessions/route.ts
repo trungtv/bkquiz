@@ -28,7 +28,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
       startedAt: true,
       endedAt: true,
       createdAt: true,
-      quiz: {
+      Quiz: {
         select: {
           id: true,
           title: true,
@@ -50,7 +50,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
       startedAt: s.startedAt,
       endedAt: s.endedAt,
       createdAt: s.createdAt,
-      quiz: s.quiz,
+      quiz: s.Quiz,
       attemptCount: s._count.attempts,
     })),
   });

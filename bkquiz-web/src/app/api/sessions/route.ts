@@ -18,7 +18,7 @@ export async function GET(_req: Request) {
     // Teacher: lấy tất cả sessions của quizzes mà teacher sở hữu
     const sessions = await prisma.quizSession.findMany({
       where: {
-        quiz: { createdByTeacherId: userId },
+        Quiz: { createdByTeacherId: userId },
       },
       orderBy: { createdAt: 'desc' },
       select: {
@@ -27,7 +27,7 @@ export async function GET(_req: Request) {
         startedAt: true,
         endedAt: true,
         createdAt: true,
-        quiz: {
+        Quiz: {
           select: {
             id: true,
             title: true,
@@ -49,7 +49,7 @@ export async function GET(_req: Request) {
         startedAt: s.startedAt,
         endedAt: s.endedAt,
         createdAt: s.createdAt,
-        quiz: s.quiz,
+        quiz: s.Quiz,
         attemptCount: s._count.attempts,
       })),
     });
@@ -85,7 +85,7 @@ export async function GET(_req: Request) {
       startedAt: true,
       endedAt: true,
       createdAt: true,
-      quiz: {
+      Quiz: {
         select: {
           id: true,
           title: true,
@@ -120,7 +120,7 @@ export async function GET(_req: Request) {
       startedAt: s.startedAt,
       endedAt: s.endedAt,
       createdAt: s.createdAt,
-      quiz: s.quiz,
+      quiz: s.Quiz,
       attempt: attemptMap.get(s.id)
         ? {
             id: attemptMap.get(s.id)!.id,
