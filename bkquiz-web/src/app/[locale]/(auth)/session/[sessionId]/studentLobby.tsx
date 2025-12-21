@@ -120,7 +120,7 @@ export function Lobby(props: { sessionId: string }) {
       return null;
     }
     return formatDuration(data.createdAt);
-  }, [data?.status, data?.createdAt]);
+  }, [data]);
 
   if (error) {
     return (
