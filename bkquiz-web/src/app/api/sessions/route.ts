@@ -10,7 +10,7 @@ const CreateSessionSchema = z.object({
   totpStepSeconds: z.number().int().min(15).max(120).optional(),
 });
 
-export async function GET(req: Request) {
+export async function GET(_req: Request) {
   const { userId, devRole } = await requireUser();
   const role = await getUserRole(userId, devRole as 'teacher' | 'student' | undefined);
 

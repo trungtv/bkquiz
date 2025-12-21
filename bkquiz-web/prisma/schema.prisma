@@ -7,9 +7,349 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum SystemRole {
-  teacher
-  student
+model Account {
+  id                String  @id
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Answer {
+  attemptId               String
+  sessionQuestionId       String
+  selected                Json                    @default("[]")
+  updatedAt               DateTime
+  Attempt                 Attempt                 @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  SessionQuestionSnapshot SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
+
+  @@id([attemptId, sessionQuestionId])
+  @@index([attemptId])
+}
+
+model Attempt {
+  id              String            @id
+  sessionId       String
+  userId          String
+  status          AttemptStatus     @default(active)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  nextDueAt       DateTime?
+  lastVerifiedAt  DateTime?
+  failedCount     Int               @default(0)
+  cooldownUntil   DateTime?
+  lockedUntil     DateTime?
+  submittedAt     DateTime?
+  score           Float?
+  Answer          Answer[]
+  QuizSession     QuizSession       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  User            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  AttemptQuestion AttemptQuestion[]
+  CheckpointLog   CheckpointLog[]
+
+  @@unique([sessionId, userId])
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model AttemptQuestion {
+  attemptId               String
+  sessionQuestionId       String
+  order                   Int
+  Attempt                 Attempt                 @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  SessionQuestionSnapshot SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
+
+  @@id([attemptId, sessionQuestionId])
+  @@unique([attemptId, order])
+  @@index([attemptId])
+}
+
+model CheckpointLog {
+  id           String              @id
+  attemptId    String
+  type         CheckpointEventType
+  dueAt        DateTime?
+  ok           Boolean?
+  enteredToken String?
+  createdAt    DateTime            @default(now())
+  Attempt      Attempt             @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId, createdAt])
+}
+
+model ClassMembership {
+  classroomId String
+  userId      String
+  roleInClass ClassroomRole    @default(student)
+  status      MembershipStatus @default(active)
+  joinedAt    DateTime         @default(now())
+  Classroom   Classroom        @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  User        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([classroomId, userId])
+  @@index([classroomId])
+  @@index([userId])
+}
+
+model Classroom {
+  id              String            @id
+  name            String
+  classCode       String            @unique
+  ownerTeacherId  String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  ClassMembership ClassMembership[]
+  User            User              @relation(fields: [ownerTeacherId], references: [id])
+  QuizSession     QuizSession[]
+}
+
+model Option {
+  id         String    @id
+  questionId String
+  content    String
+  isCorrect  Boolean   @default(false)
+  order      Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime
+  deletedAt  DateTime?
+  Question   Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+model Question {
+  id                 String        @id
+  poolId             String
+  type               QuestionType
+  prompt             String
+  createdByTeacherId String
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime
+  deletedAt          DateTime?
+  Option             Option[]
+  User               User          @relation(fields: [createdByTeacherId], references: [id])
+  QuestionPool       QuestionPool  @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  QuestionTag        QuestionTag[]
+
+  @@index([deletedAt])
+  @@index([poolId])
+}
+
+model QuestionPool {
+  id                String              @id
+  name              String
+  visibility        PoolVisibility      @default(private)
+  ownerTeacherId    String
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  Question          Question[]
+  User              User                @relation(fields: [ownerTeacherId], references: [id])
+  QuestionPoolShare QuestionPoolShare[]
+
+  @@index([ownerTeacherId])
+}
+
+model QuestionPoolShare {
+  poolId              String
+  sharedWithTeacherId String
+  permission          PoolSharePermission
+  createdAt           DateTime            @default(now())
+  QuestionPool        QuestionPool        @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  User                User                @relation(fields: [sharedWithTeacherId], references: [id], onDelete: Cascade)
+
+  @@id([poolId, sharedWithTeacherId])
+  @@index([sharedWithTeacherId])
+}
+
+model QuestionTag {
+  questionId String
+  tagId      String
+  Question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  Tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, tagId])
+  @@index([tagId, questionId])
+}
+
+model Quiz {
+  id                 String        @id
+  title              String
+  createdByTeacherId String
+  settings           Json          @default("{}")
+  status             QuizStatus    @default(draft)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime
+  User               User          @relation(fields: [createdByTeacherId], references: [id])
+  QuizRule           QuizRule[]
+  QuizSession        QuizSession[]
+
+  @@index([createdByTeacherId])
+}
+
+model QuizRule {
+  id           String   @id
+  quizId       String
+  tagId        String
+  count        Int?
+  commonCount  Int?
+  variantCount Int?
+  extraPercent Float?
+  filters      Json     @default("{}")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  Quiz         Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  Tag          Tag      @relation(fields: [tagId], references: [id])
+
+  @@index([quizId])
+  @@index([tagId])
+}
+
+model QuizSession {
+  id                      String                    @id
+  quizId                  String
+  status                  QuizSessionStatus         @default(lobby)
+  startedAt               DateTime?
+  endedAt                 DateTime?
+  totpSecret              String
+  totpStepSeconds         Int                       @default(45)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime
+  classroomId             String
+  Attempt                 Attempt[]
+  Classroom               Classroom                 @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  Quiz                    Quiz                      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  SessionCommonQuestion   SessionCommonQuestion[]
+  SessionQuestionSnapshot SessionQuestionSnapshot[]
+
+  @@index([classroomId])
+  @@index([quizId])
+}
+
+model Session {
+  id           String   @id
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model SessionCommonQuestion {
+  sessionId               String
+  tagId                   String
+  sessionQuestionId       String
+  order                   Int
+  QuizSession             QuizSession             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  SessionQuestionSnapshot SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
+  Tag                     Tag                     @relation(fields: [tagId], references: [id])
+
+  @@id([sessionId, tagId, sessionQuestionId])
+  @@unique([sessionId, tagId, order])
+  @@index([sessionId, tagId])
+}
+
+model SessionOptionSnapshot {
+  id                      String                  @id
+  sessionQuestionId       String
+  order                   Int
+  content                 String
+  isCorrect               Boolean                 @default(false)
+  SessionQuestionSnapshot SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionQuestionId, order])
+}
+
+model SessionQuestionSnapshot {
+  id                    String                  @id
+  sessionId             String
+  sourceQuestionId      String
+  tagId                 String?
+  type                  QuestionType
+  prompt                String
+  order                 Int
+  createdAt             DateTime                @default(now())
+  Answer                Answer[]
+  AttemptQuestion       AttemptQuestion[]
+  SessionCommonQuestion SessionCommonQuestion[]
+  SessionOptionSnapshot SessionOptionSnapshot[]
+  QuizSession           QuizSession             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  Tag                   Tag?                    @relation(fields: [tagId], references: [id], onDelete: Restrict)
+
+  @@unique([sessionId, order])
+  @@index([sessionId])
+  @@index([sessionId, tagId])
+}
+
+model Tag {
+  id                      String                    @id
+  name                    String
+  normalizedName          String                    @unique
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime
+  QuestionTag             QuestionTag[]
+  QuizRule                QuizRule[]
+  SessionCommonQuestion   SessionCommonQuestion[]
+  SessionQuestionSnapshot SessionQuestionSnapshot[]
+}
+
+model User {
+  id                String              @id
+  name              String?
+  email             String?             @unique
+  image             String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  Account           Account[]
+  Attempt           Attempt[]
+  ClassMembership   ClassMembership[]
+  Classroom         Classroom[]
+  Question          Question[]
+  QuestionPool      QuestionPool[]
+  QuestionPoolShare QuestionPoolShare[]
+  Quiz              Quiz[]
+  Session           Session[]
+  UserRole          UserRole[]
+}
+
+model UserRole {
+  userId String
+  role   SystemRole
+  User   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, role])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum AttemptStatus {
+  active
+  submitted
+  locked
+}
+
+enum CheckpointEventType {
+  scheduled
+  verify_ok
+  verify_fail
+  locked
 }
 
 enum ClassroomRole {
@@ -24,26 +364,20 @@ enum MembershipStatus {
   banned
 }
 
-enum PoolVisibility {
-  private
-  shared
-}
-
 enum PoolSharePermission {
   view
   use
   edit
 }
 
+enum PoolVisibility {
+  private
+  shared
+}
+
 enum QuestionType {
   mcq_single
   mcq_multi
-}
-
-enum QuizStatus {
-  draft
-  published
-  archived
 }
 
 enum QuizSessionStatus {
@@ -52,10 +386,10 @@ enum QuizSessionStatus {
   ended
 }
 
-enum AttemptStatus {
-  active
-  submitted
-  locked
+enum QuizStatus {
+  draft
+  published
+  archived
 }
 
 enum ScoringMode {
@@ -64,374 +398,7 @@ enum ScoringMode {
   penalty
 }
 
-enum CheckpointEventType {
-  scheduled
-  verify_ok
-  verify_fail
-  locked
-}
-
-model User {
-  id        String   @id @default(cuid())
-  name      String?
-  email     String?  @unique
-  image     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  accounts Account[]
-  sessions Session[]
-  roles    UserRole[]
-
-  ownedClassrooms Classroom[]       @relation("ClassroomOwner")
-  memberships     ClassMembership[]
-
-  ownedQuestionPools QuestionPool[]      @relation("QuestionPoolOwner")
-  createdQuestions   Question[]          @relation("QuestionCreatedBy")
-  poolSharesReceived QuestionPoolShare[] @relation("PoolShareReceiver")
-
-  createdQuizzes Quiz[]    @relation("QuizCreatedBy")
-  attempts       Attempt[]
-}
-
-model UserRole {
-  userId String
-  role   SystemRole
-  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([userId, role])
-}
-
-model Classroom {
-  id             String   @id @default(cuid())
-  name           String
-  classCode      String   @unique
-  ownerTeacherId String
-  ownerTeacher   User     @relation("ClassroomOwner", fields: [ownerTeacherId], references: [id], onDelete: Restrict)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  memberships ClassMembership[]
-  sessions    QuizSession[]
-}
-
-model ClassMembership {
-  classroomId String
-  userId      String
-  roleInClass ClassroomRole    @default(student)
-  status      MembershipStatus @default(active)
-  joinedAt    DateTime         @default(now())
-
-  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([classroomId, userId])
-  @@index([userId])
-  @@index([classroomId])
-}
-
-model QuestionPool {
-  id             String         @id @default(cuid())
-  name           String
-  visibility     PoolVisibility @default(private)
-  ownerTeacherId String
-  ownerTeacher   User           @relation("QuestionPoolOwner", fields: [ownerTeacherId], references: [id], onDelete: Restrict)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-
-  questions Question[]
-  shares    QuestionPoolShare[]
-
-  @@index([ownerTeacherId])
-}
-
-model QuestionPoolShare {
-  poolId              String
-  sharedWithTeacherId String
-  permission          PoolSharePermission
-  createdAt           DateTime            @default(now())
-
-  pool              QuestionPool @relation(fields: [poolId], references: [id], onDelete: Cascade)
-  sharedWithTeacher User         @relation("PoolShareReceiver", fields: [sharedWithTeacherId], references: [id], onDelete: Cascade)
-
-  @@id([poolId, sharedWithTeacherId])
-  @@index([sharedWithTeacherId])
-}
-
-model Tag {
-  id             String   @id @default(cuid())
-  name           String
-  normalizedName String   @unique
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  questionTags             QuestionTag[]
-  quizRules                QuizRule[]
-  sessionQuestionSnapshots SessionQuestionSnapshot[]
-  sessionCommonQuestions   SessionCommonQuestion[]
-}
-
-model Question {
-  id                 String       @id @default(cuid())
-  poolId             String
-  type               QuestionType
-  prompt             String
-  createdByTeacherId String
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-  deletedAt          DateTime?
-
-  pool      QuestionPool  @relation(fields: [poolId], references: [id], onDelete: Cascade)
-  createdBy User          @relation("QuestionCreatedBy", fields: [createdByTeacherId], references: [id], onDelete: Restrict)
-  options   Option[]
-  tags      QuestionTag[]
-
-  @@index([poolId])
-  @@index([deletedAt])
-}
-
-model Option {
-  id         String    @id @default(cuid())
-  questionId String
-  content    String
-  isCorrect  Boolean   @default(false)
-  order      Int       @default(0)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  deletedAt  DateTime?
-
-  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-
-  @@index([questionId])
-}
-
-model QuestionTag {
-  questionId String
-  tagId      String
-
-  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@id([questionId, tagId])
-  @@index([tagId, questionId])
-}
-
-model Quiz {
-  id                 String     @id @default(cuid())
-  title              String
-  createdByTeacherId String
-  settings           Json       @default("{}")
-  status             QuizStatus @default(draft)
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
-
-  createdBy User      @relation("QuizCreatedBy", fields: [createdByTeacherId], references: [id], onDelete: Restrict)
-
-  sessions QuizSession[]
-  rules    QuizRule[]
-
-  @@index([createdByTeacherId])
-}
-
-model QuizSession {
-  id              String            @id @default(cuid())
-  quizId          String
-  classroomId     String
-  status          QuizSessionStatus @default(lobby)
-  startedAt       DateTime?
-  endedAt         DateTime?
-  totpSecret      String
-  totpStepSeconds Int               @default(45)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-
-  quiz        Quiz                      @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  classroom   Classroom                 @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  attempts          Attempt[]
-  questionSnapshots SessionQuestionSnapshot[]
-  commonQuestions   SessionCommonQuestion[]
-
-  @@index([quizId])
-  @@index([classroomId])
-}
-
-model Attempt {
-  id        String        @id @default(cuid())
-  sessionId String
-  userId    String
-  status    AttemptStatus @default(active)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-
-  nextDueAt      DateTime?
-  lastVerifiedAt DateTime?
-  failedCount    Int       @default(0)
-  cooldownUntil  DateTime?
-  lockedUntil    DateTime?
-  submittedAt    DateTime?
-  score          Float?
-
-  session QuizSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  checkpointLogs CheckpointLog[]
-  answers        Answer[]
-  questions      AttemptQuestion[]
-
-  @@unique([sessionId, userId])
-  @@index([userId])
-  @@index([sessionId])
-}
-
-model QuizRule {
-  id           String   @id @default(cuid())
-  quizId       String
-  tagId        String
-  // same-set
-  count        Int?
-  // variant-set
-  commonCount  Int?
-  variantCount Int?
-  extraPercent Float?
-  // MVP: poolIds: string[] trong filters.poolIds
-  filters      Json     @default("{}")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Restrict)
-
-  @@index([quizId])
-  @@index([tagId])
-}
-
-model AttemptQuestion {
-  attemptId         String
-  sessionQuestionId String
-  order             Int
-
-  attempt         Attempt                 @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  sessionQuestion SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
-
-  @@id([attemptId, sessionQuestionId])
-  @@unique([attemptId, order])
-  @@index([attemptId])
-}
-
-model SessionQuestionSnapshot {
-  id               String       @id @default(cuid())
-  sessionId        String
-  sourceQuestionId String
-  tagId            String?
-  type             QuestionType
-  prompt           String
-  order            Int
-  createdAt        DateTime     @default(now())
-
-  session          QuizSession             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  tag              Tag?                    @relation(fields: [tagId], references: [id], onDelete: Restrict)
-  options          SessionOptionSnapshot[]
-  answers          Answer[]
-  attemptQuestions AttemptQuestion[]
-  commonQuestions  SessionCommonQuestion[]
-
-  @@unique([sessionId, order])
-  @@index([sessionId])
-  @@index([sessionId, tagId])
-}
-
-model SessionCommonQuestion {
-  sessionId         String
-  tagId             String
-  sessionQuestionId String
-  order             Int
-
-  session         QuizSession             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  tag             Tag                     @relation(fields: [tagId], references: [id], onDelete: Restrict)
-  sessionQuestion SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
-
-  @@id([sessionId, tagId, sessionQuestionId])
-  @@unique([sessionId, tagId, order])
-  @@index([sessionId, tagId])
-}
-
-model SessionOptionSnapshot {
-  id                String  @id @default(cuid())
-  sessionQuestionId String
-  order             Int
-  content           String
-  isCorrect         Boolean @default(false)
-
-  sessionQuestion SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
-
-  @@unique([sessionQuestionId, order])
-}
-
-model Answer {
-  attemptId         String
-  sessionQuestionId String
-  selected          Json     @default("[]")
-  updatedAt         DateTime @updatedAt
-
-  attempt         Attempt                 @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  sessionQuestion SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
-
-  @@id([attemptId, sessionQuestionId])
-  @@index([attemptId])
-}
-
-model CheckpointLog {
-  id           String              @id @default(cuid())
-  attemptId    String
-  type         CheckpointEventType
-  dueAt        DateTime?
-  ok           Boolean?
-  enteredToken String?
-  createdAt    DateTime            @default(now())
-
-  attempt Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-
-  @@index([attemptId, createdAt])
-}
-
-// -----------------------------
-// Auth.js / NextAuth models
-// -----------------------------
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@index([userId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
+enum SystemRole {
+  teacher
+  student
 }
