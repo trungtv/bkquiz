@@ -113,36 +113,47 @@ export function SessionsList(props: SessionsListProps) {
 
         // Teacher view
         return (
-          <Link key={s.id} href={`/dashboard/sessions/${s.id}/teacher`}>
-            <div
-              className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-border-strong"
-              style={{ animationDelay: `${idx * 30}ms` }}
-            >
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-text-heading">
-                  {s.quiz.title}
-                </div>
-                <div className="mt-1 text-xs text-text-muted">
-                  {s.attemptCount}
-                  {' '}
-                  attempts
-                  {' '}
-                  ·
-                  {' '}
-                  {formatDate(s.createdAt)}
-                </div>
+          <div
+            key={s.id}
+            className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-border-strong"
+            style={{ animationDelay: `${idx * 30}ms` }}
+          >
+            <Link href={`/dashboard/sessions/${s.id}/teacher`} className="min-w-0 flex-1">
+              <div className="text-sm font-medium text-text-heading">
+                {s.quiz.title}
               </div>
-              <div className="flex items-center gap-3">
-                <Badge
-                  variant={s.status === 'active' ? 'success' : (s.status === 'ended' ? 'neutral' : 'info')}
-                  className="text-xs"
+              <div className="mt-1 text-xs text-text-muted">
+                {s.attemptCount}
+                {' '}
+                attempts
+                {' '}
+                ·
+                {' '}
+                {formatDate(s.createdAt)}
+              </div>
+            </Link>
+            <div className="flex items-center gap-3">
+              <Badge
+                variant={s.status === 'active' ? 'success' : (s.status === 'ended' ? 'neutral' : 'info')}
+                className="text-xs"
+              >
+                {s.status}
+              </Badge>
+              {(s.status === 'lobby' || s.status === 'ended') && (
+                <Link
+                  href={`/dashboard/sessions/${s.id}/questions`}
+                  onClick={e => e.stopPropagation()}
                 >
-                  {s.status}
-                </Badge>
+                  <Button variant="ghost" size="sm" className="hover:scale-105">
+                    View Questions
+                  </Button>
+                </Link>
+              )}
+              <Link href={`/dashboard/sessions/${s.id}/teacher`}>
                 <span className="text-xs text-text-muted">→</span>
-              </div>
+              </Link>
             </div>
-          </Link>
+          </div>
         );
       })}
       {isStudent && sessions.length > 0 && (
