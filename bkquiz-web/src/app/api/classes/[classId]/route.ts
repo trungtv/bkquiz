@@ -12,7 +12,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
       roleInClass: true,
       status: true,
       joinedAt: true,
-      Classroom: {
+      classroom: {
         select: {
           id: true,
           name: true,
@@ -29,7 +29,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
           },
           _count: {
             select: {
-              ClassMembership: true,
+              memberships: true,
             },
           },
         },

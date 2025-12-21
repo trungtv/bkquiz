@@ -94,8 +94,8 @@ model ClassMembership {
   roleInClass ClassroomRole    @default(student)
   status      MembershipStatus @default(active)
   joinedAt    DateTime         @default(now())
-  Classroom   Classroom        @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  User        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classroom   Classroom        @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([classroomId, userId])
   @@index([classroomId])
