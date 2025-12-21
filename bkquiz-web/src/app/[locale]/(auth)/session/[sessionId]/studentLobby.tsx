@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { getI18nPath } from '@/utils/Helpers';
 
 type SessionStatus = {
   id: string;
@@ -17,6 +19,7 @@ type SessionStatus = {
 
 export function Lobby(props: { sessionId: string }) {
   const router = useRouter();
+  const locale = useLocale();
   const [data, setData] = useState<SessionStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -66,7 +69,7 @@ export function Lobby(props: { sessionId: string }) {
         setError(json.error ?? 'JOIN_FAILED');
         return;
       }
-      router.push(`/attempt/${json.attemptId}`);
+      router.push(getI18nPath(`/attempt/${json.attemptId}`, locale));
     } catch (err) {
       setError(`JOIN_FAILED: ${err instanceof Error ? err.message : String(err)}`);
       console.error('Error joining session:', err);

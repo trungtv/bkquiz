@@ -1,7 +1,7 @@
 import { AttemptClient } from './studentAttempt';
 
 export default async function AttemptPage(props: {
-  params: Promise<{ attemptId: string }>;
+  params: Promise<{ locale: string; attemptId: string }>;
 }) {
   const { attemptId } = await props.params;
   return (
@@ -11,3 +11,4 @@ export default async function AttemptPage(props: {
   );
 }
 // EOF
+
