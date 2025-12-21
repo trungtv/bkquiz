@@ -73,10 +73,11 @@ export async function PUT(req: Request, ctx: { params: Promise<{ attemptId: stri
     return NextResponse.json({ error: 'MCQ_SINGLE_ONLY_ONE' }, { status: 400 });
   }
 
+  const now = new Date();
   await prisma.answer.upsert({
     where: { attemptId_sessionQuestionId: { attemptId, sessionQuestionId: body.sessionQuestionId } },
-    update: { selected: unique as unknown as any },
-    create: { attemptId, sessionQuestionId: body.sessionQuestionId, selected: unique as unknown as any },
+    update: { selected: unique as unknown as any, updatedAt: now },
+    create: { attemptId, sessionQuestionId: body.sessionQuestionId, selected: unique as unknown as any, updatedAt: now },
     select: { attemptId: true },
   });
 

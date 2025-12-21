@@ -30,7 +30,7 @@ model Answer {
   attemptId         String
   sessionQuestionId String
   selected          Json                    @default("[]")
-  updatedAt         DateTime
+  updatedAt         DateTime                @updatedAt
   attempt           Attempt                 @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   sessionQuestion   SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
 
