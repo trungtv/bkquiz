@@ -25,7 +25,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ poolId: string }>
     select: {
       permission: true,
       createdAt: true,
-      sharedWithTeacher: { select: { id: true, email: true, name: true } },
+      sharedWith: { select: { id: true, email: true, name: true } },
     },
   });
 
@@ -58,7 +58,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ poolId: string
     select: {
       permission: true,
       createdAt: true,
-      sharedWithTeacher: { select: { id: true, email: true, name: true } },
+      sharedWith: { select: { id: true, email: true, name: true } },
     },
   });
 

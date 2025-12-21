@@ -32,7 +32,7 @@ type Question = {
 type Share = {
   permission: 'view' | 'use' | 'edit';
   createdAt: string | Date;
-  sharedWithTeacher: { id: string; email: string | null; name: string | null };
+  sharedWith: { id: string; email: string | null; name: string | null };
 };
 
 type QuestionOption = {
@@ -953,19 +953,19 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
               <div className="space-y-2">
                 {shares.map(s => (
                   <div
-                    key={s.sharedWithTeacher.id}
+                    key={s.sharedWith.id}
                     className="flex items-center justify-between rounded-md border border-border-subtle bg-bg-section px-4 py-3"
                   >
                     <div>
                       <div className="text-sm font-medium text-text-heading">
-                        {s.sharedWithTeacher.name || s.sharedWithTeacher.email || '(no name)'}
+                        {s.sharedWith.name || s.sharedWith.email || '(no name)'}
                       </div>
                       <div className="mt-1 text-xs text-text-muted">
                         <Badge variant="neutral" className="text-xs">
                           {s.permission}
                         </Badge>
                         <span className="ml-2">
-                          {s.sharedWithTeacher.email}
+                          {s.sharedWith.email}
                         </span>
                         <span className="mx-2">·</span>
                         <span>
@@ -976,7 +976,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => unsharePool(s.sharedWithTeacher.email || '')}
+                      onClick={() => unsharePool(s.sharedWith.email || '')}
                       disabled={busy}
                     >
                       Gỡ share
