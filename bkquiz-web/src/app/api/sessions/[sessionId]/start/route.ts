@@ -31,7 +31,14 @@ export async function POST(_: Request, ctx: { params: Promise<{ sessionId: strin
     select: { id: true, status: true, startedAt: true, endedAt: true },
   });
 
-  const snapshot = await buildSessionSnapshotIfNeeded(sessionId);
-
-  return NextResponse.json({ ...updated, snapshot });
+  try {
+    const snapshot = await buildSessionSnapshotIfNeeded(sessionId);
+    return NextResponse.json({ ...updated, snapshot });
+  } catch (err) {
+    console.error('Error building session snapshot:', err);
+    return NextResponse.json(
+      { error: 'SNAPSHOT_BUILD_FAILED', message: err instanceof Error ? err.message : String(err) },
+      { status: 500 },
+    );
+  }
 }

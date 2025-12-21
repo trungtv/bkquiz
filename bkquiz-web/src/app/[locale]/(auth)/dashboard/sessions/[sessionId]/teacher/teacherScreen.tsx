@@ -130,18 +130,43 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
 
   async function startSession() {
     setError(null);
-    const res = await fetch(`/api/sessions/${props.sessionId}/start`, { method: 'POST' });
-    const json = await res.json() as { error?: string; snapshot?: any };
-    if (!res.ok) {
-      setError(json.error ?? 'START_FAILED');
-      return;
+    try {
+      const res = await fetch(`/api/sessions/${props.sessionId}/start`, { method: 'POST' });
+      if (!res.ok) {
+        const text = await res.text();
+        let json: { error?: string; snapshot?: any };
+        try {
+          json = JSON.parse(text);
+        } catch {
+          setError(`START_FAILED: ${res.status} ${res.statusText}`);
+          return;
+        }
+        setError(json.error ?? 'START_FAILED');
+        return;
+      }
+      const text = await res.text();
+      if (!text) {
+        setError('START_FAILED: Empty response');
+        return;
+      }
+      let json: { error?: string; snapshot?: any };
+      try {
+        json = JSON.parse(text);
+      } catch (err) {
+        setError(`START_FAILED: Invalid JSON response`);
+        console.error('Failed to parse response:', text, err);
+        return;
+      }
+      if (json.snapshot) {
+        setSnapshotInfo(json.snapshot);
+      }
+      await fetchStatus();
+      await fetchLogs();
+      await fetchScoreboard();
+    } catch (err) {
+      setError(`START_FAILED: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('Error starting session:', err);
     }
-    if (json.snapshot) {
-      setSnapshotInfo(json.snapshot);
-    }
-    await fetchStatus();
-    await fetchLogs();
-    await fetchScoreboard();
   }
 
   async function endSession() {
