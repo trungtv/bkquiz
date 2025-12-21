@@ -230,7 +230,7 @@ export function AttemptClient(props: { attemptId: string }) {
     localAnswersRef.current = store;
     await writeLocalAnswers(props.attemptId, store);
     setPendingCount(computePending(store));
-    setAnsweredCount(questions.filter(q => {
+    setAnsweredCount(questions.filter((q) => {
       const answer = store[q.id];
       return answer && answer.selected.length > 0;
     }).length);
@@ -341,9 +341,13 @@ export function AttemptClient(props: { attemptId: string }) {
   const progressPct = questions.length > 0 ? Math.round(((idx + 1) / questions.length) * 100) : 0;
 
   const getQuestionStatus = (questionId: string, questionIdx: number) => {
-    if (questionIdx === idx) return 'current';
+    if (questionIdx === idx) {
+      return 'current';
+    }
     const answer = localAnswersRef.current[questionId];
-    if (answer && answer.selected.length > 0) return 'answered';
+    if (answer && answer.selected.length > 0) {
+      return 'answered';
+    }
     return 'unanswered';
   };
 
@@ -655,7 +659,6 @@ export function AttemptClient(props: { attemptId: string }) {
                           void verify();
                         }
                       }}
-                      autoFocus
                     />
                   </label>
 
