@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 
@@ -15,6 +16,7 @@ type SessionStatus = {
 };
 
 export function Lobby(props: { sessionId: string }) {
+  const router = useRouter();
   const [data, setData] = useState<SessionStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -40,7 +42,7 @@ export function Lobby(props: { sessionId: string }) {
         setError(json.error ?? 'JOIN_FAILED');
         return;
       }
-      window.location.href = `/attempt/${json.attemptId}`;
+      router.push(`/attempt/${json.attemptId}`);
     } finally {
       setBusy(false);
     }
