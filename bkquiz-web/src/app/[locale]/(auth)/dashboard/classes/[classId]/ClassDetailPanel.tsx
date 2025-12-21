@@ -441,19 +441,16 @@ export function ClassDetailPanel(props: ClassDetailPanelProps) {
                     </div>
                   )
                 : sessions.map((s, idx) => {
-                    // Student: link to session lobby or attempt
-                    // Teacher: link to teacher screen
-                    const href = isStudent
-                      ? `/session/${s.id}`
-                      : `/dashboard/sessions/${s.id}/teacher`;
-
-                    return (
-                      <Link key={s.id} href={href}>
+                    // For students: show join button for active sessions, link to lobby for others
+                    // For teachers: link to teacher screen
+                    if (isStudent) {
+                      return (
                         <div
+                          key={s.id}
                           className={`flex items-center justify-between gap-4 rounded-md border bg-bg-section px-4 py-3 transition-all duration-200 hover:translate-x-1 hover:shadow-md ${
-                            isStudent
-                              ? 'border-indigo-500/30 hover:border-indigo-500/50'
-                              : 'border-border-subtle hover:border-border-strong'
+                            s.status === 'active'
+                              ? 'border-indigo-500/50 bg-indigo-500/5 hover:border-indigo-500/70'
+                              : 'border-indigo-500/30 hover:border-indigo-500/50'
                           }`}
                           style={{ animationDelay: `${idx * 30}ms` }}
                         >
@@ -462,21 +459,61 @@ export function ClassDetailPanel(props: ClassDetailPanelProps) {
                               {s.quiz.title}
                             </div>
                             <div className="mt-1 text-xs text-text-muted">
-                              {isStudent
-                                ? (
-                                    <>
-                                      {s.status === 'active' && 'Đang diễn ra'}
-                                      {s.status === 'ended' && 'Đã kết thúc'}
-                                      {s.status === 'lobby' && 'Chờ bắt đầu'}
-                                    </>
-                                  )
-                                : (
-                                    <>
-                                      {s.attemptCount}
-                                      {' '}
-                                      attempts
-                                    </>
-                                  )}
+                              {s.status === 'active' && 'Đang diễn ra'}
+                              {s.status === 'ended' && 'Đã kết thúc'}
+                              {s.status === 'lobby' && 'Chờ bắt đầu'}
+                              {' '}
+                              ·
+                              {' '}
+                              {formatDate(s.createdAt)}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge
+                              variant={s.status === 'active' ? 'success' : (s.status === 'ended' ? 'neutral' : 'info')}
+                              className="text-xs"
+                            >
+                              {s.status}
+                            </Badge>
+                            {s.status === 'active'
+                              ? (
+                                  <Link href={`/session/${s.id}`}>
+                                    <Button
+                                      variant="primary"
+                                      size="sm"
+                                      className="bg-indigo-500 hover:bg-indigo-600 hover:scale-105"
+                                    >
+                                      Join →
+                                    </Button>
+                                  </Link>
+                                )
+                              : (
+                                  <Link href={`/session/${s.id}`}>
+                                    <Button variant="ghost" size="sm" className="hover:scale-105">
+                                      Xem
+                                    </Button>
+                                  </Link>
+                                )}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Teacher view
+                    return (
+                      <Link key={s.id} href={`/dashboard/sessions/${s.id}/teacher`}>
+                        <div
+                          className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-border-strong"
+                          style={{ animationDelay: `${idx * 30}ms` }}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium text-text-heading">
+                              {s.quiz.title}
+                            </div>
+                            <div className="mt-1 text-xs text-text-muted">
+                              {s.attemptCount}
+                              {' '}
+                              attempts
                               {' '}
                               ·
                               {' '}
