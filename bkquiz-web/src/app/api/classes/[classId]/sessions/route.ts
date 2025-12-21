@@ -16,14 +16,10 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 
-  // TODO: QuizSession không có classroomId, nên không thể query trực tiếp
-  // Tạm thời: lấy tất cả sessions của teacher (owner của quiz)
-  // Cần thêm classroomId vào QuizSession schema để query chính xác
+  // Query sessions của class này
   const sessions = await prisma.quizSession.findMany({
     where: {
-      quiz: {
-        createdByTeacherId: userId,
-      },
+      classroomId: classId,
     },
     orderBy: { createdAt: 'desc' },
     select: {
@@ -46,10 +42,6 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
     },
     take: 50, // Limit để tránh quá nhiều data
   });
-
-  // Note: Vì không có classroomId trong QuizSession, không thể filter chính xác
-  // Tạm thời trả về tất cả sessions của teacher
-  // TODO: Thêm classroomId vào QuizSession schema
 
   return NextResponse.json({
     sessions: sessions.map(s => ({

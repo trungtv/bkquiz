@@ -112,6 +112,7 @@ model Classroom {
   updatedAt      DateTime @updatedAt
 
   memberships ClassMembership[]
+  sessions    QuizSession[]
 }
 
 model ClassMembership {
@@ -235,6 +236,7 @@ model Quiz {
 model QuizSession {
   id              String            @id @default(cuid())
   quizId          String
+  classroomId     String
   status          QuizSessionStatus @default(lobby)
   startedAt       DateTime?
   endedAt         DateTime?
@@ -243,12 +245,14 @@ model QuizSession {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
-  quiz              Quiz                      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  quiz        Quiz                      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  classroom   Classroom                 @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   attempts          Attempt[]
   questionSnapshots SessionQuestionSnapshot[]
   commonQuestions   SessionCommonQuestion[]
 
   @@index([quizId])
+  @@index([classroomId])
 }
 
 model Attempt {

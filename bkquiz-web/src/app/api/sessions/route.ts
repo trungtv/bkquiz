@@ -55,52 +55,81 @@ export async function GET(req: Request) {
     });
   }
 
-  // Student: lấy sessions mà student đã tham gia (có attempt)
-  // Note: Vì QuizSession không có classroomId, không thể query sessions từ classes
-  // Student nên xem sessions từ class detail page để có context rõ ràng
-  const attempts = await prisma.attempt.findMany({
-    where: { userId },
+  // Student: lấy sessions từ các classes mà student đang tham gia
+  // Bao gồm cả sessions chưa join và đã join
+  const memberships = await prisma.classMembership.findMany({
+    where: {
+      userId,
+      status: 'active',
+    },
+    select: {
+      classroomId: true,
+    },
+  });
+
+  const classroomIds = memberships.map(m => m.classroomId);
+
+  if (classroomIds.length === 0) {
+    return NextResponse.json({ sessions: [] });
+  }
+
+  // Lấy tất cả sessions từ các classes mà student đang tham gia
+  const sessions = await prisma.quizSession.findMany({
+    where: {
+      classroomId: { in: classroomIds },
+    },
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,
       status: true,
-      submittedAt: true,
-      score: true,
+      startedAt: true,
+      endedAt: true,
       createdAt: true,
-      session: {
+      quiz: {
         select: {
           id: true,
-          status: true,
-          startedAt: true,
-          endedAt: true,
-          createdAt: true,
-          quiz: {
-            select: {
-              id: true,
-              title: true,
-            },
-          },
+          title: true,
         },
       },
     },
     take: 50,
   });
 
+  // Lấy attempts của student cho các sessions này
+  const attempts = await prisma.attempt.findMany({
+    where: {
+      userId,
+      sessionId: { in: sessions.map(s => s.id) },
+    },
+    select: {
+      id: true,
+      sessionId: true,
+      status: true,
+      submittedAt: true,
+      score: true,
+      createdAt: true,
+    },
+  });
+
+  const attemptMap = new Map(attempts.map(a => [a.sessionId, a]));
+
   return NextResponse.json({
-    sessions: attempts.map(a => ({
-      id: a.session.id,
-      status: a.session.status,
-      startedAt: a.session.startedAt,
-      endedAt: a.session.endedAt,
-      createdAt: a.session.createdAt,
-      quiz: a.session.quiz,
-      attempt: {
-        id: a.id,
-        status: a.status,
-        submittedAt: a.submittedAt,
-        score: a.score,
-        createdAt: a.createdAt,
-      },
+    sessions: sessions.map(s => ({
+      id: s.id,
+      status: s.status,
+      startedAt: s.startedAt,
+      endedAt: s.endedAt,
+      createdAt: s.createdAt,
+      quiz: s.quiz,
+      attempt: attemptMap.get(s.id)
+        ? {
+            id: attemptMap.get(s.id)!.id,
+            status: attemptMap.get(s.id)!.status,
+            submittedAt: attemptMap.get(s.id)!.submittedAt,
+            score: attemptMap.get(s.id)!.score,
+            createdAt: attemptMap.get(s.id)!.createdAt,
+          }
+        : undefined,
     })),
   });
 }
@@ -134,6 +163,7 @@ export async function POST(req: Request) {
   const session = await prisma.quizSession.create({
     data: {
       quizId: quiz.id,
+      classroomId: body.classroomId,
       status: 'lobby',
       totpSecret: generateTotpSecret(),
       totpStepSeconds: body.totpStepSeconds ?? 45,
