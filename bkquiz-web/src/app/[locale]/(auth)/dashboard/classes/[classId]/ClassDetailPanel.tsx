@@ -109,6 +109,7 @@ export function ClassDetailPanel(props: { classId: string }) {
 
   // Owner is determined by userRole === 'teacher' (only owner has teacher role in their own class)
   const isOwner = classInfo.userRole === 'teacher';
+  const isStudent = classInfo.userRole === 'student';
 
   return (
     <div className="space-y-7">
@@ -285,35 +286,67 @@ export function ClassDetailPanel(props: { classId: string }) {
                       Chưa có session nào.
                     </div>
                   )
-                : sessions.map(s => (
-                    <Link key={s.id} href={`/dashboard/sessions/${s.id}/teacher`}>
-                      <div className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-colors hover:border-border-strong">
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium text-text-heading">
-                            {s.quiz.title}
+                : sessions.map(s => {
+                    // Student: link to session lobby or attempt
+                    // Teacher: link to teacher screen
+                    const href = isStudent
+                      ? `/session/${s.id}`
+                      : `/dashboard/sessions/${s.id}/teacher`;
+                    const label = isStudent
+                      ? (s.status === 'active' ? 'Join' : s.status === 'ended' ? 'View' : 'View Lobby')
+                      : 'View';
+
+                    return (
+                      <Link key={s.id} href={href}>
+                        <div className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-colors hover:border-border-strong">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium text-text-heading">
+                              {s.quiz.title}
+                            </div>
+                            <div className="mt-1 text-xs text-text-muted">
+                              {isStudent
+                                ? (
+                                    <>
+                                      {s.status === 'active' && 'Đang diễn ra'}
+                                      {s.status === 'ended' && 'Đã kết thúc'}
+                                      {s.status === 'lobby' && 'Chờ bắt đầu'}
+                                    </>
+                                  )
+                                : (
+                                    <>
+                                      {s.attemptCount}
+                                      {' '}
+                                      attempts
+                                    </>
+                                  )}
+                              {' '}
+                              ·
+                              {' '}
+                              {formatDate(s.createdAt)}
+                            </div>
                           </div>
-                          <div className="mt-1 text-xs text-text-muted">
-                            {s.attemptCount}
-                            {' '}
-                            attempts
-                            {' '}
-                            ·
-                            {' '}
-                            {formatDate(s.createdAt)}
+                          <div className="flex items-center gap-3">
+                            <Badge
+                              variant={s.status === 'active' ? 'success' : (s.status === 'ended' ? 'neutral' : 'info')}
+                              className="text-xs"
+                            >
+                              {s.status}
+                            </Badge>
+                            <span className="text-xs text-text-muted">→</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <Badge
-                            variant={s.status === 'active' ? 'success' : (s.status === 'ended' ? 'neutral' : 'info')}
-                            className="text-xs"
-                          >
-                            {s.status}
-                          </Badge>
-                          <span className="text-xs text-text-muted">→</span>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    );
+                  })}
+              {isStudent && sessions.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-border-subtle">
+                  <Link href="/dashboard/sessions">
+                    <Button variant="ghost" size="sm" className="w-full">
+                      Xem tất cả sessions của tôi
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
           )}
 
