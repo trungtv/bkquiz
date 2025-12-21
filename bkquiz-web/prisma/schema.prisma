@@ -198,7 +198,7 @@ model Quiz {
 }
 
 model QuizRule {
-  id           String   @id
+  id           String   @id @default(cuid())
   quizId       String
   tagId        String
   count        Int?
@@ -207,7 +207,7 @@ model QuizRule {
   extraPercent Float?
   filters      Json     @default("{}")
   createdAt    DateTime @default(now())
-  updatedAt    DateTime
+  updatedAt    DateTime @updatedAt
   quiz         Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   tag          Tag      @relation(fields: [tagId], references: [id])
 
