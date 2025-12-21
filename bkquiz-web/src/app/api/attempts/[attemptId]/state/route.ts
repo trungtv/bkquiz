@@ -18,7 +18,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
       failedCount: true,
       cooldownUntil: true,
       lockedUntil: true,
-      session: {
+      quizSession: {
         select: {
           id: true,
           status: true,
@@ -51,7 +51,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
   return NextResponse.json({
     id: attempt.id,
     status: attempt.status,
-    session: attempt.session,
+    session: attempt.quizSession,
     nextDueAt: attempt.nextDueAt,
     due,
     warning,

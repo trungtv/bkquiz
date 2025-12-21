@@ -16,7 +16,7 @@ export async function GET() {
       id: true,
       score: true,
       submittedAt: true,
-      session: {
+      quizSession: {
         select: {
           quiz: {
             select: {
@@ -49,7 +49,7 @@ export async function GET() {
     id: a.id,
     score: a.score,
     submittedAt: a.submittedAt,
-    quizTitle: a.session.quiz.title,
+    quizTitle: a.quizSession.quiz.title,
   }));
 
   return NextResponse.json({

@@ -19,13 +19,13 @@ export async function StudentDashboard(props: StudentDashboardProps) {
     where: {
       userId,
       status: 'active',
-      session: { status: 'active' },
+      quizSession: { status: 'active' },
     },
     orderBy: { createdAt: 'desc' },
     take: 3,
     select: {
       id: true,
-      session: {
+      quizSession: {
         select: {
           id: true,
           startedAt: true,
@@ -44,13 +44,13 @@ export async function StudentDashboard(props: StudentDashboardProps) {
   const upcomingSessions = await prisma.attempt.findMany({
     where: {
       userId,
-      session: { status: 'lobby' },
+      quizSession: { status: 'lobby' },
     },
     orderBy: { createdAt: 'desc' },
     take: 3,
     select: {
       id: true,
-      session: {
+      quizSession: {
         select: {
           id: true,
           createdAt: true,
@@ -189,12 +189,12 @@ export async function StudentDashboard(props: StudentDashboardProps) {
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="text-base font-semibold text-text-heading">
-                        {attempt.session.quiz.title}
+                        {attempt.quizSession.quiz.title}
                       </div>
                       <div className="mt-1 text-xs text-text-muted">
                         Bắt đầu:
                         {' '}
-                        {formatDate(attempt.session.startedAt)}
+                        {formatDate(attempt.quizSession.startedAt)}
                       </div>
                     </div>
                     <Button variant="primary" size="sm" className="bg-indigo-500 hover:bg-indigo-600">
@@ -316,19 +316,19 @@ export async function StudentDashboard(props: StudentDashboardProps) {
           </div>
           <div className="space-y-2">
             {upcomingSessions.map((attempt, idx) => (
-              <Link key={attempt.id} href={`/session/${attempt.session.id}`}>
+              <Link key={attempt.id} href={`/session/${attempt.quizSession.id}`}>
                 <div
                   className="flex items-center justify-between gap-4 rounded-md border border-indigo-500/30 bg-bg-section px-4 py-3 transition-all duration-200 hover:border-indigo-500/50 hover:translate-x-1 hover:shadow-md"
                   style={{ animationDelay: `${idx * 50}ms` }}
                 >
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-text-heading">
-                      {attempt.session.quiz.title}
+                      {attempt.quizSession.quiz.title}
                     </div>
                     <div className="mt-1 text-xs text-text-muted">
                       Tạo lúc:
                       {' '}
-                      {formatDate(attempt.session.createdAt)}
+                      {formatDate(attempt.quizSession.createdAt)}
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" className="border-indigo-500/30 text-indigo-400">
