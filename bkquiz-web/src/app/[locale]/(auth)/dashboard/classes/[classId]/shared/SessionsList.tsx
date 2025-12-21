@@ -1,10 +1,10 @@
 'use client';
 
+import type { Session } from '../types';
+import { formatDate } from '../types';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import type { Session } from '../types';
-import { formatDate } from '../types';
 
 type SessionsListProps = {
   sessions: Session[];
