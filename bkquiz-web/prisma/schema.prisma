@@ -216,7 +216,7 @@ model QuizRule {
 }
 
 model QuizSession {
-  id                String                    @id
+  id                String                    @id @default(cuid())
   quizId            String
   status            QuizSessionStatus         @default(lobby)
   startedAt         DateTime?
