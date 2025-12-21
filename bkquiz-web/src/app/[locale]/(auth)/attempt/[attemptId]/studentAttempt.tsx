@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { MathRenderer } from '@/components/MathRenderer';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -425,7 +426,9 @@ export function AttemptClient(props: { attemptId: string }) {
                     </div>
                     <Badge variant="info">{q.type === 'mcq_single' ? 'Chọn 1' : 'Chọn nhiều'}</Badge>
                   </div>
-                  <div className="text-base whitespace-pre-wrap text-text-heading">{q.prompt}</div>
+                  <div className="text-base text-text-heading">
+                    <MathRenderer content={q.prompt} />
+                  </div>
                   <div className="mt-4 grid gap-2">
                     {q.options.map(o => (
                       <label
@@ -453,8 +456,10 @@ export function AttemptClient(props: { attemptId: string }) {
                             });
                           }}
                         />
-                        <div className="min-w-0">
-                          <div className="text-sm text-text-body">{o.content}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm text-text-body">
+                            <MathRenderer content={o.content} />
+                          </div>
                         </div>
                       </label>
                     ))}
