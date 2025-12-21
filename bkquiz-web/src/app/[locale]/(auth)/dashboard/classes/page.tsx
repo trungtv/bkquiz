@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { getUserRole, requireUser } from '@/server/authz';
 import { ClassesPanel } from './ClassesPanel';
 
 export async function generateMetadata(props: {
@@ -11,9 +12,12 @@ export async function generateMetadata(props: {
 }
 
 export default async function ClassesPage() {
+  const { userId, devRole } = await requireUser();
+  const role = await getUserRole(userId, devRole as 'teacher' | 'student' | undefined);
+
   return (
     <div className="py-5">
-      <ClassesPanel />
+      <ClassesPanel role={role} />
     </div>
   );
 }
