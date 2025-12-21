@@ -103,15 +103,15 @@ model ClassMembership {
 }
 
 model Classroom {
-  id              String            @id
-  name            String
-  classCode       String            @unique
-  ownerTeacherId  String
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime
-  ClassMembership ClassMembership[]
-  User            User              @relation(fields: [ownerTeacherId], references: [id])
-  QuizSession     QuizSession[]
+  id             String            @id
+  name           String
+  classCode      String            @unique
+  ownerTeacherId String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime
+  memberships    ClassMembership[]
+  ownerTeacher   User              @relation(fields: [ownerTeacherId], references: [id])
+  sessions       QuizSession[]
 }
 
 model Option {
