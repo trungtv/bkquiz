@@ -56,6 +56,8 @@ export async function GET(req: Request) {
   }
 
   // Student: lấy sessions mà student đã tham gia (có attempt)
+  // Note: Vì QuizSession không có classroomId, không thể query sessions từ classes
+  // Student nên xem sessions từ class detail page để có context rõ ràng
   const attempts = await prisma.attempt.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
