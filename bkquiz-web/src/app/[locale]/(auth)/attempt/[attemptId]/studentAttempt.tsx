@@ -8,8 +8,8 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
-import { getI18nPath } from '@/utils/Helpers';
 import { cn } from '@/utils/cn';
+import { getI18nPath } from '@/utils/Helpers';
 import { idbGet, idbSet } from '@/utils/idb';
 
 type AttemptState = {
