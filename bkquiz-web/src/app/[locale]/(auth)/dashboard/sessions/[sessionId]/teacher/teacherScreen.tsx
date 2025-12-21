@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { useLocale } from 'next-intl';
 import QRCode from 'react-qr-code';
+import { getI18nPath } from '@/utils/Helpers';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -74,6 +76,7 @@ function shortenUrl(url: string): string {
 }
 
 export function TeacherScreen(props: { sessionId: string; userId: string | null }) {
+  const locale = useLocale();
   const [data, setData] = useState<TeacherTokenResponse | null>(null);
   const [session, setSession] = useState<SessionStatusResponse | null>(null);
   const [logs, setLogs] = useState<TokenLogRow[]>([]);
@@ -242,13 +245,19 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
   return (
     <div className="fixed inset-0 bg-black text-white overflow-y-auto">
       {/* Breadcrumb - Small, top-left */}
-      <div className="absolute top-4 left-4 z-10">
+      <div className="absolute top-4 left-4 z-50 pointer-events-auto">
         <div className="flex items-center gap-1 text-xs text-white/60">
-          <Link href="/dashboard" className="hover:text-white/80 transition-colors">
+          <Link
+            href={getI18nPath('/dashboard', locale)}
+            className="hover:text-white/80 transition-colors cursor-pointer"
+          >
             Dashboard
           </Link>
           <span>/</span>
-          <Link href="/dashboard/sessions" className="hover:text-white/80 transition-colors">
+          <Link
+            href={getI18nPath('/dashboard/sessions', locale)}
+            className="hover:text-white/80 transition-colors cursor-pointer"
+          >
             Sessions
           </Link>
           <span>/</span>
