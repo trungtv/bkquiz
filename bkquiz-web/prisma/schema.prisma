@@ -39,7 +39,7 @@ model Answer {
 }
 
 model Attempt {
-  id               String            @id
+  id               String            @id @default(cuid())
   sessionId        String
   userId           String
   status           AttemptStatus     @default(active)
