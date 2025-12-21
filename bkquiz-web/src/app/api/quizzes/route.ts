@@ -47,7 +47,7 @@ export async function POST(req: Request) {
         title: body.title,
         createdByTeacherId: userId,
         status: body.status ?? 'draft',
-      },
+      } as any, // Type assertion: Quiz no longer has classroomId after schema refactor
       select: { id: true, title: true, status: true },
     });
 
