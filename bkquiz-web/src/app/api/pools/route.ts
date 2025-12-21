@@ -10,7 +10,7 @@ const CreatePoolSchema = z.object({
 
 export async function GET() {
   const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
+  await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
 
   const owned = await prisma.questionPool.findMany({
     where: { ownerTeacherId: userId },
@@ -85,7 +85,7 @@ export async function GET() {
       return {
         ...s.pool,
         permission: s.permission,
-        questionCount: s.pool._count.questions,
+        questionCount: s.pool._count.Question,
         tagCount: tagGroups.length,
       };
     }),
@@ -99,7 +99,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
+  await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
   const body = CreatePoolSchema.parse(await req.json());
 
   const pool = await prisma.questionPool.create({
