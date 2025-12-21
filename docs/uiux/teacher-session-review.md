@@ -108,10 +108,17 @@
 
 ### Priority 1: Full-Screen Layout & Visual Design (Critical)
 
-#### Layout Structure
+#### Layout Structure - **HỢP LÝ HƠN**
+
+**Option A: Full-Screen Focus Mode (Recommended)**
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ Full-screen, nền đen (#000 hoặc charcoal-900)           │
+│ [Breadcrumb nhỏ, góc trên trái] [Controls góc trên phải]│
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ Session Info Bar (compact, top)                  │  │
+│  │ Quiz · Class · Status · Duration                 │  │
+│  └──────────────────────────────────────────────────┘  │
 │                                                          │
 │  ┌──────────────────────┐  ┌──────────────────────┐   │
 │  │ QR Code (50% width)  │  │ Token (50% width)     │   │
@@ -120,18 +127,25 @@
 │  │ - Gợi ý rõ ràng      │  │ - Countdown lớn        │   │
 │  └──────────────────────┘  └──────────────────────┘   │
 │                                                          │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ Session Info Bar (sticky top)                    │  │
-│  │ - Quiz title, Class name, Status, Duration       │  │
-│  └──────────────────────────────────────────────────┘  │
-│                                                          │
-│  ┌──────────────────────┐  ┌──────────────────────┐   │
-│  │ Token Log            │  │ Scoreboard           │   │
-│  │ - Sortable table     │  │ - Sortable table     │   │
-│  │ - Filters            │  │ - Filters            │   │
-│  └──────────────────────┘  └──────────────────────┘   │
+│  [Collapsible Sections - Ẩn mặc định khi trình chiếu]  │
+│  ▼ Token Log (collapsed)                                │
+│  ▼ Scoreboard (collapsed)                                │
 └─────────────────────────────────────────────────────────┘
 ```
+
+**Option B: Two-Mode View**
+```
+Mode 1: Presentation Mode (Full-screen, chỉ QR + Token)
+Mode 2: Full View (có thêm token log + scoreboard)
+
+Toggle button để chuyển giữa 2 modes
+```
+
+**Lý do:**
+- ✅ Full-screen chỉ hiển thị QR + Token (quan trọng nhất)
+- ✅ Token log và scoreboard không cần hiển thị liên tục
+- ✅ Teacher có thể expand/collapse khi cần
+- ✅ Breadcrumb nhỏ, không làm rối màn hình
 
 #### Visual Design
 - **Background**: Nền đen (#000) hoặc charcoal-900
@@ -201,11 +215,14 @@
 ## 📝 Checklist Implementation
 
 ### Phase 1: Critical (Must Have)
-- [ ] Full-screen layout với nền đen
+- [ ] Full-screen layout với nền đen (chỉ QR + Token)
+- [ ] Breadcrumb nhỏ ở góc trên trái (Dashboard > Sessions > [Session])
+- [ ] Session info bar compact ở top
 - [ ] QR code lớn hơn (480px+)
 - [ ] Token lớn hơn và nổi bật hơn (text-8xl, màu cam)
 - [ ] Progress bar cho countdown
-- [ ] Session info bar với đầy đủ thông tin
+- [ ] Token log và scoreboard: Collapsible sections (ẩn mặc định)
+- [ ] Toggle button để expand/collapse sections
 
 ### Phase 2: High Priority
 - [ ] Snapshot info format rõ ràng hơn
@@ -232,6 +249,42 @@
 - Token: `text-primary` (cam) hoặc `text-red-500`
 - QR: `bg-white` với `p-4` hoặc `p-6`
 - Cards: `bg-charcoal-800` với `border-charcoal-700`
+
+---
+
+## 💡 Design Decisions
+
+### Breadcrumb: Có cần không?
+
+**Khuyến nghị: CÓ, nhưng nhỏ và không làm rối**
+
+**Lý do:**
+- ✅ Teacher có thể quay lại dashboard/sessions dễ dàng
+- ✅ Context rõ ràng (đang ở đâu)
+- ⚠️ Phải nhỏ, không làm rối màn hình trình chiếu
+- ⚠️ Có thể ẩn khi full-screen mode
+
+**Implementation:**
+- Breadcrumb nhỏ ở góc trên trái
+- Font size nhỏ (text-xs hoặc text-sm)
+- Màu mờ (text-text-muted)
+- Clickable để navigate
+
+### Full-Screen với tất cả thông tin: Hợp lý không?
+
+**Khuyến nghị: KHÔNG - Chỉ QR + Token full-screen**
+
+**Lý do:**
+- ✅ QR + Token là thông tin quan trọng nhất, cần nổi bật
+- ✅ Token log và scoreboard quá nhiều thông tin, không cần hiển thị liên tục
+- ✅ Teacher chỉ cần xem token log/scoreboard khi cần kiểm tra
+- ✅ Full-screen với tất cả thông tin sẽ làm rối màn hình
+
+**Solution:**
+- **Presentation Mode**: Chỉ QR + Token (full-screen)
+- **Full View**: QR + Token + Collapsible sections (token log, scoreboard)
+- Toggle button để chuyển giữa 2 modes
+- Hoặc: Collapsible sections (ẩn mặc định, expand khi cần)
 
 ---
 
