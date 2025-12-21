@@ -26,15 +26,15 @@ export default async function Dashboard() {
   const initial: Array<{ id: string; name: string; classCode: string }> = [];
   const rows = await prisma.classMembership.findMany({
     where: { userId, status: 'active' },
-    include: { Classroom: true },
+    include: { classroom: true },
     orderBy: { joinedAt: 'desc' },
   });
 
   for (const r of rows) {
     initial.push({
-      id: r.Classroom.id,
-      name: r.Classroom.name,
-      classCode: r.Classroom.classCode,
+      id: r.classroom.id,
+      name: r.classroom.name,
+      classCode: r.classroom.classCode,
     });
   }
 
