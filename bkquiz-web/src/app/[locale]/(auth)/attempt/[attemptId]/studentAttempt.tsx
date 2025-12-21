@@ -1,11 +1,14 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MathRenderer } from '@/components/MathRenderer';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { getI18nPath } from '@/utils/Helpers';
 import { cn } from '@/utils/cn';
 import { idbGet, idbSet } from '@/utils/idb';
 
@@ -78,6 +81,7 @@ async function writeLocalAnswers(attemptId: string, store: LocalAnswerStore) {
 }
 
 export function AttemptClient(props: { attemptId: string }) {
+  const locale = useLocale();
   const [state, setState] = useState<AttemptState | null>(null);
   const [questions, setQuestions] = useState<SnapshotQuestion[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -353,6 +357,25 @@ export function AttemptClient(props: { attemptId: string }) {
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1 text-xs text-text-muted">
+        <Link
+          href={getI18nPath('/dashboard', locale)}
+          className="hover:text-text-heading transition-colors"
+        >
+          Dashboard
+        </Link>
+        <span>/</span>
+        <Link
+          href={getI18nPath('/dashboard/classes', locale)}
+          className="hover:text-text-heading transition-colors"
+        >
+          Lớp học
+        </Link>
+        <span>/</span>
+        <span className="text-text-muted">Làm bài</span>
+      </div>
+
       {/* Sticky topbar - Improved 2-row layout */}
       <div className="sticky top-[56px] z-sticky -mx-4 border-b border-border-subtle bg-bg-page/80 px-4 py-4 backdrop-blur">
         {/* Row 1: Quiz title + Progress bar */}
