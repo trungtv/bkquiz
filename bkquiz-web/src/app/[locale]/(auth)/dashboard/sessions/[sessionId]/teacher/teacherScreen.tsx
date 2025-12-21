@@ -24,7 +24,6 @@ type SessionStatusResponse = {
   totpStepSeconds: number;
   quiz: {
     title: string;
-    classroom: { name: string; classCode: string };
   };
 };
 
@@ -208,10 +207,6 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
                     ·
                     {' '}
                     <span className="font-medium">{session.quiz.title}</span>
-                    {' '}
-                    (
-                    <span className="font-mono">{session.quiz.classroom.classCode}</span>
-                    )
                   </>
                 )
               : null}
