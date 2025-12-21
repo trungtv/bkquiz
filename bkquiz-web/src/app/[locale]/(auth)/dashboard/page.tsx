@@ -53,7 +53,7 @@ export default async function Dashboard() {
       ? prisma.quizSession.count({
           where: {
             status: 'active',
-            Quiz: { createdByTeacherId: userId },
+            quiz: { createdByTeacherId: userId },
           },
         })
       : Promise.resolve(0),
@@ -63,7 +63,7 @@ export default async function Dashboard() {
           where: {
             userId,
             status: 'active',
-            QuizSession: { status: 'active' },
+            session: { status: 'active' },
           },
         })
       : Promise.resolve(0),

@@ -19,14 +19,14 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
   const activeSessions = await prisma.quizSession.findMany({
     where: {
       status: 'active',
-      Quiz: { createdByTeacherId: userId },
+      quiz: { createdByTeacherId: userId },
     },
     orderBy: { startedAt: 'desc' },
     take: 5,
     select: {
       id: true,
       startedAt: true,
-      Quiz: {
+      quiz: {
         select: {
           id: true,
           title: true,
@@ -34,7 +34,7 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
       },
       _count: {
         select: {
-          Attempt: true,
+          attempts: true,
         },
       },
     },
@@ -57,7 +57,7 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
     prisma.quiz.count({
       where: {
         createdByTeacherId: userId,
-        QuizRule: { none: {} },
+        rules: { none: {} },
       },
     }),
   ]);
@@ -243,11 +243,11 @@ export async function TeacherDashboard(props: TeacherDashboardProps) {
                         style={{ animationDelay: `${idx * 50}ms` }}
                       >
                         <div className="text-sm font-medium text-text-heading truncate">
-                          {session.Quiz.title}
+                          {session.quiz.title}
                         </div>
                         <div className="mt-1 flex items-center justify-between text-xs text-text-muted">
                           <span>
-                            {session._count.Attempt}
+                            {session._count.attempts}
                             {' '}
                             students
                           </span>

@@ -22,42 +22,30 @@ export function StudentClassDetail(props: StudentClassDetailProps) {
   const [activeTab, setActiveTab] = useState<'members' | 'sessions'>('members');
 
   async function loadClassInfo() {
-    try {
-      const res = await fetch(`/api/classes/${classId}`, { method: 'GET' });
-      if (!res.ok) {
-        return;
-      }
-      const json = await res.json() as ClassInfo | { error?: string };
-      setClassInfo(json as ClassInfo);
-    } catch (err) {
-      console.error('Failed to load class info:', err);
+    const res = await fetch(`/api/classes/${classId}`, { method: 'GET' });
+    const json = await res.json() as ClassInfo | { error?: string };
+    if (!res.ok) {
+      return;
     }
+    setClassInfo(json as ClassInfo);
   }
 
   async function loadMembers() {
-    try {
-      const res = await fetch(`/api/classes/${classId}/members`, { method: 'GET' });
-      if (!res.ok) {
-        return;
-      }
-      const json = await res.json() as { members?: Member[]; error?: string };
-      setMembers(json.members ?? []);
-    } catch (err) {
-      console.error('Failed to load members:', err);
+    const res = await fetch(`/api/classes/${classId}/members`, { method: 'GET' });
+    const json = await res.json() as { members?: Member[]; error?: string };
+    if (!res.ok) {
+      return;
     }
+    setMembers(json.members ?? []);
   }
 
   async function loadSessions() {
-    try {
-      const res = await fetch(`/api/classes/${classId}/sessions`, { method: 'GET' });
-      if (!res.ok) {
-        return;
-      }
-      const json = await res.json() as { sessions?: Session[]; error?: string };
-      setSessions(json.sessions ?? []);
-    } catch (err) {
-      console.error('Failed to load sessions:', err);
+    const res = await fetch(`/api/classes/${classId}/sessions`, { method: 'GET' });
+    const json = await res.json() as { sessions?: Session[]; error?: string };
+    if (!res.ok) {
+      return;
     }
+    setSessions(json.sessions ?? []);
   }
 
   useEffect(() => {

@@ -18,11 +18,11 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
       failedCount: true,
       cooldownUntil: true,
       lockedUntil: true,
-      QuizSession: {
+      session: {
         select: {
           id: true,
           status: true,
-          Quiz: { select: { title: true } },
+          quiz: { select: { title: true } },
         },
       },
     },
@@ -48,14 +48,10 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
   const inCooldown = attempt.cooldownUntil ? attempt.cooldownUntil.getTime() > now.getTime() : false;
   const isLocked = attempt.lockedUntil ? attempt.lockedUntil.getTime() > now.getTime() : attempt.status === 'locked';
 
-  const { Quiz, ...sessionRest } = attempt.QuizSession;
   return NextResponse.json({
     id: attempt.id,
     status: attempt.status,
-    session: {
-      ...sessionRest,
-      quiz: Quiz,
-    },
+    session: attempt.session,
     nextDueAt: attempt.nextDueAt,
     due,
     warning,

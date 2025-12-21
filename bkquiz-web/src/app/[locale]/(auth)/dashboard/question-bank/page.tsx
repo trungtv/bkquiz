@@ -31,7 +31,7 @@ export default async function QuestionBankPage() {
       updatedAt: true,
       _count: {
         select: {
-          Question: { where: { deletedAt: null } },
+          questions: { where: { deletedAt: null } },
         },
       },
     },
@@ -44,7 +44,7 @@ export default async function QuestionBankPage() {
       const tagGroups = await prisma.questionTag.groupBy({
         by: ['tagId'],
         where: {
-          Question: {
+          question: {
             poolId: pool.id,
             deletedAt: null,
           },
@@ -55,7 +55,7 @@ export default async function QuestionBankPage() {
         name: pool.name,
         visibility: pool.visibility,
         updatedAt: pool.updatedAt,
-        questionCount: pool._count.Question,
+        questionCount: pool._count.questions,
         tagCount: tagGroups.length,
       };
     }),

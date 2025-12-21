@@ -13,50 +13,50 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
+  refreshToken      String? @map("refresh_token")
+  accessToken       String? @map("access_token")
+  expiresAt         Int?    @map("expires_at")
+  tokenType         String? @map("token_type")
   scope             String?
-  id_token          String?
-  session_state     String?
-  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idToken           String? @map("id_token")
+  sessionState      String? @map("session_state")
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@index([userId])
 }
 
 model Answer {
-  attemptId               String
-  sessionQuestionId       String
-  selected                Json                    @default("[]")
-  updatedAt               DateTime
-  Attempt                 Attempt                 @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  SessionQuestionSnapshot SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
+  attemptId         String
+  sessionQuestionId String
+  selected          Json                    @default("[]")
+  updatedAt         DateTime
+  attempt           Attempt                 @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  sessionQuestion   SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
 
   @@id([attemptId, sessionQuestionId])
   @@index([attemptId])
 }
 
 model Attempt {
-  id              String            @id
-  sessionId       String
-  userId          String
-  status          AttemptStatus     @default(active)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime
-  nextDueAt       DateTime?
-  lastVerifiedAt  DateTime?
-  failedCount     Int               @default(0)
-  cooldownUntil   DateTime?
-  lockedUntil     DateTime?
-  submittedAt     DateTime?
-  score           Float?
-  Answer          Answer[]
-  QuizSession     QuizSession       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  User            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  AttemptQuestion AttemptQuestion[]
-  CheckpointLog   CheckpointLog[]
+  id               String            @id
+  sessionId        String
+  userId           String
+  status           AttemptStatus     @default(active)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime
+  nextDueAt        DateTime?
+  lastVerifiedAt   DateTime?
+  failedCount      Int               @default(0)
+  cooldownUntil    DateTime?
+  lockedUntil      DateTime?
+  submittedAt      DateTime?
+  score            Float?
+  answers          Answer[]
+  quizSession      QuizSession       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attemptQuestions AttemptQuestion[]
+  checkpointLogs   CheckpointLog[]
 
   @@unique([sessionId, userId])
   @@index([sessionId])
@@ -64,11 +64,11 @@ model Attempt {
 }
 
 model AttemptQuestion {
-  attemptId               String
-  sessionQuestionId       String
-  order                   Int
-  Attempt                 Attempt                 @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  SessionQuestionSnapshot SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
+  attemptId         String
+  sessionQuestionId String
+  order             Int
+  attempt           Attempt                 @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  sessionQuestion   SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
 
   @@id([attemptId, sessionQuestionId])
   @@unique([attemptId, order])
@@ -83,7 +83,7 @@ model CheckpointLog {
   ok           Boolean?
   enteredToken String?
   createdAt    DateTime            @default(now())
-  Attempt      Attempt             @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  attempt      Attempt             @relation(fields: [attemptId], references: [id], onDelete: Cascade)
 
   @@index([attemptId, createdAt])
 }
@@ -94,8 +94,8 @@ model ClassMembership {
   roleInClass ClassroomRole    @default(student)
   status      MembershipStatus @default(active)
   joinedAt    DateTime         @default(now())
-  Classroom   Classroom        @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  User        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classroom   Classroom        @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([classroomId, userId])
   @@index([classroomId])
@@ -123,7 +123,7 @@ model Option {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime
   deletedAt  DateTime?
-  Question   Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  question   Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@index([questionId])
 }
@@ -137,25 +137,25 @@ model Question {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime
   deletedAt          DateTime?
-  Option             Option[]
-  User               User          @relation(fields: [createdByTeacherId], references: [id])
-  QuestionPool       QuestionPool  @relation(fields: [poolId], references: [id], onDelete: Cascade)
-  QuestionTag        QuestionTag[]
+  options            Option[]
+  createdBy          User          @relation(fields: [createdByTeacherId], references: [id])
+  pool               QuestionPool  @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  tags               QuestionTag[]
 
   @@index([deletedAt])
   @@index([poolId])
 }
 
 model QuestionPool {
-  id                String              @id
-  name              String
-  visibility        PoolVisibility      @default(private)
-  ownerTeacherId    String
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime
-  Question          Question[]
-  User              User                @relation(fields: [ownerTeacherId], references: [id])
-  QuestionPoolShare QuestionPoolShare[]
+  id             String              @id
+  name           String
+  visibility     PoolVisibility      @default(private)
+  ownerTeacherId String
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime
+  questions      Question[]
+  owner          User                @relation(fields: [ownerTeacherId], references: [id])
+  shares         QuestionPoolShare[]
 
   @@index([ownerTeacherId])
 }
@@ -165,8 +165,8 @@ model QuestionPoolShare {
   sharedWithTeacherId String
   permission          PoolSharePermission
   createdAt           DateTime            @default(now())
-  QuestionPool        QuestionPool        @relation(fields: [poolId], references: [id], onDelete: Cascade)
-  User                User                @relation(fields: [sharedWithTeacherId], references: [id], onDelete: Cascade)
+  pool                QuestionPool        @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  sharedWith          User                @relation(fields: [sharedWithTeacherId], references: [id], onDelete: Cascade)
 
   @@id([poolId, sharedWithTeacherId])
   @@index([sharedWithTeacherId])
@@ -175,8 +175,8 @@ model QuestionPoolShare {
 model QuestionTag {
   questionId String
   tagId      String
-  Question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  Tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([questionId, tagId])
   @@index([tagId, questionId])
@@ -190,9 +190,9 @@ model Quiz {
   status             QuizStatus    @default(draft)
   createdAt          DateTime      @default(now())
   updatedAt          DateTime
-  User               User          @relation(fields: [createdByTeacherId], references: [id])
-  QuizRule           QuizRule[]
-  QuizSession        QuizSession[]
+  createdBy          User          @relation(fields: [createdByTeacherId], references: [id])
+  rules              QuizRule[]
+  sessions           QuizSession[]
 
   @@index([createdByTeacherId])
 }
@@ -208,29 +208,29 @@ model QuizRule {
   filters      Json     @default("{}")
   createdAt    DateTime @default(now())
   updatedAt    DateTime
-  Quiz         Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  Tag          Tag      @relation(fields: [tagId], references: [id])
+  quiz         Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  tag          Tag      @relation(fields: [tagId], references: [id])
 
   @@index([quizId])
   @@index([tagId])
 }
 
 model QuizSession {
-  id                      String                    @id
-  quizId                  String
-  status                  QuizSessionStatus         @default(lobby)
-  startedAt               DateTime?
-  endedAt                 DateTime?
-  totpSecret              String
-  totpStepSeconds         Int                       @default(45)
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime
-  classroomId             String
-  Attempt                 Attempt[]
-  Classroom               Classroom                 @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  Quiz                    Quiz                      @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  SessionCommonQuestion   SessionCommonQuestion[]
-  SessionQuestionSnapshot SessionQuestionSnapshot[]
+  id                String                    @id
+  quizId            String
+  status            QuizSessionStatus         @default(lobby)
+  startedAt         DateTime?
+  endedAt           DateTime?
+  totpSecret        String
+  totpStepSeconds   Int                       @default(45)
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime
+  classroomId       String
+  attempts          Attempt[]
+  classroom         Classroom                 @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  quiz              Quiz                      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  commonQuestions   SessionCommonQuestion[]
+  questionSnapshots SessionQuestionSnapshot[]
 
   @@index([classroomId])
   @@index([quizId])
@@ -241,19 +241,19 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model SessionCommonQuestion {
-  sessionId               String
-  tagId                   String
-  sessionQuestionId       String
-  order                   Int
-  QuizSession             QuizSession             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  SessionQuestionSnapshot SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
-  Tag                     Tag                     @relation(fields: [tagId], references: [id])
+  sessionId         String
+  tagId             String
+  sessionQuestionId String
+  order             Int
+  session           QuizSession             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionQuestion   SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
+  tag               Tag                     @relation(fields: [tagId], references: [id])
 
   @@id([sessionId, tagId, sessionQuestionId])
   @@unique([sessionId, tagId, order])
@@ -261,31 +261,31 @@ model SessionCommonQuestion {
 }
 
 model SessionOptionSnapshot {
-  id                      String                  @id
-  sessionQuestionId       String
-  order                   Int
-  content                 String
-  isCorrect               Boolean                 @default(false)
-  SessionQuestionSnapshot SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
+  id                String                  @id
+  sessionQuestionId String
+  order             Int
+  content           String
+  isCorrect         Boolean                 @default(false)
+  sessionQuestion   SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
 
   @@unique([sessionQuestionId, order])
 }
 
 model SessionQuestionSnapshot {
-  id                    String                  @id
-  sessionId             String
-  sourceQuestionId      String
-  tagId                 String?
-  type                  QuestionType
-  prompt                String
-  order                 Int
-  createdAt             DateTime                @default(now())
-  Answer                Answer[]
-  AttemptQuestion       AttemptQuestion[]
-  SessionCommonQuestion SessionCommonQuestion[]
-  SessionOptionSnapshot SessionOptionSnapshot[]
-  QuizSession           QuizSession             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  Tag                   Tag?                    @relation(fields: [tagId], references: [id], onDelete: Restrict)
+  id               String                  @id
+  sessionId        String
+  sourceQuestionId String
+  tagId            String?
+  type             QuestionType
+  prompt           String
+  order            Int
+  createdAt        DateTime                @default(now())
+  answers          Answer[]
+  attemptQuestions AttemptQuestion[]
+  commonQuestions  SessionCommonQuestion[]
+  options          SessionOptionSnapshot[]
+  session          QuizSession             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  tag              Tag?                    @relation(fields: [tagId], references: [id], onDelete: Restrict)
 
   @@unique([sessionId, order])
   @@index([sessionId])
@@ -293,40 +293,40 @@ model SessionQuestionSnapshot {
 }
 
 model Tag {
-  id                      String                    @id
-  name                    String
-  normalizedName          String                    @unique
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime
-  QuestionTag             QuestionTag[]
-  QuizRule                QuizRule[]
-  SessionCommonQuestion   SessionCommonQuestion[]
-  SessionQuestionSnapshot SessionQuestionSnapshot[]
+  id                       String                    @id
+  name                     String
+  normalizedName           String                    @unique
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime
+  questionTags             QuestionTag[]
+  quizRules                QuizRule[]
+  sessionCommonQuestions   SessionCommonQuestion[]
+  sessionQuestionSnapshots SessionQuestionSnapshot[]
 }
 
 model User {
-  id                String              @id
-  name              String?
-  email             String?             @unique
-  image             String?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime
-  Account           Account[]
-  Attempt           Attempt[]
-  ClassMembership   ClassMembership[]
-  Classroom         Classroom[]
-  Question          Question[]
-  QuestionPool      QuestionPool[]
-  QuestionPoolShare QuestionPoolShare[]
-  Quiz              Quiz[]
-  Session           Session[]
-  UserRole          UserRole[]
+  id              String              @id
+  name            String?
+  email           String?             @unique
+  image           String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime
+  accounts        Account[]
+  attempts        Attempt[]
+  memberships     ClassMembership[]
+  ownedClassrooms Classroom[]
+  questions       Question[]
+  questionPools   QuestionPool[]
+  poolShares      QuestionPoolShare[]
+  quizzes         Quiz[]
+  sessions        Session[]
+  roles           UserRole[]
 }
 
 model UserRole {
   userId String
   role   SystemRole
-  User   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, role])
 }

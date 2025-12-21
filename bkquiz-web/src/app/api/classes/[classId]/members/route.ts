@@ -26,7 +26,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
       userId: true,
       roleInClass: true,
       joinedAt: true,
-      User: {
+      user: {
         select: {
           id: true,
           name: true,
@@ -39,7 +39,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
   return NextResponse.json({
     members: members.map(m => ({
       userId: m.userId,
-      user: m.User,
+      user: m.user,
       roleInClass: m.roleInClass,
       joinedAt: m.joinedAt,
     })),

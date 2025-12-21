@@ -19,17 +19,17 @@ export async function StudentDashboard(props: StudentDashboardProps) {
     where: {
       userId,
       status: 'active',
-      QuizSession: { status: 'active' },
+      session: { status: 'active' },
     },
     orderBy: { createdAt: 'desc' },
     take: 3,
     select: {
       id: true,
-      QuizSession: {
+      session: {
         select: {
           id: true,
           startedAt: true,
-          Quiz: {
+          quiz: {
             select: {
               id: true,
               title: true,
@@ -44,17 +44,17 @@ export async function StudentDashboard(props: StudentDashboardProps) {
   const upcomingSessions = await prisma.attempt.findMany({
     where: {
       userId,
-      QuizSession: { status: 'lobby' },
+      session: { status: 'lobby' },
     },
     orderBy: { createdAt: 'desc' },
     take: 3,
     select: {
       id: true,
-      QuizSession: {
+      session: {
         select: {
           id: true,
           createdAt: true,
-          Quiz: {
+          quiz: {
             select: {
               id: true,
               title: true,
@@ -189,12 +189,12 @@ export async function StudentDashboard(props: StudentDashboardProps) {
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="text-base font-semibold text-text-heading">
-                        {attempt.QuizSession.Quiz.title}
+                        {attempt.session.quiz.title}
                       </div>
                       <div className="mt-1 text-xs text-text-muted">
                         Bắt đầu:
                         {' '}
-                        {formatDate(attempt.QuizSession.startedAt)}
+                        {formatDate(attempt.session.startedAt)}
                       </div>
                     </div>
                     <Button variant="primary" size="sm" className="bg-indigo-500 hover:bg-indigo-600">
@@ -316,7 +316,7 @@ export async function StudentDashboard(props: StudentDashboardProps) {
           </div>
           <div className="space-y-2">
             {upcomingSessions.map((attempt, idx) => (
-              <Link key={attempt.id} href={`/session/${attempt.QuizSession.id}`}>
+              <Link key={attempt.id} href={`/session/${attempt.session.id}`}>
                 <div
                   className="flex items-center justify-between gap-4 rounded-md border border-indigo-500/30 bg-bg-section px-4 py-3 transition-all duration-200 hover:border-indigo-500/50 hover:translate-x-1 hover:shadow-md"
                   style={{ animationDelay: `${idx * 50}ms` }}
@@ -328,7 +328,7 @@ export async function StudentDashboard(props: StudentDashboardProps) {
                     <div className="mt-1 text-xs text-text-muted">
                       Tạo lúc:
                       {' '}
-                      {formatDate(attempt.QuizSession.createdAt)}
+                      {formatDate(attempt.session.createdAt)}
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" className="border-indigo-500/30 text-indigo-400">

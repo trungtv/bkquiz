@@ -48,20 +48,14 @@ export function ClassesPanel(props: ClassesPanelProps) {
   }
 
   async function load() {
-    try {
-      const res = await fetch('/api/classes', { method: 'GET' });
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({ error: 'LOAD_FAILED' }));
-        setError(json.error ?? 'LOAD_FAILED');
-        return;
-      }
-      const json = await res.json() as { classes?: ClassroomLite[]; error?: string };
-      setError(null);
-      setClasses(json.classes ?? []);
-    } catch (err) {
-      console.error('Failed to load classes:', err);
-      setError('LOAD_FAILED');
+    const res = await fetch('/api/classes', { method: 'GET' });
+    const json = await res.json() as { classes?: ClassroomLite[]; error?: string };
+    if (!res.ok) {
+      setError(json.error ?? 'LOAD_FAILED');
+      return;
     }
+    setError(null);
+    setClasses(json.classes ?? []);
   }
 
   useEffect(() => {

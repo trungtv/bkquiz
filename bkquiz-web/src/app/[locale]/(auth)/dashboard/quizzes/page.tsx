@@ -6,7 +6,7 @@ import { prisma } from '@/server/prisma';
 import { QuizzesPanel } from './QuizzesPanel';
 
 type ClassroomRow = {
-  Classroom: { id: string; name: string; classCode: string };
+  classroom: { id: string; name: string; classCode: string };
   roleInClass: 'student' | 'ta' | 'teacher';
 };
 
@@ -31,19 +31,13 @@ export default async function QuizzesPage() {
     orderBy: { joinedAt: 'desc' },
     select: {
       roleInClass: true,
-      Classroom: {
-        select: {
-          id: true,
-          name: true,
-          classCode: true,
-        },
-      },
+      classroom: { select: { id: true, name: true, classCode: true } },
     },
   });
 
   return (
     <div className="py-5">
-      <QuizzesPanel classrooms={classrooms.map((r: ClassroomRow) => ({ ...r.Classroom, roleInClass: r.roleInClass }))} />
+      <QuizzesPanel classrooms={classrooms.map((r: ClassroomRow) => ({ ...r.classroom, roleInClass: r.roleInClass }))} />
     </div>
   );
 }
