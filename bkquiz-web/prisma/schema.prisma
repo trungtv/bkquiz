@@ -272,7 +272,7 @@ model SessionOptionSnapshot {
 }
 
 model SessionQuestionSnapshot {
-  id               String                  @id
+  id               String                  @id @default(cuid())
   sessionId        String
   sourceQuestionId String
   tagId            String?
