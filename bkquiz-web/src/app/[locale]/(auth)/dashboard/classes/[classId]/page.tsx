@@ -9,7 +9,7 @@ export async function generateMetadata(props: {
   params: Promise<{ locale: string; classId: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
-  const t = await getTranslations({ locale, namespace: 'Dashboard' });
+  await getTranslations({ locale, namespace: 'Dashboard' });
   return { title: 'Class Detail - BKquiz' };
 }
 
