@@ -26,7 +26,7 @@ export async function GET(_req: Request) {
           ownerTeacherId: true,
           _count: {
             select: {
-              memberships: true,
+              ClassMembership: true,
             },
           },
         },
@@ -43,7 +43,7 @@ export async function GET(_req: Request) {
       ownerTeacherId: m.Classroom.ownerTeacherId,
       roleInClass: m.roleInClass,
       joinedAt: m.joinedAt,
-      memberCount: m.Classroom._count.memberships,
+      memberCount: m.Classroom._count.ClassMembership,
     })),
   });
 }

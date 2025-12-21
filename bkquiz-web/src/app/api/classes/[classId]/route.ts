@@ -20,7 +20,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
           createdAt: true,
           updatedAt: true,
           ownerTeacherId: true,
-          ownerTeacher: {
+          User: {
             select: {
               id: true,
               name: true,
@@ -29,7 +29,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
           },
           _count: {
             select: {
-              memberships: true,
+              ClassMembership: true,
             },
           },
         },
@@ -48,8 +48,8 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
     createdAt: membership.Classroom.createdAt,
     updatedAt: membership.Classroom.updatedAt,
     ownerTeacherId: membership.Classroom.ownerTeacherId,
-    ownerTeacher: membership.Classroom.ownerTeacher,
-    memberCount: membership.Classroom._count.memberships,
+    ownerTeacher: membership.Classroom.User,
+    memberCount: membership.Classroom._count.ClassMembership,
     userRole: membership.roleInClass,
     joinedAt: membership.joinedAt,
   });
