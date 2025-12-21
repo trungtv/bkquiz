@@ -69,7 +69,6 @@ export async function POST(_: Request, ctx: { params: Promise<{ sessionId: strin
   const now = new Date();
   const nextDueAt = new Date(now.getTime() + randomInt(240, 300) * 1000);
 
-  const now = new Date();
   const attempt = await prisma.attempt.upsert({
     where: { sessionId_userId: { sessionId, userId } },
     update: {
