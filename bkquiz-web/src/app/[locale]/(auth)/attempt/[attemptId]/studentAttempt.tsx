@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { cn } from '@/utils/cn';
 import { idbGet, idbSet } from '@/utils/idb';
 
 type AttemptState = {
@@ -88,6 +89,7 @@ export function AttemptClient(props: { attemptId: string }) {
   const [pendingCount, setPendingCount] = useState(0);
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const localAnswersRef = useRef<LocalAnswerStore>({});
   const syncTimerRef = useRef<number | null>(null);
 
@@ -161,6 +163,7 @@ export function AttemptClient(props: { attemptId: string }) {
   }, [selected, idx, questions.length, state?.status]);
 
   async function submit() {
+    setShowSubmitConfirm(false);
     setBusy(true);
     setError(null);
     try {
@@ -332,52 +335,98 @@ export function AttemptClient(props: { attemptId: string }) {
   const q = questions[idx] ?? null;
   const progressPct = questions.length > 0 ? Math.round(((idx + 1) / questions.length) * 100) : 0;
 
+  const answeredCount = useMemo(() => {
+    return questions.filter(q => {
+      const answer = localAnswersRef.current[q.id];
+      return answer && answer.selected.length > 0;
+    }).length;
+  }, [questions]);
+
+  const getQuestionStatus = (questionId: string, questionIdx: number) => {
+    if (questionIdx === idx) return 'current';
+    const answer = localAnswersRef.current[questionId];
+    if (answer && answer.selected.length > 0) return 'answered';
+    return 'unanswered';
+  };
+
   return (
     <div className="space-y-6">
-      {/* Sticky topbar */}
-      <div className="sticky top-[56px] z-sticky -mx-4 border-b border-border-subtle bg-bg-page/80 px-4 py-3 backdrop-blur">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="min-w-0">
-            <div className="truncate text-base font-semibold">{state.session.quiz.title}</div>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-muted">
-              <span className="font-mono">
-                Attempt
-                {state.id.slice(0, 8)}
-              </span>
-              <span>·</span>
-              <span>
-                Câu
-                {' '}
-                <span className="font-mono">{questions.length === 0 ? '-' : (idx + 1)}</span>
-                /
-                <span className="font-mono">{questions.length || '-'}</span>
-                {' '}
-                (
-                {progressPct}
-                %)
-              </span>
-              <span>·</span>
-              <span>
-                Checkpoint còn:
-                {' '}
-                <span className="font-mono">{nextDueIn === null ? '...' : `${nextDueIn}s`}</span>
-              </span>
+      {/* Sticky topbar - Improved 2-row layout */}
+      <div className="sticky top-[56px] z-sticky -mx-4 border-b border-border-subtle bg-bg-page/80 px-4 py-4 backdrop-blur">
+        {/* Row 1: Quiz title + Progress bar */}
+        <div className="mb-3">
+          <div className="truncate text-lg font-semibold text-text-heading">{state.session.quiz.title}</div>
+          <div className="mt-3 flex items-center gap-3">
+            <div className="flex-1">
+              <div className="mb-1 flex items-center justify-between text-xs text-text-muted">
+                <span>
+                  Câu
+                  {' '}
+                  <span className="font-mono font-semibold">{questions.length === 0 ? '-' : (idx + 1)}</span>
+                  /
+                  <span className="font-mono">{questions.length || '-'}</span>
+                </span>
+                <span className="font-mono font-semibold text-text-heading">
+                  {progressPct}
+                  %
+                </span>
+              </div>
+              <div className="h-3 w-full overflow-hidden rounded-full bg-bg-section">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-300"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
             </div>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-bg-section">
-              <div
-                className="h-full rounded-full bg-primary"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
+          </div>
+        </div>
+
+        {/* Row 2: Metadata + Status badges */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted">
+            <span className="font-mono">
+              Attempt
+              {state.id.slice(0, 8)}
+            </span>
+            <span>·</span>
+            <span>
+              Đã trả lời:
+              {' '}
+              <span className="font-mono font-semibold text-text-heading">{answeredCount}</span>
+              /
+              <span className="font-mono">{questions.length || '-'}</span>
+            </span>
+            {nextDueIn !== null
+              ? (
+                  <>
+                    <span>·</span>
+                    <span>
+                      Checkpoint:
+                      {' '}
+                      <span className={cn(
+                        'font-mono font-semibold',
+                        nextDueIn <= 10 ? 'text-danger' : nextDueIn <= 30 ? 'text-warning' : 'text-text-heading',
+                      )}
+                      >
+                        {nextDueIn}s
+                      </span>
+                    </span>
+                  </>
+                )
+              : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={isOnline ? 'success' : 'danger'}>{isOnline ? 'Online' : 'Offline'}</Badge>
-            <Badge variant={pendingCount > 0 ? 'warning' : 'neutral'}>
-              Pending
-              {' '}
-              <span className="font-mono">{pendingCount}</span>
-            </Badge>
+            {pendingCount > 0
+              ? (
+                  <Badge variant="warning">
+                    Pending
+                    {' '}
+                    <span className="font-mono">{pendingCount}</span>
+                  </Badge>
+                )
+              : null}
             <Button
               size="sm"
               variant="ghost"
@@ -411,6 +460,51 @@ export function AttemptClient(props: { attemptId: string }) {
           : null}
       </div>
 
+      {/* Question Navigation Grid */}
+      {questions.length > 0
+        ? (
+            <Card className="p-4">
+              <div className="mb-3 text-sm font-semibold text-text-heading">Danh sách câu hỏi</div>
+              <div className="grid grid-cols-10 gap-2 sm:grid-cols-12 md:grid-cols-15 lg:grid-cols-20">
+                {questions.map((question, i) => {
+                  const status = getQuestionStatus(question.id, i);
+                  return (
+                    <button
+                      key={question.id}
+                      type="button"
+                      onClick={() => setIdx(i)}
+                      className={cn(
+                        'aspect-square rounded-md border-2 p-2 text-xs font-mono transition-all duration-fast',
+                        'hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                        status === 'current' && 'border-primary bg-primary/20 shadow-md',
+                        status === 'answered' && 'border-success/50 bg-success/10',
+                        status === 'unanswered' && 'border-border-subtle bg-bg-section hover:bg-bg-elevated',
+                      )}
+                      aria-label={`Câu ${i + 1}: ${status === 'answered' ? 'Đã trả lời' : status === 'current' ? 'Đang xem' : 'Chưa trả lời'}`}
+                    >
+                      {i + 1}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-text-muted">
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 rounded border-2 border-primary bg-primary/20" />
+                  <span>Đang xem</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 rounded border-2 border-success/50 bg-success/10" />
+                  <span>Đã trả lời</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 rounded border-2 border-border-subtle bg-bg-section" />
+                  <span>Chưa trả lời</span>
+                </div>
+              </div>
+            </Card>
+          )
+        : null}
+
       <Card className="p-6">
         <div className="text-sm text-text-body">
           {q
@@ -430,39 +524,55 @@ export function AttemptClient(props: { attemptId: string }) {
                     <MathRenderer content={q.prompt} />
                   </div>
                   <div className="mt-4 grid gap-2">
-                    {q.options.map(o => (
-                      <label
-                        key={o.order}
-                        aria-label={`option:${o.order}`}
-                        className={[
-                          'flex cursor-pointer items-start gap-3 rounded-md border border-border-subtle p-3 transition-colors duration-fast ease-soft',
-                          'bg-bg-section hover:bg-bg-elevated',
-                          selected.includes(o.order) ? 'border-primary bg-primary-subtle' : '',
-                        ].filter(Boolean).join(' ')}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selected.includes(o.order)}
-                          onChange={(e) => {
-                            if (q.type === 'mcq_single') {
-                              setSelected(e.target.checked ? [o.order] : []);
-                              return;
-                            }
-                            setSelected((prev) => {
-                              if (e.target.checked) {
-                                return [...prev, o.order];
-                              }
-                              return prev.filter(x => x !== o.order);
-                            });
-                          }}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm text-text-body">
-                            <MathRenderer content={o.content} />
+                    {q.options.map(o => {
+                      const optionLabel = String.fromCharCode(65 + o.order); // A, B, C, D...
+                      const isSelected = selected.includes(o.order);
+                      return (
+                        <label
+                          key={o.order}
+                          aria-label={`option:${o.order}`}
+                          className={cn(
+                            'flex cursor-pointer items-start gap-3 rounded-md border-2 p-3 transition-all duration-fast ease-soft',
+                            'bg-bg-section hover:bg-bg-elevated hover:scale-[1.01]',
+                            isSelected ? 'border-primary bg-primary/10 shadow-md' : 'border-border-subtle',
+                          )}
+                        >
+                          <div className="flex shrink-0 items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (q.type === 'mcq_single') {
+                                  setSelected(e.target.checked ? [o.order] : []);
+                                  return;
+                                }
+                                setSelected((prev) => {
+                                  if (e.target.checked) {
+                                    return [...prev, o.order];
+                                  }
+                                  return prev.filter(x => x !== o.order);
+                                });
+                              }}
+                              className="h-4 w-4"
+                            />
+                            <div className={cn(
+                              'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 font-semibold text-sm',
+                              isSelected
+                                ? 'border-primary bg-primary text-white'
+                                : 'border-border-subtle bg-bg-card text-text-muted',
+                            )}
+                            >
+                              {optionLabel}
+                            </div>
                           </div>
-                        </div>
-                      </label>
-                    ))}
+                          <div className="min-w-0 flex-1">
+                            <div className="text-base text-text-body">
+                              <MathRenderer content={o.content} />
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
                   </div>
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
                     <div className="text-xs text-text-muted">
@@ -502,7 +612,7 @@ export function AttemptClient(props: { attemptId: string }) {
           <Button
             variant="primary"
             disabled={busy || blocked || state.status !== 'active' || !isOnline || pendingCount > 0}
-            onClick={() => void submit()}
+            onClick={() => setShowSubmitConfirm(true)}
           >
             Submit
           </Button>
@@ -512,43 +622,122 @@ export function AttemptClient(props: { attemptId: string }) {
         </div>
       </Card>
 
+      {/* Checkpoint Modal */}
       {blocked
         ? (
-            <Card className="p-6 border border-danger/40 bg-danger/10">
-              <div className="text-lg font-semibold text-danger">Checkpoint: nhập token để tiếp tục</div>
-              <div className="mt-2 text-sm text-danger/90">
-                {!isOnline
-                  ? 'Bạn đang offline. Vui lòng online lại để verify token.'
-                  : (state.isLocked ? 'Bạn đang bị lock do nhập sai nhiều lần.' : 'Đến hạn verify token.')}
-              </div>
+            <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/60 backdrop-blur-sm">
+              <Card className="w-full max-w-md p-6">
+                <div className="mb-4 text-center">
+                  <div className={cn(
+                    'mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full text-4xl font-mono font-bold',
+                    nextDueIn !== null && nextDueIn <= 10 ? 'bg-danger/20 text-danger' : 'bg-warning/20 text-warning',
+                  )}
+                  >
+                    {nextDueIn !== null ? nextDueIn : '...'}
+                  </div>
+                  <div className="text-xl font-semibold text-text-heading">Checkpoint: Nhập token để tiếp tục</div>
+                  <div className="mt-2 text-sm text-text-muted">
+                    {!isOnline
+                      ? 'Bạn đang offline. Vui lòng online lại để verify token.'
+                      : (state.isLocked ? 'Bạn đang bị lock do nhập sai nhiều lần.' : 'Đến hạn verify token.')}
+                  </div>
+                </div>
 
-              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
-                <label className="flex-1" htmlFor="checkpointToken">
-                  <div className="text-sm font-medium text-danger">Token</div>
-                  <Input
-                    id="checkpointToken"
-                    className="mt-1 font-mono"
-                    value={token}
-                    onChange={e => setToken(e.target.value)}
-                    disabled={busy || state.inCooldown || state.isLocked || !isOnline}
-                  />
-                </label>
-                <Button
-                  variant="danger"
-                  onClick={() => void verify()}
-                  disabled={busy || token.trim().length === 0 || state.inCooldown || state.isLocked || !isOnline}
-                >
-                  {busy ? 'Đang verify...' : 'Verify'}
-                </Button>
-              </div>
+                <div className="space-y-4">
+                  <label htmlFor="checkpointToken">
+                    <div className="mb-1 text-sm font-medium text-text-heading">Token</div>
+                    <Input
+                      id="checkpointToken"
+                      className="font-mono"
+                      value={token}
+                      onChange={e => setToken(e.target.value)}
+                      disabled={busy || state.inCooldown || state.isLocked || !isOnline}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !busy && token.trim().length > 0 && !state.inCooldown && !state.isLocked && isOnline) {
+                          void verify();
+                        }
+                      }}
+                      autoFocus
+                    />
+                  </label>
 
-              <div className="mt-3 text-sm text-danger/90">
-                Sai:
-                {' '}
-                <span className="font-mono">{state.failedCount}</span>
-                {state.inCooldown ? ' · đang cooldown 30s' : null}
-              </div>
-            </Card>
+                  <Button
+                    variant="danger"
+                    className="w-full"
+                    onClick={() => void verify()}
+                    disabled={busy || token.trim().length === 0 || state.inCooldown || state.isLocked || !isOnline}
+                  >
+                    {busy ? 'Đang verify...' : 'Verify'}
+                  </Button>
+
+                  <div className="text-center text-xs text-text-muted">
+                    Sai:
+                    {' '}
+                    <span className="font-mono">{state.failedCount}</span>
+                    {state.inCooldown ? ' · đang cooldown 30s' : null}
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )
+        : null}
+
+      {/* Submit Confirmation Modal */}
+      {showSubmitConfirm
+        ? (
+            <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/60 backdrop-blur-sm">
+              <Card className="w-full max-w-md p-6">
+                <div className="mb-4 text-lg font-semibold text-text-heading">Xác nhận nộp bài</div>
+                <div className="mb-6 space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-text-muted">Tổng số câu:</span>
+                    <span className="font-semibold text-text-heading">{questions.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-text-muted">Đã trả lời:</span>
+                    <span className="font-semibold text-success">{answeredCount}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-text-muted">Chưa trả lời:</span>
+                    <span className={cn(
+                      'font-semibold',
+                      questions.length - answeredCount > 0 ? 'text-warning' : 'text-text-heading',
+                    )}
+                    >
+                      {questions.length - answeredCount}
+                    </span>
+                  </div>
+                  {questions.length - answeredCount > 0
+                    ? (
+                        <div className="mt-3 rounded-md bg-warning/10 p-2 text-xs text-warning">
+                          ⚠️ Bạn còn
+                          {' '}
+                          {questions.length - answeredCount}
+                          {' '}
+                          câu chưa trả lời. Bạn có chắc muốn nộp bài?
+                        </div>
+                      )
+                    : null}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    className="flex-1"
+                    onClick={() => setShowSubmitConfirm(false)}
+                  >
+                    Hủy
+                  </Button>
+                  <Button
+                    variant="primary"
+                    className="flex-1"
+                    onClick={() => void submit()}
+                    disabled={busy || blocked || state.status !== 'active' || !isOnline || pendingCount > 0}
+                  >
+                    {busy ? 'Đang nộp...' : 'Xác nhận nộp'}
+                  </Button>
+                </div>
+              </Card>
+            </div>
           )
         : null}
     </div>
