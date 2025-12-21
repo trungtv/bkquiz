@@ -38,7 +38,7 @@ export async function GET(_req: Request) {
 
 export async function POST(req: Request) {
   const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
+  await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
   const body = CreateQuizSchema.parse(await req.json());
 
   const quiz = await prisma.quiz.create({
