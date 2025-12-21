@@ -18,6 +18,13 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
           title: true,
         },
       },
+      classroom: {
+        select: {
+          id: true,
+          name: true,
+          classCode: true,
+        },
+      },
     },
   });
 
@@ -32,6 +39,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
     endedAt: session.endedAt,
     totpStepSeconds: session.totpStepSeconds,
     quiz: session.quiz,
+    classroom: session.classroom,
   });
 }
 // EOF

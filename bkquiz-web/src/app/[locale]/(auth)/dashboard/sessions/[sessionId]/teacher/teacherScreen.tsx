@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'react-qr-code';
 import { Badge } from '@/components/ui/Badge';
@@ -25,6 +26,11 @@ type SessionStatusResponse = {
   quiz: {
     title: string;
   };
+  classroom: {
+    id: string;
+    name: string;
+    classCode: string;
+  };
 };
 
 type TokenLogRow = {
@@ -46,6 +52,27 @@ type ScoreRow = {
   user: { id: string; email: string | null; name: string | null };
 };
 
+function formatDuration(startedAt: string | null): string {
+  if (!startedAt) {
+    return 'Chưa bắt đầu';
+  }
+  const start = new Date(startedAt);
+  const now = new Date();
+  const diff = Math.floor((now.getTime() - start.getTime()) / 1000);
+  const minutes = Math.floor(diff / 60);
+  const seconds = diff % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function shortenUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.origin}${u.pathname}`;
+  } catch {
+    return url.length > 50 ? `${url.slice(0, 47)}...` : url;
+  }
+}
+
 export function TeacherScreen(props: { sessionId: string; userId: string | null }) {
   const [data, setData] = useState<TeacherTokenResponse | null>(null);
   const [session, setSession] = useState<SessionStatusResponse | null>(null);
@@ -58,6 +85,8 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
   }>(null);
   const [error, setError] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const [showLogs, setShowLogs] = useState(false);
+  const [showScoreboard, setShowScoreboard] = useState(false);
 
   const lastFetchedAt = useRef<number>(0);
   const hasRefetchedForExpiry = useRef<boolean>(false);
@@ -76,7 +105,6 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
     const res = await fetch(`/api/sessions/${props.sessionId}/report/tokenLog`, { method: 'GET' });
     const json = await res.json() as { logs?: TokenLogRow[]; error?: string };
     if (!res.ok) {
-      // don't overwrite main error; just skip
       return;
     }
     setLogs(json.logs ?? []);
@@ -101,7 +129,7 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
     }
     setData(json as TeacherTokenResponse);
     lastFetchedAt.current = Date.now();
-    hasRefetchedForExpiry.current = false; // Reset flag when new token is fetched
+    hasRefetchedForExpiry.current = false;
   }
 
   useEffect(() => {
@@ -172,6 +200,10 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
   }
 
   async function endSession() {
+    // eslint-disable-next-line no-alert
+    if (!window.confirm('Bạn có chắc muốn kết thúc session này?')) {
+      return;
+    }
     setError(null);
     const res = await fetch(`/api/sessions/${props.sessionId}/end`, { method: 'POST' });
     const json = await res.json() as { error?: string };
@@ -198,268 +230,387 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
         hasRefetchedForExpiry.current = true;
         void fetchToken();
       }
-    }, 3000); // Update countdown every 3 seconds
+    }, 3000);
     return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
+  const progressPercent = data && secondsLeft !== null
+    ? Math.max(0, Math.min(100, (secondsLeft / data.stepSeconds) * 100))
+    : 0;
+
   return (
-    <div className="mx-auto max-w-6xl">
-      <Card>
-        <div className="text-lg font-semibold">Teacher Screen</div>
-        <div className="mt-1 text-sm text-text-muted">
-          <div>
-            Session:
-            {' '}
-            <span className="font-mono">{props.sessionId}</span>
-          </div>
-          <div className="mt-1">
-            Trạng thái:
-            {' '}
-            <span className="font-mono">{session?.status ?? '...'}</span>
-            {' '}
+    <div className="fixed inset-0 bg-black text-white overflow-y-auto">
+      {/* Breadcrumb - Small, top-left */}
+      <div className="absolute top-4 left-4 z-10">
+        <div className="flex items-center gap-1 text-xs text-white/60">
+          <Link href="/dashboard" className="hover:text-white/80 transition-colors">
+            Dashboard
+          </Link>
+          <span>/</span>
+          <Link href="/dashboard/sessions" className="hover:text-white/80 transition-colors">
+            Sessions
+          </Link>
+          <span>/</span>
+          <span className="text-white/40">Session</span>
+        </div>
+      </div>
+
+      {/* Controls - Top-right */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+        {session?.status === 'lobby'
+          ? (
+              <Button size="md" variant="primary" onClick={() => void startSession()} className="px-6 py-3 text-base">
+                Start Session
+              </Button>
+            )
+          : null}
+        {session?.status === 'active'
+          ? (
+              <Button size="md" variant="danger" onClick={() => void endSession()} className="px-6 py-3 text-base">
+                End Session
+              </Button>
+            )
+          : null}
+        <Button size="sm" variant="ghost" onClick={() => void fetchToken()} className="text-white/80 border-white/20 hover:bg-white/10">
+          Refresh Token
+        </Button>
+      </div>
+
+      {/* Session Info Bar - Compact, top */}
+      <div className="sticky top-0 z-20 bg-black/80 backdrop-blur-sm border-b border-white/10 px-6 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 text-sm">
+            <div className="font-semibold text-white">{session?.quiz?.title ?? 'Loading...'}</div>
+            <span className="text-white/40">·</span>
+            <div className="text-white/60">{session?.classroom?.name ?? '...'}</div>
+            <span className="text-white/40">·</span>
             <Badge
               variant={session?.status === 'active' ? 'success' : session?.status === 'ended' ? 'neutral' : 'info'}
               className="align-middle"
             >
               {session?.status ?? 'loading'}
             </Badge>
-            {session?.quiz?.title
+            {session?.startedAt
               ? (
                   <>
-                    {' '}
-                    ·
-                    {' '}
-                    <span className="font-medium">{session.quiz.title}</span>
+                    <span className="text-white/40">·</span>
+                    <div className="text-white/60 font-mono">
+                      {formatDuration(session.startedAt)}
+                    </div>
                   </>
                 )
               : null}
           </div>
+          {error
+            ? (
+                <div className="text-xs text-red-400">
+                  {error}
+                </div>
+              )
+            : null}
         </div>
-        {error
-          ? (
-              <div className="mt-3 rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
-                {error}
+      </div>
+
+      {/* Main Content - Full-screen QR + Token */}
+      <div className="min-h-screen flex items-center justify-center px-6 py-20">
+        <div className="w-full max-w-7xl grid gap-8 lg:grid-cols-2">
+          {/* QR Code Section */}
+          <div className="flex flex-col items-center justify-center">
+            <div className="text-sm font-medium text-white/60 mb-4">QR để sinh viên vào bài</div>
+            <div className="flex items-center justify-center">
+              {data?.joinUrl
+                ? (
+                    <div className="rounded-lg bg-white p-6 shadow-2xl">
+                      <QRCode value={data.joinUrl} size={480} />
+                    </div>
+                  )
+                : (
+                    <div className="w-[480px]">
+                      <Skeleton className="mx-auto h-[480px] w-[480px]" />
+                      <div className="mt-3 text-center text-sm text-white/40">Đang tải QR...</div>
+                    </div>
+                  )}
+            </div>
+            <div className="mt-6 max-w-md text-center">
+              <div className="rounded-md bg-white/5 border border-white/10 p-3 break-all text-xs text-white/60 font-mono">
+                {data?.joinUrl ? shortenUrl(data.joinUrl) : '...'}
               </div>
-            )
-          : null}
-        {session?.status === 'active'
-          ? (
-              <Card className="mt-3 p-3 text-sm text-text-body">
-                Nếu thấy "Chưa có câu hỏi" ở phía sinh viên, hãy kiểm tra quiz đã có rules và bấm Start lại (snapshot chỉ build 1 lần/1 session).
-              </Card>
-            )
-          : null}
-
-      </Card>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Card className="p-6">
-          <div className="text-sm font-medium text-text-heading">QR để sinh viên vào bài</div>
-          <div className="mt-4 flex items-center justify-center">
-            {data?.joinUrl
-              ? (
-                  <div className="rounded-md bg-bg-card p-4">
-                    <QRCode value={data.joinUrl} size={360} />
-                  </div>
-                )
-              : (
-                  <div className="w-full max-w-[420px]">
-                    <Skeleton className="mx-auto h-[360px] w-[360px]" />
-                    <div className="mt-3 text-center text-sm text-text-muted">Đang tải QR...</div>
-                  </div>
-                )}
-          </div>
-          {/* eslint-disable-next-line tailwindcss/classnames-order */}
-          <Card className="mt-4 p-3 break-all text-sm text-text-body">
-            {data?.joinUrl ?? '...'}
-          </Card>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="text-sm font-medium text-text-heading">Token (TOTP)</div>
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="ghost" onClick={() => void fetchToken()}>
-                Refresh token
-              </Button>
-              {session?.status === 'lobby'
-                ? (
-                    <Button size="sm" variant="primary" onClick={() => void startSession()}>
-                      Start
-                    </Button>
-                  )
-                : null}
-              {session?.status === 'active'
-                ? (
-                    <Button size="sm" variant="danger" onClick={() => void endSession()}>
-                      End
-                    </Button>
-                  )
-                : null}
+              <div className="mt-2 text-xs text-white/40">
+                Sinh viên quét QR hoặc mở link này để join session
+              </div>
             </div>
           </div>
 
-          <div className="mt-6 text-center">
-            <div className="text-7xl font-bold tracking-[0.25em] text-text-heading">
-              {data?.token ?? '------'}
-            </div>
-            <div className="mt-3 text-sm text-text-muted">
-              Đổi sau:
-              {' '}
-              <span className="font-mono">
+          {/* Token Section */}
+          <div className="flex flex-col items-center justify-center">
+            <div className="text-sm font-medium text-white/60 mb-4">Token (TOTP)</div>
+            <div className="text-center w-full">
+              <div className="text-8xl font-bold tracking-[0.3em] text-primary mb-6 font-mono">
+                {data?.token ?? '------'}
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full max-w-md mx-auto mb-4">
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all duration-300 ease-linear"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="text-lg text-white/80 font-mono mb-2">
                 {secondsLeft === null
                   ? '...'
                   : `${secondsLeft}s`}
-              </span>
-              {' '}
-              (step=
-              {data?.stepSeconds ?? 45}
-              s)
+              </div>
+              <div className="text-xs text-white/40">
+                Token đổi sau
+                {' '}
+                {secondsLeft === null
+                  ? '...'
+                  : `${secondsLeft}s`}
+                {' '}
+                (step=
+                {data?.stepSeconds ?? 45}
+                s)
+              </div>
+            </div>
+            <div className="mt-8 max-w-md text-center">
+              <div className="rounded-md bg-white/5 border border-white/10 p-3 text-xs text-white/60">
+                Gợi ý: Chiếu màn hình này lên projector. Sinh viên scan QR để vào link, khi tới checkpoint sẽ nhập token hiện tại.
+              </div>
             </div>
           </div>
-
-          <Card className="mt-6 p-3 text-sm text-text-body">
-            Gợi ý: chiếu màn hình này lên projector; sinh viên scan QR để vào link, khi tới checkpoint sẽ nhập token hiện tại.
-          </Card>
-        </Card>
+        </div>
       </div>
 
-      {snapshotInfo && snapshotInfo.perRule.length > 0
-        ? (
-            <Card className="mt-6 p-6">
-              <div className="font-semibold text-text-heading">Snapshot summary</div>
-              <div className="mt-1 text-xs text-text-muted">
-                Total picked:
+      {/* Collapsible Sections */}
+      <div className="bg-black/40 border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-6 py-4 space-y-4">
+          {/* Snapshot Info */}
+          {snapshotInfo && snapshotInfo.perRule.length > 0
+            ? (
+                <Card className="bg-white/5 border-white/10 p-4">
+                  <div className="font-semibold text-white text-sm mb-2">Snapshot Summary</div>
+                  <div className="text-xs text-white/60 mb-2">
+                    Total picked:
+                    {' '}
+                    <span className="font-mono text-white/80">{snapshotInfo.totalPicked}</span>
+                    {snapshotInfo.alreadyBuilt ? ' (already built)' : ''}
+                  </div>
+                  <div className="space-y-1">
+                    {snapshotInfo.perRule.filter(r => r.picked < r.requested).length === 0
+                      ? (
+                          <div className="text-xs text-green-400">✅ Đủ câu theo tất cả rules.</div>
+                        )
+                      : snapshotInfo.perRule.filter(r => r.picked < r.requested).map(r => (
+                          <div key={r.tagId} className="text-xs text-yellow-400">
+                            ⚠️ Tag
+                            {' '}
+                            <span className="font-mono">{r.tagNormalizedName}</span>
+                            : Cần
+                            {' '}
+                            <span className="font-mono">{r.requested}</span>
+                            , có
+                            {' '}
+                            <span className="font-mono">{r.picked}</span>
+                            {' '}
+                            (thiếu
+                            {' '}
+                            {r.requested - r.picked}
+                            )
+                          </div>
+                        ))}
+                  </div>
+                </Card>
+              )
+            : null}
+
+          {/* Token Log - Collapsible */}
+          <Card className="bg-white/5 border-white/10">
+            <button
+              type="button"
+              onClick={() => setShowLogs(!showLogs)}
+              className="w-full flex items-center justify-between p-4 text-left hover:bg-white/5 transition-colors"
+            >
+              <div className="text-base font-semibold text-white">
+                Token Log
                 {' '}
-                <span className="font-mono">{snapshotInfo.totalPicked}</span>
-                {snapshotInfo.alreadyBuilt ? ' (already built)' : ''}
+                <span className="text-xs font-normal text-white/40">
+                  (
+                  {logs.length}
+                  {' '}
+                  entries)
+                </span>
               </div>
-              <div className="mt-2 grid gap-1">
-                {snapshotInfo.perRule.filter(r => r.picked < r.requested).length === 0
-                  ? (
-                      <div className="text-sm text-text-body">Đủ câu theo tất cả rules.</div>
-                    )
-                  : snapshotInfo.perRule.filter(r => r.picked < r.requested).map(r => (
-                      <div key={r.tagId} className="text-sm text-text-body">
-                        Tag
-                        {' '}
-                        <span className="font-mono">{r.tagNormalizedName}</span>
-                        : requested
-                        {' '}
-                        <span className="font-mono">{r.requested}</span>
-                        , picked
-                        {' '}
-                        <span className="font-mono">{r.picked}</span>
-                      </div>
-                    ))}
+              <div className="flex items-center gap-2">
+                <a
+                  className="rounded-md border border-white/20 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10 transition-colors"
+                  href={`/api/sessions/${props.sessionId}/report/tokenLog?format=csv`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={e => e.stopPropagation()}
+                >
+                  Download CSV
+                </a>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void fetchLogs();
+                  }}
+                  className="text-white/80 border-white/20 hover:bg-white/10"
+                >
+                  Refresh
+                </Button>
+                <svg
+                  className={`w-5 h-5 text-white/60 transition-transform ${showLogs ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </div>
-            </Card>
-          )
-        : null}
+            </button>
+            {showLogs
+              ? (
+                  <div className="px-4 pb-4">
+                    <TableWrap className="mt-3">
+                      <Table>
+                        <thead>
+                          <tr className="text-white/60 text-xs">
+                            <th className="border-b border-white/10 p-2">Time</th>
+                            <th className="border-b border-white/10 p-2">User</th>
+                            <th className="border-b border-white/10 p-2">Type</th>
+                            <th className="border-b border-white/10 p-2">Token</th>
+                            <th className="border-b border-white/10 p-2">Attempt</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {logs.length === 0
+                            ? (
+                                <tr>
+                                  <td className="p-2 text-white/40 text-xs" colSpan={5}>Chưa có log.</td>
+                                </tr>
+                              )
+                            : logs.slice(0, 50).map(l => (
+                                <tr key={l.id} className="odd:bg-white/5 text-xs">
+                                  <td className="p-2 font-mono text-white/80">{new Date(l.createdAt).toLocaleTimeString()}</td>
+                                  <td className="p-2 text-white/80">
+                                    {l.user.email ?? l.user.name ?? l.user.id}
+                                  </td>
+                                  <td className="p-2 font-mono text-white/60">
+                                    {l.type}
+                                  </td>
+                                  <td className="p-2 font-mono text-white/80">
+                                    {l.enteredToken ?? '-'}
+                                  </td>
+                                  <td className="p-2 font-mono text-white/60">{l.attemptId.slice(0, 8)}</td>
+                                </tr>
+                              ))}
+                        </tbody>
+                      </Table>
+                    </TableWrap>
+                  </div>
+                )
+              : null}
+          </Card>
 
-      <Card className="mt-6 p-6">
-        <div className="flex items-center justify-between">
-          <div className="text-lg font-semibold">Token log</div>
-          <div className="flex items-center gap-2">
-            <a
-              className="rounded-md border border-border-subtle px-3 py-1.5 text-sm text-text-body hover:bg-bg-card"
-              href={`/api/sessions/${props.sessionId}/report/tokenLog?format=csv`}
-              target="_blank"
-              rel="noreferrer"
+          {/* Scoreboard - Collapsible */}
+          <Card className="bg-white/5 border-white/10">
+            <button
+              type="button"
+              onClick={() => setShowScoreboard(!showScoreboard)}
+              className="w-full flex items-center justify-between p-4 text-left hover:bg-white/5 transition-colors"
             >
-              Download CSV
-            </a>
-            <Button size="sm" variant="ghost" onClick={() => void fetchLogs()}>Refresh log</Button>
-          </div>
+              <div className="text-base font-semibold text-white">
+                Scoreboard
+                {' '}
+                <span className="text-xs font-normal text-white/40">
+                  (
+                  {scores.length}
+                  {' '}
+                  students)
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  className="rounded-md border border-white/20 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10 transition-colors"
+                  href={`/api/sessions/${props.sessionId}/report/scoreboard?format=csv`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={e => e.stopPropagation()}
+                >
+                  Download CSV
+                </a>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void fetchScoreboard();
+                  }}
+                  className="text-white/80 border-white/20 hover:bg-white/10"
+                >
+                  Refresh
+                </Button>
+                <svg
+                  className={`w-5 h-5 text-white/60 transition-transform ${showScoreboard ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </button>
+            {showScoreboard
+              ? (
+                  <div className="px-4 pb-4">
+                    <TableWrap className="mt-3">
+                      <Table>
+                        <thead>
+                          <tr className="text-white/60 text-xs">
+                            <th className="border-b border-white/10 p-2">User</th>
+                            <th className="border-b border-white/10 p-2">Status</th>
+                            <th className="border-b border-white/10 p-2">Score</th>
+                            <th className="border-b border-white/10 p-2">Submitted</th>
+                            <th className="border-b border-white/10 p-2">Attempt</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {scores.length === 0
+                            ? (
+                                <tr>
+                                  <td className="p-2 text-white/40 text-xs" colSpan={5}>Chưa có attempt.</td>
+                                </tr>
+                              )
+                            : scores.map(s => (
+                                <tr key={s.id} className="odd:bg-white/5 text-xs">
+                                  <td className="p-2 text-white/80">
+                                    {s.user.email ?? s.user.name ?? s.user.id}
+                                  </td>
+                                  <td className="p-2 font-mono text-white/60">{s.status}</td>
+                                  <td className="p-2 font-mono text-white/80">{s.score ?? '-'}</td>
+                                  <td className="p-2 font-mono text-white/60">
+                                    {s.submittedAt ? new Date(s.submittedAt).toLocaleTimeString() : '-'}
+                                  </td>
+                                  <td className="p-2 font-mono text-white/60">{s.id.slice(0, 8)}</td>
+                                </tr>
+                              ))}
+                        </tbody>
+                      </Table>
+                    </TableWrap>
+                  </div>
+                )
+              : null}
+          </Card>
         </div>
-        <TableWrap className="mt-3">
-          <Table>
-            <thead>
-              <tr className="text-text-muted">
-                <th className="border-b p-2">Time</th>
-                <th className="border-b p-2">User</th>
-                <th className="border-b p-2">Type</th>
-                <th className="border-b p-2">Token</th>
-                <th className="border-b p-2">Attempt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.length === 0
-                ? (
-                    <tr>
-                      <td className="p-2 text-text-muted" colSpan={5}>Chưa có log.</td>
-                    </tr>
-                  )
-                : logs.slice(0, 50).map(l => (
-                    <tr key={l.id} className="odd:bg-bg-elevated">
-                      <td className="p-2 font-mono">{new Date(l.createdAt).toLocaleTimeString()}</td>
-                      <td className="p-2">
-                        {l.user.email ?? l.user.name ?? l.user.id}
-                      </td>
-                      <td className="p-2 font-mono">
-                        {l.type}
-                      </td>
-                      <td className="p-2 font-mono">
-                        {l.enteredToken ?? '-'}
-                      </td>
-                      <td className="p-2 font-mono">{l.attemptId.slice(0, 8)}</td>
-                    </tr>
-                  ))}
-            </tbody>
-          </Table>
-        </TableWrap>
-      </Card>
-
-      <Card className="mt-6 p-6">
-        <div className="flex items-center justify-between">
-          <div className="text-lg font-semibold">Scoreboard</div>
-          <div className="flex items-center gap-2">
-            <a
-              className="rounded-md border border-border-subtle px-3 py-1.5 text-sm text-text-body hover:bg-bg-card"
-              href={`/api/sessions/${props.sessionId}/report/scoreboard?format=csv`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Download CSV
-            </a>
-            <Button size="sm" variant="ghost" onClick={() => void fetchScoreboard()}>Refresh scoreboard</Button>
-          </div>
-        </div>
-        <TableWrap className="mt-3">
-          <Table>
-            <thead>
-              <tr className="text-text-muted">
-                <th className="border-b p-2">User</th>
-                <th className="border-b p-2">Status</th>
-                <th className="border-b p-2">Score</th>
-                <th className="border-b p-2">Submitted</th>
-                <th className="border-b p-2">Attempt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scores.length === 0
-                ? (
-                    <tr>
-                      <td className="p-2 text-text-muted" colSpan={5}>Chưa có attempt.</td>
-                    </tr>
-                  )
-                : scores.map(s => (
-                    <tr key={s.id} className="odd:bg-bg-elevated">
-                      <td className="p-2">
-                        {s.user.email ?? s.user.name ?? s.user.id}
-                      </td>
-                      <td className="p-2 font-mono">{s.status}</td>
-                      <td className="p-2 font-mono">{s.score ?? '-'}</td>
-                      <td className="p-2 font-mono">
-                        {s.submittedAt ? new Date(s.submittedAt).toLocaleTimeString() : '-'}
-                      </td>
-                      <td className="p-2 font-mono">{s.id.slice(0, 8)}</td>
-                    </tr>
-                  ))}
-            </tbody>
-          </Table>
-        </TableWrap>
-      </Card>
+      </div>
     </div>
   );
 }
