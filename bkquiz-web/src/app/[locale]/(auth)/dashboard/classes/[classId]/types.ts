@@ -33,6 +33,7 @@ export type QuizLite = {
   title: string;
   status: 'draft' | 'published' | 'archived';
   ruleCount: number;
+  durationSeconds: number | null;
   tags?: Array<{ id: string; name: string; normalizedName: string }>;
 };
 

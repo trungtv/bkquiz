@@ -259,6 +259,7 @@ model QuizSession {
   endedAt           DateTime?
   totpSecret        String
   totpStepSeconds   Int                       @default(45)
+  settings          Json?                     // Store session-specific settings like durationSeconds
   createdAt         DateTime                  @default(now())
   updatedAt         DateTime                  @updatedAt
   classroomId       String

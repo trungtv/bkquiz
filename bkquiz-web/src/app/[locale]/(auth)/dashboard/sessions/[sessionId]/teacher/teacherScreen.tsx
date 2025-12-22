@@ -25,6 +25,7 @@ type SessionStatusResponse = {
   startedAt: string | null;
   endedAt: string | null;
   totpStepSeconds: number;
+  attemptCount: number;
   quiz: {
     title: string;
   };
@@ -81,6 +82,14 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
   const [session, setSession] = useState<SessionStatusResponse | null>(null);
   const [logs, setLogs] = useState<TokenLogRow[]>([]);
   const [scores, setScores] = useState<ScoreRow[]>([]);
+  const [joinedStudents, setJoinedStudents] = useState<Array<{
+    attemptId: string;
+    userId: string;
+    name: string;
+    email: string | null;
+    status: string;
+    joinedAt: string;
+  }>>([]);
   const [snapshotInfo, setSnapshotInfo] = useState<null | {
     alreadyBuilt: boolean;
     totalPicked: number;
@@ -122,6 +131,26 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
     setScores(json.attempts ?? []);
   }
 
+  async function fetchJoinedStudents() {
+    // Chỉ fetch khi session ở lobby hoặc active
+    if (session?.status === 'ended') {
+      return;
+    }
+    const res = await fetch(`/api/sessions/${props.sessionId}/joinedStudents`, { method: 'GET' });
+    const json = await res.json() as { students?: Array<{
+      attemptId: string;
+      userId: string;
+      name: string;
+      email: string | null;
+      status: string;
+      joinedAt: string;
+    }>; error?: string };
+    if (!res.ok) {
+      return;
+    }
+    setJoinedStudents(json.students ?? []);
+  };
+
   async function fetchToken() {
     // Không fetch token nếu session đã ended
     if (session?.status === 'ended') {
@@ -143,6 +172,7 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
     void fetchStatus();
     void fetchLogs();
     void fetchScoreboard();
+    void fetchJoinedStudents();
     void fetchToken();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.sessionId]);
@@ -172,6 +202,12 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.sessionId]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => void fetchJoinedStudents(), 3000);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.sessionId, session?.status]);
 
   async function startSession() {
     setError(null);
@@ -322,6 +358,18 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
             >
               {session?.status ?? 'loading'}
             </Badge>
+            {session?.status === 'lobby' && typeof session?.attemptCount === 'number'
+              ? (
+                  <>
+                    <span className="text-white/40">·</span>
+                    <div className="text-white/60">
+                      <span className="font-semibold text-white">{session.attemptCount}</span>
+                      {' '}
+                      sinh viên đã join
+                    </div>
+                  </>
+                )
+              : null}
             {session?.startedAt
               ? (
                   <>
@@ -345,8 +393,109 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
 
       {/* Main Content - Full-screen QR + Token hoặc Ended Summary */}
       <div className="min-h-screen flex items-center justify-center px-6 py-20">
-        {session?.status === 'ended'
+        {session?.status === 'lobby'
           ? (
+              /* Lobby - QR Code + Joined Students List */
+              <div className="w-full max-w-7xl grid gap-8 lg:grid-cols-2">
+                {/* QR Code Section - Left */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="text-sm font-medium text-white/60 mb-4">QR để sinh viên vào bài</div>
+                  <div className="flex items-center justify-center">
+                    {data?.joinUrl
+                      ? (
+                          <div className="rounded-lg bg-white p-6 shadow-2xl">
+                            <QRCode value={data.joinUrl} size={480} />
+                          </div>
+                        )
+                      : (
+                          <div className="w-[480px]">
+                            <Skeleton className="mx-auto h-[480px] w-[480px]" />
+                            <div className="mt-3 text-center text-sm text-white/40">Đang tải QR...</div>
+                          </div>
+                        )}
+                  </div>
+                  <div className="mt-6 max-w-md text-center">
+                    <div className="rounded-md bg-white/5 border border-white/10 p-3 break-all text-xs text-white/60 font-mono">
+                      {data?.joinUrl ? shortenUrl(data.joinUrl) : '...'}
+                    </div>
+                    <div className="mt-2 text-xs text-white/40">
+                      Sinh viên quét QR hoặc mở link này để join session
+                    </div>
+                  </div>
+                </div>
+
+                {/* Joined Students List - Right */}
+                <div className="flex flex-col">
+                  <Card className="bg-white/5 border-white/10 p-6">
+                    <div className="mb-4 flex items-center justify-between">
+                      <div>
+                        <div className="text-lg font-semibold text-white">
+                          Sinh viên đã join
+                        </div>
+                        <div className="mt-1 text-sm text-white/60">
+                          {joinedStudents.length}
+                          {' '}
+                          sinh viên
+                        </div>
+                      </div>
+                    </div>
+
+                    {joinedStudents.length === 0
+                      ? (
+                          <div className="py-8 text-center text-sm text-white/40">
+                            Chưa có sinh viên nào join
+                          </div>
+                        )
+                      : (
+                          <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                            {joinedStudents.map((student, idx) => {
+                              // Get initials for avatar
+                              const initials = student.name
+                                .split(' ')
+                                .map(n => n[0])
+                                .join('')
+                                .toUpperCase()
+                                .slice(0, 2);
+                              const joinedTime = new Date(student.joinedAt).toLocaleTimeString('vi-VN', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              });
+                              return (
+                                <div
+                                  key={student.attemptId}
+                                  className="flex items-center gap-3 rounded-md border border-white/10 bg-white/5 px-3 py-2 transition-all duration-200 hover:bg-white/10"
+                                  style={{ animationDelay: `${idx * 50}ms` }}
+                                >
+                                  {/* Avatar */}
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
+                                    {initials}
+                                  </div>
+                                  {/* Student Info */}
+                                  <div className="min-w-0 flex-1">
+                                    <div className="truncate text-sm font-medium text-white">
+                                      {student.name}
+                                    </div>
+                                    {student.email && (
+                                      <div className="truncate text-xs text-white/60">
+                                        {student.email}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {/* Joined Time */}
+                                  <div className="shrink-0 text-xs text-white/40 font-mono">
+                                    {joinedTime}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                  </Card>
+                </div>
+              </div>
+            )
+          : session?.status === 'ended'
+            ? (
               /* Session Ended - Summary View */
               <div className="w-full max-w-4xl space-y-6">
                 {/* Banner đỏ */}

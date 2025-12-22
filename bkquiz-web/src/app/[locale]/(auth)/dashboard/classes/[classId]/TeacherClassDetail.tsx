@@ -31,6 +31,8 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
   const [selectedQuizId, setSelectedQuizId] = useState('');
   const [quizSearchQuery, setQuizSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [scheduledStartTime, setScheduledStartTime] = useState<string>('');
+  const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
   const [createSessionBusy, setCreateSessionBusy] = useState(false);
   const [createSessionError, setCreateSessionError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -142,13 +144,25 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
     setCreateSessionBusy(true);
     setCreateSessionError(null);
     try {
+      const selectedQuiz = quizzes.find(q => q.id === selectedQuizId);
+      const body: any = {
+        classroomId: classId,
+        quizId: selectedQuizId,
+      };
+      if (scheduledStartTime) {
+        body.scheduledStartAt = scheduledStartTime;
+      }
+      // Use duration from input if set, otherwise use quiz's default duration
+      if (durationMinutes !== null && durationMinutes > 0) {
+        body.durationSeconds = durationMinutes * 60;
+      } else if (selectedQuiz?.durationSeconds !== null && selectedQuiz.durationSeconds > 0) {
+        // Fallback to quiz's duration if no override
+        body.durationSeconds = selectedQuiz.durationSeconds;
+      }
       const res = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          classroomId: classId,
-          quizId: selectedQuizId,
-        }),
+        body: JSON.stringify(body),
       });
       const json = await res.json() as { sessionId?: string; error?: string };
       if (!res.ok || !json.sessionId) {
@@ -157,6 +171,10 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
       }
       setShowCreateSessionModal(false);
       setSelectedQuizId('');
+      setScheduledStartTime('');
+      setDurationMinutes(null);
+      setSelectedTags([]);
+      setQuizSearchQuery('');
       setToast({ message: 'Đã tạo session thành công', type: 'success' });
       await loadSessions();
       setTimeout(() => {
@@ -452,7 +470,15 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                               <button
                                 key={q.id}
                                 type="button"
-                                onClick={() => setSelectedQuizId(q.id)}
+                                onClick={() => {
+                                  setSelectedQuizId(q.id);
+                                  // Auto-set duration from quiz (always set when selecting a quiz)
+                                  if (q.durationSeconds !== null) {
+                                    setDurationMinutes(Math.floor(q.durationSeconds / 60));
+                                  } else {
+                                    setDurationMinutes(null);
+                                  }
+                                }}
                                 className={`w-full rounded-md border transition-all duration-200 text-left ${
                                   isSelected
                                     ? 'border-primary bg-primary/10 hover:border-primary/70'
@@ -524,6 +550,15 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                                         {' '}
                                         rules
                                       </span>
+                                      {q.durationSeconds !== null && (
+                                        <span>
+                                          ·
+                                          {' '}
+                                          {q.durationSeconds >= 3600
+                                            ? `${Math.floor(q.durationSeconds / 3600)}h ${Math.floor((q.durationSeconds % 3600) / 60)}m`
+                                            : `${Math.floor(q.durationSeconds / 60)} phút`}
+                                        </span>
+                                      )}
                                       {q.ruleCount === 0 && (
                                         <Badge variant="neutral" className="text-xs bg-yellow-500/20 border-yellow-500/40 text-yellow-400">
                                           ⚠️ Chưa có rule
@@ -550,6 +585,100 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                     </>
                   )}
 
+              {/* Session Configuration - Show when quiz is selected */}
+              {selectedQuizId && (
+                <div className="space-y-4 border-t border-border-subtle pt-4">
+                  {(() => {
+                    const selectedQuiz = quizzes.find(q => q.id === selectedQuizId);
+                    const quizDurationMinutes = selectedQuiz?.durationSeconds
+                      ? Math.floor(selectedQuiz.durationSeconds / 60)
+                      : null;
+                    return (
+                      <>
+                        <div>
+                          <label htmlFor="scheduledStartTime" className="mb-2 block text-sm font-medium text-text-heading">
+                            Thời gian bắt đầu (tùy chọn)
+                          </label>
+                          <Input
+                            id="scheduledStartTime"
+                            type="datetime-local"
+                            value={scheduledStartTime}
+                            onChange={e => setScheduledStartTime(e.target.value)}
+                            className="w-full"
+                          />
+                          <p className="mt-1 text-xs text-text-muted">
+                            Để trống nếu muốn bắt đầu ngay khi tạo session
+                          </p>
+                        </div>
+
+                        <div>
+                          <div className="mb-2 flex items-center justify-between">
+                            <label htmlFor="durationMinutes" className="text-sm font-medium text-text-heading">
+                              Thời gian làm bài (phút)
+                            </label>
+                            {quizDurationMinutes && (
+                              <Badge variant="info" className="text-xs">
+                                Quiz: {quizDurationMinutes >= 60
+                                  ? `${Math.floor(quizDurationMinutes / 60)}h ${quizDurationMinutes % 60 > 0 ? `${quizDurationMinutes % 60}m` : ''}`
+                                  : `${quizDurationMinutes} phút`}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Input
+                              id="durationMinutes"
+                              type="number"
+                              min={1}
+                              max={1440}
+                              value={durationMinutes ?? ''}
+                              onChange={e => {
+                                const val = e.target.value === '' ? null : Number(e.target.value);
+                                setDurationMinutes(val);
+                              }}
+                              placeholder={quizDurationMinutes ? `${quizDurationMinutes} phút` : 'Không giới hạn'}
+                              className="w-32"
+                            />
+                            <span className="text-sm text-text-muted">
+                              {durationMinutes !== null && durationMinutes > 0
+                                ? (
+                                    <>
+                                      (
+                                      {durationMinutes >= 60
+                                        ? `${Math.floor(durationMinutes / 60)} giờ ${durationMinutes % 60 > 0 ? `${durationMinutes % 60} phút` : ''}`
+                                        : `${durationMinutes} phút`}
+                                      )
+                                    </>
+                                  )
+                                : quizDurationMinutes
+                                  ? (
+                                      <span className="text-text-muted">
+                                        Đang dùng mặc định từ quiz:
+                                        {' '}
+                                        {quizDurationMinutes >= 60
+                                          ? `${Math.floor(quizDurationMinutes / 60)}h ${quizDurationMinutes % 60}m`
+                                          : `${quizDurationMinutes} phút`}
+                                      </span>
+                                    )
+                                  : 'Không giới hạn'}
+                            </span>
+                          </div>
+                          {quizDurationMinutes && (
+                            <p className="mt-1 text-xs text-text-muted">
+                              Giá trị mặc định từ cấu hình quiz. Bạn có thể thay đổi cho session này nếu cần.
+                            </p>
+                          )}
+                          {!quizDurationMinutes && (
+                            <p className="mt-1 text-xs text-text-muted">
+                              Quiz này không có giới hạn thời gian. Bạn có thể đặt thời gian cho session này.
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+
               {createSessionError && (
                 <div className="rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
                   {createSessionError}
@@ -565,6 +694,8 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                     setSelectedQuizId('');
                     setQuizSearchQuery('');
                     setSelectedTags([]);
+                    setScheduledStartTime('');
+                    setDurationMinutes(null);
                     setCreateSessionError(null);
                   }}
                 >

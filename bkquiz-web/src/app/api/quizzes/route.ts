@@ -77,6 +77,7 @@ export async function GET(req: Request) {
       title: true,
       status: true,
       updatedAt: true,
+      settings: true,
       _count: { select: { rules: true } },
       tags: {
         select: {
@@ -93,14 +94,18 @@ export async function GET(req: Request) {
   });
 
   return NextResponse.json({
-    quizzes: quizzes.map(q => ({
-      id: q.id,
-      title: q.title,
-      status: q.status,
-      updatedAt: q.updatedAt,
-      ruleCount: q._count.rules,
-      tags: q.tags.map((t: any) => t.tag),
-    })),
+    quizzes: quizzes.map(q => {
+      const settings = (q.settings ?? {}) as any;
+      return {
+        id: q.id,
+        title: q.title,
+        status: q.status,
+        updatedAt: q.updatedAt,
+        ruleCount: q._count.rules,
+        durationSeconds: typeof settings.durationSeconds === 'number' ? settings.durationSeconds : null,
+        tags: q.tags.map((t: any) => t.tag),
+      };
+    }),
   });
 }
 

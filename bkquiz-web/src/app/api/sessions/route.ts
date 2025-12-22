@@ -8,6 +8,8 @@ const CreateSessionSchema = z.object({
   classroomId: z.string().trim().min(1),
   quizId: z.string().trim().min(1),
   totpStepSeconds: z.number().int().min(15).max(120).optional(),
+  scheduledStartAt: z.string().datetime().optional(),
+  durationSeconds: z.number().int().min(60).max(86400).optional(), // 1 phút đến 24 giờ
 });
 
 export async function GET(_req: Request) {
@@ -160,14 +162,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'QUIZ_HAS_NO_RULES' }, { status: 400 });
   }
 
+  // Prepare session data
+  const sessionData: any = {
+    quizId: quiz.id,
+    classroomId: body.classroomId,
+    status: 'lobby',
+    totpSecret: generateTotpSecret(),
+    totpStepSeconds: body.totpStepSeconds ?? 45,
+  };
+
+  // If scheduledStartAt is provided, set startedAt (will be used when session actually starts)
+  // Note: startedAt is used for both scheduled start and actual start
+  // TODO: Consider adding a separate scheduledStartAt field in schema for better clarity
+  if (body.scheduledStartAt) {
+    sessionData.startedAt = new Date(body.scheduledStartAt);
+  }
+
+  // Store durationSeconds in settings JSONB
+  if (body.durationSeconds) {
+    sessionData.settings = { durationSeconds: body.durationSeconds };
+  }
+
   const session = await prisma.quizSession.create({
-    data: {
-      quizId: quiz.id,
-      classroomId: body.classroomId,
-      status: 'lobby',
-      totpSecret: generateTotpSecret(),
-      totpStepSeconds: body.totpStepSeconds ?? 45,
-    },
+    data: sessionData,
     select: { id: true, totpStepSeconds: true, status: true },
   });
 

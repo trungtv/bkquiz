@@ -13,6 +13,11 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
       endedAt: true,
       totpStepSeconds: true,
       createdAt: true,
+      _count: {
+        select: {
+          attempts: true,
+        },
+      },
       quiz: {
         select: {
           id: true,
@@ -46,6 +51,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
     endedAt: session.endedAt,
     createdAt: session.createdAt,
     totpStepSeconds: session.totpStepSeconds,
+    attemptCount: session._count.attempts,
     quiz: session.quiz,
     classroom: session.classroom,
   });
