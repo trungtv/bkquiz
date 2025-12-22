@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
 import { Toast } from '@/components/ui/Toast';
 import { TagInput } from '@/components/ui/TagInput';
 import { ClassHeader } from './shared/ClassHeader';
@@ -28,9 +29,28 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
   const [showCreateSessionModal, setShowCreateSessionModal] = useState(false);
   const [quizzes, setQuizzes] = useState<QuizLite[]>([]);
   const [selectedQuizId, setSelectedQuizId] = useState('');
+  const [quizSearchQuery, setQuizSearchQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [createSessionBusy, setCreateSessionBusy] = useState(false);
   const [createSessionError, setCreateSessionError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  // Toggle tag filter
+  const toggleTagFilter = (tagName: string) => {
+    const normalizedTagName = tagName.trim().toLowerCase();
+    setSelectedTags(prev => {
+      const isSelected = prev.some(t => t.toLowerCase() === normalizedTagName);
+      if (isSelected) {
+        return prev.filter(t => t.toLowerCase() !== normalizedTagName);
+      }
+      return [...prev, tagName.trim()];
+    });
+  };
+
+  // Check if tag is selected
+  const isTagSelected = (tagName: string) => {
+    return selectedTags.some(t => t.toLowerCase() === tagName.trim().toLowerCase());
+  };
 
   // Tags state
   const [tagsInput, setTagsInput] = useState('');
@@ -313,7 +333,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
       {/* Create Session Modal */}
       {showCreateSessionModal && (
         <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-md p-6">
+          <Card className="w-full max-w-2xl max-h-[90vh] flex flex-col p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-text-heading">Tạo Session</h2>
               <button
@@ -321,6 +341,8 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                 onClick={() => {
                   setShowCreateSessionModal(false);
                   setSelectedQuizId('');
+                  setQuizSearchQuery('');
+                  setSelectedTags([]);
                   setCreateSessionError(null);
                 }}
                 className="rounded-md p-1 text-text-muted transition-colors hover:bg-bg-cardHover hover:text-text-heading"
@@ -329,15 +351,12 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="quizSelect" className="mb-2 block text-sm font-medium text-text-heading">
-                  Chọn Quiz
-                </label>
-                {quizzes.length === 0
-                  ? (
-                      <div className="rounded-md border border-dashed border-border-subtle px-4 py-8 text-center text-sm text-text-muted">
-                        Chưa có quiz nào.
+            <div className="flex flex-1 flex-col space-y-4 overflow-hidden">
+              {quizzes.length === 0
+                ? (
+                    <div className="flex flex-1 items-center justify-center rounded-md border border-dashed border-border-subtle px-4 py-8 text-center text-sm text-text-muted">
+                      <div>
+                        <div>Chưa có quiz nào.</div>
                         <div className="mt-2">
                           <Link href="/dashboard/quizzes">
                             <Button variant="primary" size="sm" className="hover:scale-105">
@@ -346,28 +365,190 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                           </Link>
                         </div>
                       </div>
-                    )
-                  : (
-                      <select
-                        id="quizSelect"
-                        value={selectedQuizId}
-                        onChange={e => setSelectedQuizId(e.target.value)}
-                        className="w-full rounded-md border border-border-subtle bg-bg-card px-3 py-2 text-sm text-text-body transition-colors hover:border-border-strong focus:border-primary focus:outline-none"
-                      >
-                        <option value="">-- Chọn quiz --</option>
-                        {quizzes.map(q => (
-                          <option key={q.id} value={q.id}>
-                            {q.title}
-                            {' '}
-                            (
-                            {q.status}
-                            )
-                            {q.ruleCount === 0 && ' ⚠️ Chưa có rule'}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-              </div>
+                    </div>
+                  )
+                : (
+                    <>
+                      {/* Search Input */}
+                      <div>
+                        <Input
+                          type="text"
+                          placeholder="Tìm kiếm quiz..."
+                          value={quizSearchQuery}
+                          onChange={e => setQuizSearchQuery(e.target.value)}
+                          className="w-full"
+                        />
+                      </div>
+
+                      {/* Selected Tags Filter */}
+                      {selectedTags.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2">
+                          <span className="text-xs text-text-muted">Filter:</span>
+                          {selectedTags.map((tag, idx) => (
+                            <Badge
+                              key={idx}
+                              variant="info"
+                              className="text-xs cursor-pointer bg-primary/20 border-primary/40 hover:bg-primary/30"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                toggleTagFilter(tag);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  toggleTagFilter(tag);
+                                }
+                              }}
+                              role="button"
+                              tabIndex={0}
+                            >
+                              {tag}
+                              {' '}
+                              ×
+                            </Badge>
+                          ))}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="ml-auto h-5 px-2 text-xs"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setSelectedTags([]);
+                            }}
+                          >
+                            Clear
+                          </Button>
+                        </div>
+                      )}
+
+                      {/* Quiz List */}
+                      <div className="flex-1 space-y-2 overflow-y-auto">
+                        {quizzes
+                          .filter(q => {
+                            // Filter by search query
+                            if (quizSearchQuery.trim()) {
+                              const query = quizSearchQuery.toLowerCase();
+                              const matchesSearch = q.title.toLowerCase().includes(query)
+                                || q.tags?.some(t => t.name.toLowerCase().includes(query));
+                              if (!matchesSearch) {
+                                return false;
+                              }
+                            }
+                            // Filter by selected tags (AND logic - quiz must have ALL selected tags)
+                            if (selectedTags.length > 0) {
+                              const quizTagNames = (q.tags || []).map(t => t.name.trim().toLowerCase());
+                              const hasAllTags = selectedTags.every(selectedTag =>
+                                quizTagNames.includes(selectedTag.toLowerCase())
+                              );
+                              if (!hasAllTags) {
+                                return false;
+                              }
+                            }
+                            return true;
+                          })
+                          .map(q => {
+                            const isSelected = selectedQuizId === q.id;
+                            return (
+                              <button
+                                key={q.id}
+                                type="button"
+                                onClick={() => setSelectedQuizId(q.id)}
+                                className={`w-full rounded-md border transition-all duration-200 text-left ${
+                                  isSelected
+                                    ? 'border-primary bg-primary/10 hover:border-primary/70'
+                                    : 'border-border-subtle bg-bg-section hover:border-primary/30 hover:translate-x-1 hover:shadow-md'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-4 px-4 py-3">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <div className="truncate text-sm font-medium text-text-heading">
+                                        {q.title}
+                                      </div>
+                                      <Badge
+                                        variant={q.status === 'published' ? 'success' : 'neutral'}
+                                        className="text-xs shrink-0"
+                                      >
+                                        {q.status}
+                                      </Badge>
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                                      {q.tags && q.tags.length > 0
+                                        ? (
+                                            <>
+                                              {q.tags.slice(0, 5).map((tag) => {
+                                                const tagIsSelected = isTagSelected(tag.name);
+                                                return (
+                                                  <Badge
+                                                    key={tag.id}
+                                                    variant={tagIsSelected ? 'info' : 'neutral'}
+                                                    className={`text-xs cursor-pointer transition-colors ${
+                                                      tagIsSelected
+                                                        ? 'bg-primary/20 border-primary/40 hover:bg-primary/30'
+                                                        : 'hover:bg-primary/10'
+                                                    }`}
+                                                    onClick={(e) => {
+                                                      e.preventDefault();
+                                                      e.stopPropagation();
+                                                      toggleTagFilter(tag.name);
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                      if (e.key === 'Enter' || e.key === ' ') {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        toggleTagFilter(tag.name);
+                                                      }
+                                                    }}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                  >
+                                                    {tag.name}
+                                                  </Badge>
+                                                );
+                                              })}
+                                              {q.tags.length > 5 && (
+                                                <Badge variant="neutral" className="text-xs">
+                                                  +
+                                                  {q.tags.length - 5}
+                                                </Badge>
+                                              )}
+                                            </>
+                                          )
+                                        : (
+                                            <span className="text-xs text-text-muted">Không có tags</span>
+                                          )}
+                                    </div>
+                                    <div className="mt-1 flex items-center gap-2 text-xs text-text-muted">
+                                      <span>
+                                        {q.ruleCount}
+                                        {' '}
+                                        rules
+                                      </span>
+                                      {q.ruleCount === 0 && (
+                                        <Badge variant="neutral" className="text-xs bg-yellow-500/20 border-yellow-500/40 text-yellow-400">
+                                          ⚠️ Chưa có rule
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="shrink-0">
+                                    {isSelected
+                                      ? (
+                                          <div className="h-5 w-5 rounded-full border-2 border-primary bg-primary flex items-center justify-center">
+                                            <div className="h-2 w-2 rounded-full bg-white" />
+                                          </div>
+                                        )
+                                      : (
+                                          <div className="h-5 w-5 rounded-full border-2 border-border-strong" />
+                                        )}
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </>
+                  )}
 
               {createSessionError && (
                 <div className="rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
@@ -375,13 +556,15 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                 </div>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 border-t border-border-subtle pt-4">
                 <Button
                   variant="ghost"
                   className="flex-1"
                   onClick={() => {
                     setShowCreateSessionModal(false);
                     setSelectedQuizId('');
+                    setQuizSearchQuery('');
+                    setSelectedTags([]);
                     setCreateSessionError(null);
                   }}
                 >
