@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireUser } from '@/server/authz';
+import { requireQuizOwnership, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 import { parseTagsInput, upsertTags, validateTagsCount } from '@/server/tags';
 
@@ -55,21 +55,13 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ quizId: strin
   const { quizId } = await ctx.params;
   const body = UpdateTagsSchema.parse(await req.json());
 
-  // Check quiz exists và user là owner
-  const quiz = await prisma.quiz.findUnique({
-    where: { id: quizId },
-    select: {
-      id: true,
-      createdByTeacherId: true,
-    },
-  });
-
-  if (!quiz) {
-    return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
-  }
-
-  // Chỉ owner mới được update tags
-  if (quiz.createdByTeacherId !== userId) {
+  try {
+    await requireQuizOwnership(userId, quizId);
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    if (error === 'QUIZ_NOT_FOUND') {
+      return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 

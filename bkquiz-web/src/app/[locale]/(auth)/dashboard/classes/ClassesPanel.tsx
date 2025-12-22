@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -27,6 +28,8 @@ type ClassesPanelProps = {
 
 export function ClassesPanel(props: ClassesPanelProps) {
   const { role } = props;
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [classes, setClasses] = useState<ClassroomLite[]>([]);
   const [newClassName, setNewClassName] = useState('');
   const [joinCode, setJoinCode] = useState('');
@@ -34,6 +37,7 @@ export function ClassesPanel(props: ClassesPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [tagFilter, setTagFilter] = useState('');
+  const [autoJoining, setAutoJoining] = useState(false);
 
   // Parse tag filter thành array
   const activeFilterTags = useMemo(() => {
@@ -76,7 +80,7 @@ export function ClassesPanel(props: ClassesPanelProps) {
     }
     try {
       const res = await fetch(url.toString(), { method: 'GET' });
-      if (!res.ok) {
+    if (!res.ok) {
         const text = await res.text();
         let json: { classes?: ClassroomLite[]; error?: string };
         try {
@@ -85,9 +89,9 @@ export function ClassesPanel(props: ClassesPanelProps) {
           setError(`LOAD_FAILED: ${res.status} ${res.statusText}`);
           return;
         }
-        setError(json.error ?? 'LOAD_FAILED');
-        return;
-      }
+      setError(json.error ?? 'LOAD_FAILED');
+      return;
+    }
       const text = await res.text();
       if (!text) {
         setError('LOAD_FAILED: Empty response');
@@ -101,8 +105,8 @@ export function ClassesPanel(props: ClassesPanelProps) {
         console.error('Failed to parse response:', text, err);
         return;
       }
-      setError(null);
-      setClasses(json.classes ?? []);
+    setError(null);
+    setClasses(json.classes ?? []);
     } catch (err) {
       setError(`LOAD_FAILED: ${err instanceof Error ? err.message : String(err)}`);
       console.error('Error loading classes:', err);
@@ -140,8 +144,9 @@ export function ClassesPanel(props: ClassesPanelProps) {
     }
   }
 
-  async function joinClass() {
-    if (joinCode.trim().length === 0) {
+  async function joinClass(code?: string) {
+    const codeToJoin = code || joinCode.trim();
+    if (codeToJoin.length === 0) {
       setError('Vui lòng nhập class code');
       return;
     }
@@ -151,9 +156,21 @@ export function ClassesPanel(props: ClassesPanelProps) {
       const res = await fetch('/api/classes/join', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ classCode: joinCode }),
+        body: JSON.stringify({ classCode: codeToJoin }),
       });
-      const json = await res.json() as { id?: string; error?: string };
+      const text = await res.text();
+      if (!text) {
+        setError('JOIN_FAILED: Empty response');
+        return;
+      }
+      let json: { id?: string; error?: string };
+      try {
+        json = JSON.parse(text);
+      } catch (err) {
+        setError('JOIN_FAILED: Invalid JSON response');
+        console.error('Failed to parse response:', text, err);
+        return;
+      }
       if (!res.ok || !json.id) {
         setError(json.error ?? 'JOIN_FAILED');
         return;
@@ -161,10 +178,32 @@ export function ClassesPanel(props: ClassesPanelProps) {
       setJoinCode('');
       setToast({ message: 'Đã join lớp thành công', type: 'success' });
       await load();
+      // Redirect to class detail page
+      if (json.id) {
+        setTimeout(() => {
+          router.push(`/dashboard/classes/${json.id}`);
+        }, 1000);
+      }
+      return json.id;
     } finally {
       setBusy(false);
     }
   }
+
+  // Auto-join khi có query param `join`
+  useEffect(() => {
+    const joinParam = searchParams.get('join');
+    if (joinParam && !autoJoining) {
+      setAutoJoining(true);
+      void joinClass(joinParam).then((classId) => {
+        if (classId) {
+          // Clear query param
+          router.replace('/dashboard/classes');
+        }
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   return (
     <div className="space-y-7">

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireUser } from '@/server/authz';
+import { requireAttemptAccess, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 
 type AnswerRow = Awaited<ReturnType<typeof prisma.answer.findMany>>[number];
@@ -87,11 +87,20 @@ export async function POST(_: Request, ctx: { params: Promise<{ attemptId: strin
   const { userId } = await requireUser();
   const { attemptId } = await ctx.params;
 
+  try {
+    await requireAttemptAccess(userId, attemptId);
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    if (error === 'ATTEMPT_NOT_FOUND') {
+      return NextResponse.json({ error: 'ATTEMPT_NOT_FOUND' }, { status: 404 });
+    }
+    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+  }
+
   const attempt = await prisma.attempt.findUnique({
     where: { id: attemptId },
     select: {
       id: true,
-      userId: true,
       status: true,
       sessionId: true,
       quizSession: { select: { quiz: { select: { settings: true } } } },
@@ -99,9 +108,6 @@ export async function POST(_: Request, ctx: { params: Promise<{ attemptId: strin
   });
   if (!attempt) {
     return NextResponse.json({ error: 'ATTEMPT_NOT_FOUND' }, { status: 404 });
-  }
-  if (attempt.userId !== userId) {
-    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
   if (attempt.status !== 'active') {
     return NextResponse.json({ error: 'ATTEMPT_NOT_ACTIVE' }, { status: 400 });

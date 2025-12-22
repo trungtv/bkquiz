@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireUser } from '@/server/authz';
+import { requireAttemptAccess, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 
 const GRACE_SECONDS_BEFORE_BLOCK = 5;
@@ -8,11 +8,20 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
   const { userId } = await requireUser();
   const { attemptId } = await ctx.params;
 
+  try {
+    await requireAttemptAccess(userId, attemptId);
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    if (error === 'ATTEMPT_NOT_FOUND') {
+      return NextResponse.json({ error: 'ATTEMPT_NOT_FOUND' }, { status: 404 });
+    }
+    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+  }
+
   const attempt = await prisma.attempt.findUnique({
     where: { id: attemptId },
     select: {
       id: true,
-      userId: true,
       status: true,
       nextDueAt: true,
       failedCount: true,
@@ -27,13 +36,6 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
       },
     },
   });
-
-  if (!attempt) {
-    return NextResponse.json({ error: 'ATTEMPT_NOT_FOUND' }, { status: 404 });
-  }
-  if (attempt.userId !== userId) {
-    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
-  }
 
   const now = new Date();
   const warning = attempt.nextDueAt

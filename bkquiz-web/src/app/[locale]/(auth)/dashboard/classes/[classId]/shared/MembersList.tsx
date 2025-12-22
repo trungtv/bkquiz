@@ -46,19 +46,19 @@ export function MembersList(props: MembersListProps) {
                 <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_auto_auto] items-center gap-4 md:grid-cols-[2fr_auto_120px_100px]">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium text-text-heading">
-                      {m.user.name ?? m.user.email ?? 'N/A'}
-                    </div>
-                    <div className="mt-1 text-xs text-text-muted">
-                      {m.user.email}
-                    </div>
-                  </div>
-                  <Badge
-                    variant={m.roleInClass === 'teacher' ? 'success' : (m.roleInClass === 'ta' ? 'info' : 'neutral')}
-                    className="text-xs"
-                  >
-                    {m.roleInClass === 'teacher' ? 'Teacher' : (m.roleInClass === 'ta' ? 'TA' : 'Student')}
-                  </Badge>
-                  <div className="text-xs text-text-muted">
+                  {m.user.name ?? m.user.email ?? 'N/A'}
+                </div>
+                <div className="mt-1 text-xs text-text-muted">
+                  {m.user.email}
+                </div>
+              </div>
+                <Badge
+                  variant={m.roleInClass === 'teacher' ? 'success' : (m.roleInClass === 'ta' ? 'info' : 'neutral')}
+                  className="text-xs"
+                >
+                  {m.roleInClass === 'teacher' ? 'Teacher' : (m.roleInClass === 'ta' ? 'TA' : 'Student')}
+                </Badge>
+                <div className="text-xs text-text-muted">
                     <span className="font-mono">{formatDate(m.joinedAt)}</span>
                   </div>
                   <div className="text-xs text-text-muted">

@@ -71,9 +71,9 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
     }
     try {
       const res = await fetch(url.toString(), { method: 'GET' });
-      if (!res.ok) {
-        return;
-      }
+    if (!res.ok) {
+      return;
+    }
       const text = await res.text();
       if (!text) {
         return;
@@ -85,7 +85,7 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
         console.error('Failed to parse pools response:', text, err);
         return;
       }
-      setOwned(data.owned);
+    setOwned(data.owned);
     } catch (err) {
       console.error('Error loading pools:', err);
     }
@@ -325,8 +325,8 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
       <Card className="p-5 md:p-6 animate-slideUp" style={{ animationDelay: '100ms' }}>
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-lg font-semibold text-text-heading">Pools của bạn</div>
-            <div className="mt-1 text-sm text-text-muted">
+        <div className="text-lg font-semibold text-text-heading">Pools của bạn</div>
+        <div className="mt-1 text-sm text-text-muted">
               {sorted.length}
               {' '}
               pools
@@ -334,24 +334,24 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
           </div>
         </div>
 
-        {busy && sorted.length === 0
-          ? (
-              <div className="mt-4 space-y-3">
-                <Skeleton className="h-16" />
-                <Skeleton className="h-16" />
-              </div>
-            )
-          : sorted.length === 0
+          {busy && sorted.length === 0
             ? (
+              <div className="mt-4 space-y-3">
+                  <Skeleton className="h-16" />
+                  <Skeleton className="h-16" />
+                </div>
+              )
+            : sorted.length === 0
+              ? (
                 <div className="mt-6 rounded-md border border-dashed border-border-subtle px-4 py-8 text-center">
                   <div className="text-sm text-text-muted">
                     Chưa có question pool nào.
-                  </div>
+                    </div>
                   <div className="mt-2 text-xs text-text-muted">
                     Bắt đầu bằng cách import từ Markdown/ZIP hoặc tạo pool mới.
+                    </div>
                   </div>
-                </div>
-              )
+                )
             : (
                 <div className="mt-4 space-y-3">
                   {sorted.map((p, idx) => (
@@ -363,11 +363,11 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
                         <div className="flex items-center justify-between gap-4 px-4 py-3">
                           <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_auto_auto] items-center gap-4 md:grid-cols-[2fr_auto_120px_100px]">
                             <div className="min-w-0">
-                              <div className="truncate text-sm font-medium text-text-heading">{p.name}</div>
+                        <div className="truncate text-sm font-medium text-text-heading">{p.name}</div>
                               <div className="mt-1 text-xs text-text-muted">
-                                {p.questionCount ?? 0}
-                                {' '}
-                                câu
+                            {p.questionCount ?? 0}
+                            {' '}
+                            câu
                               </div>
                             </div>
                             {p.tags && p.tags.length > 0 && (
@@ -403,7 +403,7 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
                                   );
                                 })}
                                 {p.tags.length > 5 && (
-                                  <Badge variant="neutral" className="text-xs">
+                          <Badge variant="neutral" className="text-xs">
                                     +
                                     {p.tags.length - 5}
                                   </Badge>
@@ -414,12 +414,12 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
                               variant={p.visibility === 'shared' ? 'info' : 'neutral'}
                               className="text-xs"
                             >
-                              {p.visibility}
-                            </Badge>
+                            {p.visibility}
+                          </Badge>
                             <div className="text-xs text-text-muted">
                               <span className="font-mono">
-                                {new Date(p.updatedAt).toLocaleDateString('vi-VN')}
-                              </span>
+                            {new Date(p.updatedAt).toLocaleDateString('vi-VN')}
+                          </span>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -427,9 +427,9 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
                           </div>
                         </div>
                       </div>
-                    </Link>
-                  ))}
-                </div>
+                  </Link>
+                ))}
+        </div>
               )}
       </Card>
     </div>

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getUserRole, requireTeacherInClassroom, requireUser } from '@/server/authz';
+import { getUserRole, requireQuizOwnership, requireTeacherInClassroom, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 import { generateTotpSecret } from '@/server/totp';
 
@@ -144,19 +144,20 @@ export async function POST(req: Request) {
   await requireTeacherInClassroom(userId, body.classroomId);
 
   // Check quiz tồn tại và teacher sở hữu quiz
-  const quiz = await prisma.quiz.findUnique({
-    where: { id: body.quizId },
-    select: { id: true, createdByTeacherId: true, _count: { select: { rules: true } } },
-  });
-
-  if (!quiz) {
-    return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
-  }
-
-  // Chỉ teacher sở hữu quiz mới được tạo session
-  if (quiz.createdByTeacherId !== userId) {
+  try {
+    await requireQuizOwnership(userId, body.quizId);
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    if (error === 'QUIZ_NOT_FOUND') {
+      return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
+
+  const quiz = await prisma.quiz.findUnique({
+    where: { id: body.quizId },
+    select: { id: true, _count: { select: { rules: true } } },
+  });
 
   if (quiz._count.rules === 0) {
     return NextResponse.json({ error: 'QUIZ_HAS_NO_RULES' }, { status: 400 });
@@ -164,11 +165,11 @@ export async function POST(req: Request) {
 
   // Prepare session data
   const sessionData: any = {
-    quizId: quiz.id,
-    classroomId: body.classroomId,
-    status: 'lobby',
-    totpSecret: generateTotpSecret(),
-    totpStepSeconds: body.totpStepSeconds ?? 45,
+      quizId: quiz.id,
+      classroomId: body.classroomId,
+      status: 'lobby',
+      totpSecret: generateTotpSecret(),
+      totpStepSeconds: body.totpStepSeconds ?? 45,
   };
 
   // If scheduledStartAt is provided, set startedAt (will be used when session actually starts)

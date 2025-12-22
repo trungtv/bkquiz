@@ -104,3 +104,133 @@ export async function requireTeacherInClassroom(userId: string, classroomId: str
   }
   return membership;
 }
+
+/**
+ * Require user to own the quiz
+ * Throws error if user is not the quiz owner
+ * Returns the quiz for convenience
+ */
+export async function requireQuizOwnership(userId: string, quizId: string) {
+  const quiz = await prisma.quiz.findUnique({
+    where: { id: quizId },
+    select: { id: true, createdByTeacherId: true },
+  });
+
+  if (!quiz) {
+    throw new Error('QUIZ_NOT_FOUND');
+  }
+  if (quiz.createdByTeacherId !== userId) {
+    throw new Error('FORBIDDEN: Quiz ownership required');
+  }
+  return quiz;
+}
+
+/**
+ * Require user to own the pool
+ * Throws error if user is not the pool owner
+ * Returns the pool for convenience
+ */
+export async function requirePoolOwnership(userId: string, poolId: string) {
+  const pool = await prisma.questionPool.findUnique({
+    where: { id: poolId },
+    select: { id: true, ownerTeacherId: true },
+  });
+
+  if (!pool) {
+    throw new Error('POOL_NOT_FOUND');
+  }
+  if (pool.ownerTeacherId !== userId) {
+    throw new Error('FORBIDDEN: Pool ownership required');
+  }
+  return pool;
+}
+
+/**
+ * Require user to own the classroom
+ * Throws error if user is not the classroom owner
+ * Returns the classroom for convenience
+ */
+export async function requireClassroomOwnership(userId: string, classroomId: string) {
+  const classroom = await prisma.classroom.findUnique({
+    where: { id: classroomId },
+    select: { id: true, ownerTeacherId: true },
+  });
+
+  if (!classroom) {
+    throw new Error('CLASSROOM_NOT_FOUND');
+  }
+  if (classroom.ownerTeacherId !== userId) {
+    throw new Error('FORBIDDEN: Classroom ownership required');
+  }
+  return classroom;
+}
+
+/**
+ * Require user to have access to the session
+ * - Teacher: must own the quiz OR be a teacher/TA in the classroom
+ * - Student: must be an active member of the classroom
+ * Returns the session for convenience
+ */
+export async function requireSessionAccess(
+  userId: string,
+  sessionId: string,
+  requiredRole?: 'teacher' | 'student',
+) {
+  const session = await prisma.quizSession.findUnique({
+    where: { id: sessionId },
+    select: {
+      id: true,
+      quiz: { select: { createdByTeacherId: true } },
+      classroomId: true,
+    },
+  });
+
+  if (!session) {
+    throw new Error('SESSION_NOT_FOUND');
+  }
+
+  // Check if user is teacher who owns the quiz
+  const isQuizOwner = session.quiz.createdByTeacherId === userId;
+
+  // Check classroom membership
+  const membership = await prisma.classMembership.findUnique({
+    where: { classroomId_userId: { classroomId: session.classroomId, userId } },
+    select: { status: true, roleInClass: true },
+  });
+
+  const isActiveMember = membership && membership.status === 'active';
+  const isTeacherInClass = isActiveMember && (membership.roleInClass === 'teacher' || membership.roleInClass === 'ta');
+
+  // Determine user's role for this session
+  const userRole = isQuizOwner || isTeacherInClass ? 'teacher' : (isActiveMember ? 'student' : null);
+
+  if (!userRole) {
+    throw new Error('FORBIDDEN: Session access denied');
+  }
+
+  if (requiredRole && userRole !== requiredRole) {
+    throw new Error(`FORBIDDEN: ${requiredRole} role required for this session`);
+  }
+
+  return { session, userRole, isQuizOwner, isTeacherInClass };
+}
+
+/**
+ * Require user to own the attempt
+ * Throws error if user is not the attempt owner
+ * Returns the attempt for convenience
+ */
+export async function requireAttemptAccess(userId: string, attemptId: string) {
+  const attempt = await prisma.attempt.findUnique({
+    where: { id: attemptId },
+    select: { id: true, userId: true },
+  });
+
+  if (!attempt) {
+    throw new Error('ATTEMPT_NOT_FOUND');
+  }
+  if (attempt.userId !== userId) {
+    throw new Error('FORBIDDEN: Attempt access denied');
+  }
+  return attempt;
+}

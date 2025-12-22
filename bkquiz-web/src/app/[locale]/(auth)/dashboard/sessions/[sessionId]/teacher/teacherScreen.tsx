@@ -338,9 +338,9 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
             : null}
           {session?.status !== 'ended'
             ? (
-                <Button size="sm" variant="ghost" onClick={() => void fetchToken()} className="text-white/80 border-white/20 hover:bg-white/10">
-                  Refresh Token
-                </Button>
+          <Button size="sm" variant="ghost" onClick={() => void fetchToken()} className="text-white/80 border-white/20 hover:bg-white/10">
+            Refresh Token
+          </Button>
               )
             : null}
         </div>
@@ -594,76 +594,76 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
             )
           : (
               /* Active/Lobby - QR + Token View */
-              <div className="w-full max-w-7xl grid gap-8 lg:grid-cols-2">
-                {/* QR Code Section */}
-                <div className="flex flex-col items-center justify-center">
-                  <div className="text-sm font-medium text-white/60 mb-4">QR để sinh viên vào bài</div>
-                  <div className="flex items-center justify-center">
-                    {data?.joinUrl
-                      ? (
-                          <div className="rounded-lg bg-white p-6 shadow-2xl">
-                            <QRCode value={data.joinUrl} size={480} />
-                          </div>
-                        )
-                      : (
-                          <div className="w-[480px]">
-                            <Skeleton className="mx-auto h-[480px] w-[480px]" />
-                            <div className="mt-3 text-center text-sm text-white/40">Đang tải QR...</div>
-                          </div>
-                        )}
-                  </div>
-                  <div className="mt-6 max-w-md text-center">
-                    <div className="rounded-md bg-white/5 border border-white/10 p-3 break-all text-xs text-white/60 font-mono">
-                      {data?.joinUrl ? shortenUrl(data.joinUrl) : '...'}
+        <div className="w-full max-w-7xl grid gap-8 lg:grid-cols-2">
+          {/* QR Code Section */}
+          <div className="flex flex-col items-center justify-center">
+            <div className="text-sm font-medium text-white/60 mb-4">QR để sinh viên vào bài</div>
+            <div className="flex items-center justify-center">
+              {data?.joinUrl
+                ? (
+                    <div className="rounded-lg bg-white p-6 shadow-2xl">
+                      <QRCode value={data.joinUrl} size={480} />
                     </div>
-                    <div className="mt-2 text-xs text-white/40">
-                      Sinh viên quét QR hoặc mở link này để join session
+                  )
+                : (
+                    <div className="w-[480px]">
+                      <Skeleton className="mx-auto h-[480px] w-[480px]" />
+                      <div className="mt-3 text-center text-sm text-white/40">Đang tải QR...</div>
                     </div>
-                  </div>
-                </div>
+                  )}
+            </div>
+            <div className="mt-6 max-w-md text-center">
+              <div className="rounded-md bg-white/5 border border-white/10 p-3 break-all text-xs text-white/60 font-mono">
+                {data?.joinUrl ? shortenUrl(data.joinUrl) : '...'}
+              </div>
+              <div className="mt-2 text-xs text-white/40">
+                Sinh viên quét QR hoặc mở link này để join session
+              </div>
+            </div>
+          </div>
 
-                {/* Token Section */}
-                <div className="flex flex-col items-center justify-center">
-                  <div className="text-sm font-medium text-white/60 mb-4">Token (TOTP)</div>
-                  <div className="text-center w-full">
-                    <div className="text-8xl font-bold tracking-[0.3em] text-primary mb-6 font-mono">
-                      {data?.token ?? '------'}
-                    </div>
+          {/* Token Section */}
+          <div className="flex flex-col items-center justify-center">
+            <div className="text-sm font-medium text-white/60 mb-4">Token (TOTP)</div>
+            <div className="text-center w-full">
+              <div className="text-8xl font-bold tracking-[0.3em] text-primary mb-6 font-mono">
+                {data?.token ?? '------'}
+              </div>
 
-                    {/* Progress Bar */}
-                    <div className="w-full max-w-md mx-auto mb-4">
-                      <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary transition-all duration-300 ease-linear"
-                          style={{ width: `${progressPercent}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="text-lg text-white/80 font-mono mb-2">
-                      {secondsLeft === null
-                        ? '...'
-                        : `${secondsLeft}s`}
-                    </div>
-                    <div className="text-xs text-white/40">
-                      Token đổi sau
-                      {' '}
-                      {secondsLeft === null
-                        ? '...'
-                        : `${secondsLeft}s`}
-                      {' '}
-                      (step=
-                      {data?.stepSeconds ?? 45}
-                      s)
-                    </div>
-                  </div>
-                  <div className="mt-8 max-w-md text-center">
-                    <div className="rounded-md bg-white/5 border border-white/10 p-3 text-xs text-white/60">
-                      Gợi ý: Chiếu màn hình này lên projector. Sinh viên scan QR để vào link, khi tới checkpoint sẽ nhập token hiện tại.
-                    </div>
-                  </div>
+              {/* Progress Bar */}
+              <div className="w-full max-w-md mx-auto mb-4">
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all duration-300 ease-linear"
+                    style={{ width: `${progressPercent}%` }}
+                  />
                 </div>
               </div>
+
+              <div className="text-lg text-white/80 font-mono mb-2">
+                {secondsLeft === null
+                  ? '...'
+                  : `${secondsLeft}s`}
+              </div>
+              <div className="text-xs text-white/40">
+                Token đổi sau
+                {' '}
+                {secondsLeft === null
+                  ? '...'
+                  : `${secondsLeft}s`}
+                {' '}
+                (step=
+                {data?.stepSeconds ?? 45}
+                s)
+              </div>
+            </div>
+            <div className="mt-8 max-w-md text-center">
+              <div className="rounded-md bg-white/5 border border-white/10 p-3 text-xs text-white/60">
+                Gợi ý: Chiếu màn hình này lên projector. Sinh viên scan QR để vào link, khi tới checkpoint sẽ nhập token hiện tại.
+              </div>
+            </div>
+          </div>
+        </div>
             )}
       </div>
 

@@ -90,7 +90,7 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
     }
     try {
       const res = await fetch(url.toString(), { method: 'GET' });
-      if (!res.ok) {
+    if (!res.ok) {
         const text = await res.text();
         let json: { quizzes?: QuizLite[]; error?: string };
         try {
@@ -99,9 +99,9 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
           setError(`LOAD_FAILED: ${res.status} ${res.statusText}`);
           return;
         }
-        setError(json.error ?? 'LOAD_FAILED');
-        return;
-      }
+      setError(json.error ?? 'LOAD_FAILED');
+      return;
+    }
       const text = await res.text();
       if (!text) {
         setError('LOAD_FAILED: Empty response');
@@ -115,8 +115,8 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
         console.error('Failed to parse response:', text, err);
         return;
       }
-      setError(null);
-      setQuizzes(json.quizzes ?? []);
+    setError(null);
+    setQuizzes(json.quizzes ?? []);
     } catch (err) {
       setError(`LOAD_FAILED: ${err instanceof Error ? err.message : String(err)}`);
       console.error('Error loading quizzes:', err);
@@ -304,22 +304,22 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
               <div className="mt-4 space-y-3">
                 {quizzes.map((q, idx) => (
                   <Link key={q.id} href={`/dashboard/quizzes/${q.id}`}>
-                    <div
+                  <div
                       className="rounded-md border border-border-subtle bg-bg-section transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-primary/30"
                       style={{ animationDelay: `${idx * 30}ms` }}
-                    >
-                      <div className="flex items-center justify-between gap-4 px-4 py-3">
+                  >
+                    <div className="flex items-center justify-between gap-4 px-4 py-3">
                         <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_auto_auto] items-center gap-4 md:grid-cols-[2fr_auto_120px_100px]">
-                          <div className="min-w-0">
-                            <div className="truncate text-sm font-medium text-text-heading">{q.title}</div>
-                            {typeof q.ruleCount === 'number' && (
-                              <div className="mt-1 text-xs text-text-muted">
-                                {q.ruleCount}
-                                {' '}
-                                lượt chọn câu
-                              </div>
-                            )}
-                          </div>
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium text-text-heading">{q.title}</div>
+                          {typeof q.ruleCount === 'number' && (
+                            <div className="mt-1 text-xs text-text-muted">
+                              {q.ruleCount}
+                              {' '}
+                              lượt chọn câu
+                            </div>
+                          )}
+                        </div>
                           {q.tags && q.tags.length > 0 && (
                             <div className="flex flex-wrap items-center gap-1">
                               {q.tags.slice(0, 5).map((tag) => {
@@ -360,47 +360,47 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
                               )}
                             </div>
                           )}
-                          <Badge
-                            variant={q.status === 'published' ? 'success' : (q.status === 'archived' ? 'neutral' : 'warning')}
-                            className="text-xs"
-                          >
-                            {q.status}
-                          </Badge>
-                          <div className="text-xs text-text-muted">
-                            {formatDate(q.updatedAt)}
-                          </div>
+                        <Badge
+                          variant={q.status === 'published' ? 'success' : (q.status === 'archived' ? 'neutral' : 'warning')}
+                          className="text-xs"
+                        >
+                          {q.status}
+                        </Badge>
+                        <div className="text-xs text-text-muted">
+                          {formatDate(q.updatedAt)}
                         </div>
-                        <div className="flex items-center gap-2">
-                          {q.status === 'draft'
-                            ? (
-                                <Button
-                                  size="sm"
-                                  variant="primary"
-                                  disabled={busy}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {q.status === 'draft'
+                          ? (
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                disabled={busy}
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     void updateQuizStatus(q.id, 'published');
                                   }}
-                                >
-                                  Publish
-                                </Button>
-                              )
-                            : null}
-                          <Button
-                            size="sm"
-                            variant="ghost"
+                              >
+                                Publish
+                              </Button>
+                            )
+                          : null}
+                        <Button
+                          size="sm"
+                          variant="ghost"
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              router.push(`/dashboard/quizzes/${q.id}`);
-                            }}
-                          >
-                            Mở
-                          </Button>
-                        </div>
+                            router.push(`/dashboard/quizzes/${q.id}`);
+                          }}
+                        >
+                          Mở
+                        </Button>
                       </div>
                     </div>
+                  </div>
                   </Link>
                 ))}
               </div>

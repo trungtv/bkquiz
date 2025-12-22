@@ -97,11 +97,11 @@ export async function GET(req: Request) {
     quizzes: quizzes.map(q => {
       const settings = (q.settings ?? {}) as any;
       return {
-        id: q.id,
-        title: q.title,
-        status: q.status,
-        updatedAt: q.updatedAt,
-        ruleCount: q._count.rules,
+      id: q.id,
+      title: q.title,
+      status: q.status,
+      updatedAt: q.updatedAt,
+      ruleCount: q._count.rules,
         durationSeconds: typeof settings.durationSeconds === 'number' ? settings.durationSeconds : null,
         tags: q.tags.map((t: any) => t.tag),
       };

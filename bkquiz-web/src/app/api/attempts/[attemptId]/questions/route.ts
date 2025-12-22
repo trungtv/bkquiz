@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireUser } from '@/server/authz';
+import { requireAttemptAccess, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 import { buildSessionSnapshotIfNeeded } from '@/server/quizSnapshot';
 
@@ -7,24 +7,31 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
   const { userId } = await requireUser();
   const { attemptId } = await ctx.params;
 
-  const attempt = await prisma.attempt.findUnique({
+  let attempt;
+  try {
+    attempt = await requireAttemptAccess(userId, attemptId);
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    if (error === 'ATTEMPT_NOT_FOUND') {
+      return NextResponse.json({ error: 'ATTEMPT_NOT_FOUND' }, { status: 404 });
+    }
+    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+  }
+
+  const attemptFull = await prisma.attempt.findUnique({
     where: { id: attemptId },
     select: {
       id: true,
-      userId: true,
       sessionId: true,
       quizSession: { select: { status: true } },
     },
   });
 
-  if (!attempt) {
+  if (!attemptFull) {
     return NextResponse.json({ error: 'ATTEMPT_NOT_FOUND' }, { status: 404 });
   }
-  if (attempt.userId !== userId) {
-    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
-  }
 
-  await buildSessionSnapshotIfNeeded(attempt.sessionId);
+  await buildSessionSnapshotIfNeeded(attemptFull.sessionId);
 
   const attemptQuestions = await prisma.attemptQuestion.findMany({
     where: { attemptId },
@@ -36,7 +43,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
   const sessionQuestionIds = attemptQuestions.map((aq: { sessionQuestionId: string }) => aq.sessionQuestionId);
 
   const raw = await prisma.sessionQuestionSnapshot.findMany({
-    where: useAttemptOrder ? { id: { in: sessionQuestionIds } } : { sessionId: attempt.sessionId },
+    where: useAttemptOrder ? { id: { in: sessionQuestionIds } } : { sessionId: attemptFull.sessionId },
     orderBy: useAttemptOrder ? undefined : { order: 'asc' },
     select: {
       id: true,

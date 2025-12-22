@@ -370,8 +370,8 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
             </div>
 
             <div className="flex flex-1 flex-col space-y-4 overflow-hidden">
-              {quizzes.length === 0
-                ? (
+                {quizzes.length === 0
+                  ? (
                     <div className="flex flex-1 items-center justify-center rounded-md border border-dashed border-border-subtle px-4 py-8 text-center text-sm text-text-muted">
                       <div>
                         <div>Chưa có quiz nào.</div>
@@ -382,10 +382,10 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                             </Button>
                           </Link>
                         </div>
+                        </div>
                       </div>
-                    </div>
-                  )
-                : (
+                    )
+                  : (
                     <>
                       {/* Search Input */}
                       <div>
@@ -489,7 +489,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                                   <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-2">
                                       <div className="truncate text-sm font-medium text-text-heading">
-                                        {q.title}
+                            {q.title}
                                       </div>
                                       <Badge
                                         variant={q.status === 'published' ? 'success' : 'neutral'}
@@ -671,8 +671,8 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                             <p className="mt-1 text-xs text-text-muted">
                               Quiz này không có giới hạn thời gian. Bạn có thể đặt thời gian cho session này.
                             </p>
-                          )}
-                        </div>
+                    )}
+              </div>
                       </>
                     );
                   })()}

@@ -1,4 +1,5 @@
 import JSZip from 'jszip';
+import { nanoid } from 'nanoid';
 import { NextResponse } from 'next/server';
 import { requireTeacher, requireUser } from '@/server/authz';
 import { extractQuestionsMdFromZip, parsePoolMarkdown } from '@/server/import/markdownPool';
@@ -94,9 +95,11 @@ export async function POST(req: Request) {
           })
         : await prisma.questionPool.create({
             data: {
+              id: nanoid(),
               name: parsed.poolName,
               visibility: parsed.visibility,
               ownerTeacherId: userId,
+              updatedAt: new Date(),
             },
           });
     }

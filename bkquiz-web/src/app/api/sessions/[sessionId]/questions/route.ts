@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireUser } from '@/server/authz';
+import { requireSessionAccess, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 import { buildSessionSnapshotIfNeeded } from '@/server/quizSnapshot';
 
@@ -7,45 +7,20 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
   const { userId } = await requireUser();
   const { sessionId } = await ctx.params;
 
-  // Check session exists and teacher has permission
-  const session = await prisma.quizSession.findUnique({
-    where: { id: sessionId },
-    select: {
-      id: true,
-      status: true,
-      quiz: {
-        select: {
-          id: true,
-          createdByTeacherId: true,
-        },
-      },
-      classroom: {
-        select: {
-          id: true,
-          memberships: {
-            where: {
-              userId,
-              status: 'active',
-              roleInClass: { in: ['teacher', 'ta'] },
-            },
-            select: { roleInClass: true },
-          },
-        },
-      },
-    },
-  });
-
-  if (!session) {
-    return NextResponse.json({ error: 'SESSION_NOT_FOUND' }, { status: 404 });
-  }
-
-  // Check authorization: teacher must be quiz owner OR classroom member
-  const isOwner = session.quiz.createdByTeacherId === userId;
-  const isMember = session.classroom.memberships.length > 0;
-
-  if (!isOwner && !isMember) {
+  try {
+    await requireSessionAccess(userId, sessionId, 'teacher');
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    if (error === 'SESSION_NOT_FOUND') {
+      return NextResponse.json({ error: 'SESSION_NOT_FOUND' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
+
+  const session = await prisma.quizSession.findUnique({
+    where: { id: sessionId },
+    select: { id: true, status: true },
+  });
 
   // Build snapshot if needed (will check internally if already built)
   await buildSessionSnapshotIfNeeded(sessionId);

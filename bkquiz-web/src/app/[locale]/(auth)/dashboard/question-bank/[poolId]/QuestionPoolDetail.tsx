@@ -881,11 +881,11 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
               disabled={poolTagsBusy}
               placeholder="basic, advanced, chapter1..."
             />
-          </div>
-        </Card>
-      )}
+            </div>
+          </Card>
+        )}
 
-      {/* Questions List */}
+        {/* Questions List */}
         <div className="mt-4 space-y-3">
           {filteredQuestions.length === 0
             ? (

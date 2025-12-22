@@ -173,22 +173,22 @@ export function AttemptClient(props: { attemptId: string }) {
     if (selectedChanged) {
       const existing = localAnswersRef.current[current.id];
       const isSubmitted = existing?.submittedAt != null;
-      // Save locally immediately; sync best-effort when online.
-      const store = localAnswersRef.current;
+    // Save locally immediately; sync best-effort when online.
+    const store = localAnswersRef.current;
       store[current.id] = {
         selected,
         updatedAt: Date.now(),
         dirty: !isSubmitted, // Don't mark as dirty if already submitted (to avoid overwriting)
         submittedAt: existing?.submittedAt ?? null,
       };
-      localAnswersRef.current = { ...store };
-      void writeLocalAnswers(props.attemptId, localAnswersRef.current);
-      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
-      setPendingCount(computePending(localAnswersRef.current));
+    localAnswersRef.current = { ...store };
+    void writeLocalAnswers(props.attemptId, localAnswersRef.current);
+    // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+    setPendingCount(computePending(localAnswersRef.current));
       // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
       setAnsweredCount(computeAnsweredCount(localAnswersRef.current));
       if (!isSubmitted) {
-        scheduleSync();
+    scheduleSync();
       }
       prevSelectedRef.current = [...selected];
     }
@@ -538,35 +538,35 @@ export function AttemptClient(props: { attemptId: string }) {
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold text-text-heading sm:text-base">{state.session.quiz.title}</div>
             <div className="mt-1 flex items-center gap-2 text-[10px] text-text-muted sm:text-xs">
-              <span>
-                Câu
-                {' '}
-                <span className="font-mono font-semibold">{questions.length === 0 ? '-' : (idx + 1)}</span>
-                /
-                <span className="font-mono">{questions.length || '-'}</span>
-              </span>
-              <span>·</span>
-              <span>
-                Đã trả lời:
-                {' '}
-                <span className="font-mono font-semibold text-text-heading">{answeredCount}</span>
-                /
-                <span className="font-mono">{questions.length || '-'}</span>
-              </span>
+                <span>
+                  Câu
+                  {' '}
+                  <span className="font-mono font-semibold">{questions.length === 0 ? '-' : (idx + 1)}</span>
+                  /
+                  <span className="font-mono">{questions.length || '-'}</span>
+            </span>
+            <span>·</span>
+            <span>
+              Đã trả lời:
+              {' '}
+              <span className="font-mono font-semibold text-text-heading">{answeredCount}</span>
+              /
+              <span className="font-mono">{questions.length || '-'}</span>
+            </span>
               {nextDueIn !== null && (
-                <>
-                  <span>·</span>
-                  <span>
-                    <span className={cn(
-                      'font-mono font-semibold',
-                      nextDueIn <= 10 ? 'text-danger' : nextDueIn <= 30 ? 'text-warning' : 'text-text-heading',
-                    )}
-                    >
+                  <>
+                    <span>·</span>
+                    <span>
+                      <span className={cn(
+                        'font-mono font-semibold',
+                        nextDueIn <= 10 ? 'text-danger' : nextDueIn <= 30 ? 'text-warning' : 'text-text-heading',
+                      )}
+                      >
                       {nextDueIn}
-                    </span>
+                      </span>
                     s
-                  </span>
-                </>
+                    </span>
+                  </>
               )}
             </div>
           </div>
@@ -574,8 +574,8 @@ export function AttemptClient(props: { attemptId: string }) {
             <Badge variant={isOnline ? 'success' : 'danger'} className="text-[9px] sm:text-[10px]">{isOnline ? 'Online' : 'Offline'}</Badge>
             {pendingCount > 0 && (
               <Badge variant="warning" className="text-[9px] sm:text-[10px]">
-                <span className="font-mono">{pendingCount}</span>
-              </Badge>
+                    <span className="font-mono">{pendingCount}</span>
+                  </Badge>
             )}
             {state.warning && !blocked && <Badge variant="warning" className="text-[9px] sm:text-[10px]">⚠️</Badge>}
             {blocked && <Badge variant="danger" className="text-[9px] sm:text-[10px]">🔒</Badge>}
@@ -602,9 +602,9 @@ export function AttemptClient(props: { attemptId: string }) {
         {syncError && (
           <div className="mt-1 text-[9px] text-danger sm:text-[10px]">
             Sync lỗi:
-            {' '}
-            <span className="font-mono">{syncError}</span>
-          </div>
+                {' '}
+                <span className="font-mono">{syncError}</span>
+              </div>
         )}
       </div>
 
@@ -737,29 +737,29 @@ export function AttemptClient(props: { attemptId: string }) {
                               </Badge>
                             )}
                         <div className="text-[10px] text-text-muted sm:text-xs">
-                          Autosave bật: lưu local ngay lập tức, sync khi online.
+                      Autosave bật: lưu local ngay lập tức, sync khi online.
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setIdx(i => Math.max(0, i - 1))}
-                          disabled={idx === 0}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setIdx(i => Math.max(0, i - 1))}
+                        disabled={idx === 0}
                           className="flex-1 sm:flex-initial"
-                        >
-                          Trước
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setIdx(i => Math.min(questions.length - 1, i + 1))}
-                          disabled={idx >= questions.length - 1}
+                      >
+                        Trước
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setIdx(i => Math.min(questions.length - 1, i + 1))}
+                        disabled={idx >= questions.length - 1}
                           className="flex-1 sm:flex-initial"
-                        >
-                          Sau
-                        </Button>
-                      </div>
+                      >
+                        Sau
+                      </Button>
+                    </div>
                     </div>
                     {!submittedQuestions.has(q.id) && (
                       <div className="flex items-center justify-end">

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireUser } from '@/server/authz';
+import { requireAttemptAccess, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 
 type AnswerRow = Awaited<ReturnType<typeof prisma.answer.findMany>>[number];
@@ -16,14 +16,13 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
   const { userId } = await requireUser();
   const { attemptId } = await ctx.params;
 
-  const attempt = await prisma.attempt.findUnique({
-    where: { id: attemptId },
-    select: { id: true, userId: true, status: true },
-  });
-  if (!attempt) {
-    return NextResponse.json({ error: 'ATTEMPT_NOT_FOUND' }, { status: 404 });
-  }
-  if (attempt.userId !== userId) {
+  try {
+    await requireAttemptAccess(userId, attemptId);
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    if (error === 'ATTEMPT_NOT_FOUND') {
+      return NextResponse.json({ error: 'ATTEMPT_NOT_FOUND' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 
@@ -47,17 +46,25 @@ export async function PUT(req: Request, ctx: { params: Promise<{ attemptId: stri
   const { attemptId } = await ctx.params;
   const body = UpsertAnswerSchema.parse(await req.json());
 
-  const attempt = await prisma.attempt.findUnique({
-    where: { id: attemptId },
-    select: { id: true, userId: true, status: true, sessionId: true },
-  });
-  if (!attempt) {
-    return NextResponse.json({ error: 'ATTEMPT_NOT_FOUND' }, { status: 404 });
-  }
-  if (attempt.userId !== userId) {
+  let attempt;
+  try {
+    attempt = await requireAttemptAccess(userId, attemptId);
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    if (error === 'ATTEMPT_NOT_FOUND') {
+      return NextResponse.json({ error: 'ATTEMPT_NOT_FOUND' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
-  if (attempt.status !== 'active') {
+
+  const attemptFull = await prisma.attempt.findUnique({
+    where: { id: attemptId },
+    select: { id: true, status: true, sessionId: true },
+  });
+  if (!attemptFull) {
+    return NextResponse.json({ error: 'ATTEMPT_NOT_FOUND' }, { status: 404 });
+  }
+  if (attemptFull.status !== 'active') {
     return NextResponse.json({ error: 'ATTEMPT_NOT_ACTIVE' }, { status: 400 });
   }
 
@@ -65,7 +72,7 @@ export async function PUT(req: Request, ctx: { params: Promise<{ attemptId: stri
     where: { id: body.sessionQuestionId },
     select: { id: true, sessionId: true, type: true, options: { select: { order: true } } },
   });
-  if (!q || q.sessionId !== attempt.sessionId) {
+  if (!q || q.sessionId !== attemptFull.sessionId) {
     return NextResponse.json({ error: 'QUESTION_NOT_FOUND' }, { status: 404 });
   }
 

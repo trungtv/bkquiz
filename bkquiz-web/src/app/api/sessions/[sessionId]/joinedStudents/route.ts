@@ -1,37 +1,18 @@
 import { NextResponse } from 'next/server';
-import { requireUser } from '@/server/authz';
+import { requireSessionAccess, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 
 export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string }> }) {
   const { userId } = await requireUser();
   const { sessionId } = await ctx.params;
 
-  // Check session exists and user has access
-  const session = await prisma.quizSession.findUnique({
-    where: { id: sessionId },
-    select: {
-      id: true,
-      quiz: {
-        select: {
-          createdByTeacherId: true,
-        },
-      },
-      classroomId: true,
-    },
-  });
-
-  if (!session) {
-    return NextResponse.json({ error: 'SESSION_NOT_FOUND' }, { status: 404 });
-  }
-
-  // Check if user is teacher who owns the quiz or member of the classroom
-  const isTeacher = session.quiz.createdByTeacherId === userId;
-  const membership = await prisma.classMembership.findUnique({
-    where: { classroomId_userId: { classroomId: session.classroomId, userId } },
-    select: { status: true, roleInClass: true },
-  });
-
-  if (!isTeacher && (!membership || membership.status !== 'active')) {
+  try {
+    await requireSessionAccess(userId, sessionId, 'teacher');
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    if (error === 'SESSION_NOT_FOUND') {
+      return NextResponse.json({ error: 'SESSION_NOT_FOUND' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireUser } from '@/server/authz';
+import { requireAttemptAccess, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 import { verifyTotp } from '@/server/totp';
 
@@ -17,11 +17,20 @@ export async function POST(req: Request, ctx: { params: Promise<{ attemptId: str
   const { attemptId } = await ctx.params;
   const body = VerifySchema.parse(await req.json());
 
+  try {
+    await requireAttemptAccess(userId, attemptId);
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    if (error === 'ATTEMPT_NOT_FOUND') {
+      return NextResponse.json({ error: 'ATTEMPT_NOT_FOUND' }, { status: 404 });
+    }
+    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+  }
+
   const attempt = await prisma.attempt.findUnique({
     where: { id: attemptId },
     select: {
       id: true,
-      userId: true,
       status: true,
       failedCount: true,
       cooldownUntil: true,
@@ -29,13 +38,6 @@ export async function POST(req: Request, ctx: { params: Promise<{ attemptId: str
       quizSession: { select: { id: true, status: true, totpSecret: true, totpStepSeconds: true } },
     },
   });
-
-  if (!attempt) {
-    return NextResponse.json({ error: 'ATTEMPT_NOT_FOUND' }, { status: 404 });
-  }
-  if (attempt.userId !== userId) {
-    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
-  }
   if (attempt.quizSession.status !== 'active') {
     return NextResponse.json({ error: 'SESSION_NOT_ACTIVE' }, { status: 400 });
   }

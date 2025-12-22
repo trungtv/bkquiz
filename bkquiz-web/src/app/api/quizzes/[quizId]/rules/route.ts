@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireTeacher, requireUser } from '@/server/authz';
+import { requireQuizOwnership, requireTeacher, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 import { normalizeTagName } from '@/utils/tags';
 
@@ -19,17 +19,13 @@ export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }>
   await requireTeacher(userId, devRole);
   const { quizId } = await ctx.params;
 
-  const quiz = await prisma.quiz.findUnique({
-    where: { id: quizId },
-    select: { id: true, createdByTeacherId: true },
-  });
-
-  if (!quiz) {
-    return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
-  }
-
-  // Chỉ teacher sở hữu quiz mới được xem
-  if (quiz.createdByTeacherId !== userId) {
+  try {
+    await requireQuizOwnership(userId, quizId);
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    if (error === 'QUIZ_NOT_FOUND') {
+      return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 
@@ -57,17 +53,13 @@ export async function POST(req: Request, ctx: { params: Promise<{ quizId: string
     const { quizId } = await ctx.params;
     const body = UpsertRuleSchema.parse(await req.json());
 
-    const quiz = await prisma.quiz.findUnique({
-      where: { id: quizId },
-      select: { id: true, createdByTeacherId: true },
-    });
-
-    if (!quiz) {
-      return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
-    }
-
-    // Chỉ teacher sở hữu quiz mới được edit
-    if (quiz.createdByTeacherId !== userId) {
+    try {
+      await requireQuizOwnership(userId, quizId);
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      if (error === 'QUIZ_NOT_FOUND') {
+        return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
+      }
       return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
     }
 
@@ -168,17 +160,13 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ quizId: stri
     return NextResponse.json({ error: 'MISSING_RULE_ID' }, { status: 400 });
   }
 
-  const quiz = await prisma.quiz.findUnique({
-    where: { id: quizId },
-    select: { createdByTeacherId: true },
-  });
-
-  if (!quiz) {
-    return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
-  }
-
-  // Chỉ teacher sở hữu quiz mới được xóa rule
-  if (quiz.createdByTeacherId !== userId) {
+  try {
+    await requireQuizOwnership(userId, quizId);
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    if (error === 'QUIZ_NOT_FOUND') {
+      return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 

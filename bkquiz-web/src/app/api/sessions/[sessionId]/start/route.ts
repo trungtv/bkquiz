@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireUser } from '@/server/authz';
+import { requireSessionAccess, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 import { buildSessionSnapshotIfNeeded } from '@/server/quizSnapshot';
 
@@ -7,19 +7,20 @@ export async function POST(_: Request, ctx: { params: Promise<{ sessionId: strin
   const { userId } = await requireUser();
   const { sessionId } = await ctx.params;
 
-  const session = await prisma.quizSession.findUnique({
-    where: { id: sessionId },
-    select: { id: true, status: true, quiz: { select: { createdByTeacherId: true } } },
-  });
-
-  if (!session) {
-    return NextResponse.json({ error: 'SESSION_NOT_FOUND' }, { status: 404 });
-  }
-
-  // Chỉ teacher sở hữu quiz mới được start session
-  if (session.quiz.createdByTeacherId !== userId) {
+  try {
+    await requireSessionAccess(userId, sessionId, 'teacher');
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    if (error === 'SESSION_NOT_FOUND') {
+      return NextResponse.json({ error: 'SESSION_NOT_FOUND' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
+
+  const session = await prisma.quizSession.findUnique({
+    where: { id: sessionId },
+    select: { id: true, status: true },
+  });
 
   const updated = await prisma.quizSession.update({
     where: { id: sessionId },

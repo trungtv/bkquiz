@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireTeacher, requireUser } from '@/server/authz';
@@ -134,11 +135,14 @@ export async function POST(req: Request) {
     classCode = generateClassCode();
   }
 
+  const now = new Date();
   const classroom = await prisma.classroom.create({
     data: {
+      id: nanoid(),
       name: body.name,
       classCode,
       ownerTeacherId: userId,
+      updatedAt: now,
       memberships: {
         create: {
           userId,
