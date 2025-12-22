@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import type { Session } from '../types';
 import { formatDate } from '../types';
+import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 

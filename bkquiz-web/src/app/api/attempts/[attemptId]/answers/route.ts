@@ -9,6 +9,7 @@ type OptionRow = { order: number };
 const UpsertAnswerSchema = z.object({
   sessionQuestionId: z.string().trim().min(1),
   selected: z.array(z.number().int().min(0)).max(50),
+  submit: z.boolean().optional(), // If true, mark this answer as submitted
 });
 
 export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string }> }) {
@@ -28,13 +29,14 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
 
   const answers = await prisma.answer.findMany({
     where: { attemptId },
-    select: { sessionQuestionId: true, selected: true, updatedAt: true },
+    select: { sessionQuestionId: true, selected: true, submittedAt: true, updatedAt: true },
   });
 
   return NextResponse.json({
     answers: (answers as AnswerRow[]).map(a => ({
       sessionQuestionId: a.sessionQuestionId,
       selected: a.selected,
+      submittedAt: a.submittedAt,
       updatedAt: a.updatedAt,
     })),
   });
@@ -74,10 +76,30 @@ export async function PUT(req: Request, ctx: { params: Promise<{ attemptId: stri
   }
 
   const now = new Date();
+  const updateData: {
+    selected: unknown;
+    updatedAt: Date;
+    submittedAt?: Date;
+  } = {
+    selected: unique as unknown as any,
+    updatedAt: now,
+  };
+  
+  // If submit=true, set submittedAt (only if not already submitted)
+  if (body.submit) {
+    updateData.submittedAt = now;
+  }
+
   await prisma.answer.upsert({
     where: { attemptId_sessionQuestionId: { attemptId, sessionQuestionId: body.sessionQuestionId } },
-    update: { selected: unique as unknown as any, updatedAt: now },
-    create: { attemptId, sessionQuestionId: body.sessionQuestionId, selected: unique as unknown as any, updatedAt: now },
+    update: updateData,
+    create: {
+      attemptId,
+      sessionQuestionId: body.sessionQuestionId,
+      selected: unique as unknown as any,
+      submittedAt: body.submit ? now : null,
+      updatedAt: now,
+    },
     select: { attemptId: true },
   });
 
