@@ -39,19 +39,47 @@ export const BaseTemplate = (props: {
 
       <main className="mx-auto max-w-6xl px-4 py-8">{props.children}</main>
 
-      <footer className="border-t border-border-subtle bg-bg-page py-10 text-center text-sm text-text-muted">
+      <footer className="border-t border-border-subtle bg-bg-page py-10 text-sm text-text-muted">
         <div className="mx-auto max-w-6xl px-4">
-          {`© ${new Date().getFullYear()} ${AppConfig.name}. `}
-          {t.rich('made_with', {
-            author: () => (
+          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+            <div className="text-center md:text-left">
+              {`© ${new Date().getFullYear()} ${AppConfig.name}. Made with ❤️ for education. `}
               <a
-                href="https://nextjs-boilerplate.com"
-                className="text-primary hover:border-b-2 hover:border-primary"
+                href="https://github.com/trungtv/bkquiz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
               >
-                Next.js Boilerplate
+                Open source on GitHub
               </a>
-            ),
-          })}
+              {' '}
+              · Apache License 2.0
+            </div>
+            <div className="flex items-center gap-4">
+              <a
+                href="https://github.com/trungtv/bkquiz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-text-muted hover:text-text-heading transition-colors"
+              >
+                GitHub
+              </a>
+              <a
+                href="/docs"
+                className="text-text-muted hover:text-text-heading transition-colors"
+              >
+                Documentation
+              </a>
+              <a
+                href="https://github.com/trungtv/bkquiz/issues"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-text-muted hover:text-text-heading transition-colors"
+              >
+                Report Issue
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

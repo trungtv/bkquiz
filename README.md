@@ -190,7 +190,14 @@ Mọi đóng góp đều được chào đón! Vui lòng:
 
 ## 📄 License
 
-MIT License - xem [LICENSE](bkquiz-web/LICENSE) để biết thêm chi tiết.
+Apache License 2.0 - xem [LICENSE](LICENSE) để biết thêm chi tiết.
+
+**Tại sao chọn Apache 2.0?**
+- ✅ **Bảo vệ bằng sáng chế**: Quan trọng cho educational/commercial adoption
+- ✅ **Tự do sử dụng**: Tự do sử dụng, chỉnh sửa, phân phối
+- ✅ **Yêu cầu ghi nhận**: Tăng tính minh bạch và traceability
+- ✅ **Enterprise-friendly**: Nhiều tổ chức giáo dục và doanh nghiệp ưa chuộng
+- ✅ **Vẫn rất permissive**: Giống MIT nhưng có thêm legal protections
 
 ## 👥 Authors
 
