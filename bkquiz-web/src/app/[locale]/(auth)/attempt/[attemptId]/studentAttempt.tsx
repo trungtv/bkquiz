@@ -13,6 +13,10 @@ type AttemptState = {
   id: string;
   status: 'active' | 'submitted' | 'locked';
   session: { id: string; status: 'lobby' | 'active' | 'ended'; quiz: { title: string } };
+  attemptStartedAt: string | null;
+  attemptEndTime: string | null;
+  timeRemaining: number | null;
+  isTimeUp: boolean;
   nextDueAt: string | null;
   due: boolean;
   warning: boolean;
@@ -91,10 +95,13 @@ export function AttemptClient(props: { attemptId: string }) {
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [answeredCount, setAnsweredCount] = useState(0);
   const [submittedQuestions, setSubmittedQuestions] = useState<Set<string>>(() => new Set());
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
   const localAnswersRef = useRef<LocalAnswerStore>({});
   const syncTimerRef = useRef<number | null>(null);
   const prevIdxRef = useRef<number>(0);
   const prevSelectedRef = useRef<number[]>([]);
+  const countdownTimerRef = useRef<number | null>(null);
 
   function computePending(store: LocalAnswerStore) {
     return Object.values(store).filter(a => a.dirty).length;
@@ -173,22 +180,22 @@ export function AttemptClient(props: { attemptId: string }) {
     if (selectedChanged) {
       const existing = localAnswersRef.current[current.id];
       const isSubmitted = existing?.submittedAt != null;
-    // Save locally immediately; sync best-effort when online.
-    const store = localAnswersRef.current;
+      // Save locally immediately; sync best-effort when online.
+      const store = localAnswersRef.current;
       store[current.id] = {
         selected,
         updatedAt: Date.now(),
         dirty: !isSubmitted, // Don't mark as dirty if already submitted (to avoid overwriting)
         submittedAt: existing?.submittedAt ?? null,
       };
-    localAnswersRef.current = { ...store };
-    void writeLocalAnswers(props.attemptId, localAnswersRef.current);
-    // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
-    setPendingCount(computePending(localAnswersRef.current));
+      localAnswersRef.current = { ...store };
+      void writeLocalAnswers(props.attemptId, localAnswersRef.current);
+      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+      setPendingCount(computePending(localAnswersRef.current));
       // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
       setAnsweredCount(computeAnsweredCount(localAnswersRef.current));
       if (!isSubmitted) {
-    scheduleSync();
+        scheduleSync();
       }
       prevSelectedRef.current = [...selected];
     }
@@ -299,6 +306,34 @@ export function AttemptClient(props: { attemptId: string }) {
     }
   }
 
+  async function startAttempt() {
+    setIsStarting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/attempts/${props.attemptId}/start`, { method: 'POST' });
+      const text = await res.text();
+      if (!text || text.trim().length === 0) {
+        setError('START_FAILED');
+        return;
+      }
+      let json: { ok?: boolean; attemptStartedAt?: string; error?: string };
+      try {
+        json = JSON.parse(text);
+      } catch {
+        setError('START_FAILED');
+        return;
+      }
+      if (!res.ok || !json.ok) {
+        setError(json.error ?? 'START_FAILED');
+        return;
+      }
+      // Reload state để lấy time limit info
+      await load();
+    } finally {
+      setIsStarting(false);
+    }
+  }
+
   async function load() {
     const res = await fetch(`/api/attempts/${props.attemptId}/state`, { method: 'GET' });
     const text = await res.text();
@@ -319,7 +354,51 @@ export function AttemptClient(props: { attemptId: string }) {
     }
     setError(null);
     setState(json);
+    // Update time remaining from state
+    setTimeRemaining(json.timeRemaining);
   }
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (countdownTimerRef.current) {
+      window.clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+
+    if (!state?.attemptEndTime || !state?.attemptStartedAt || state.isTimeUp) {
+      return;
+    }
+
+    const updateTimer = () => {
+      const now = new Date();
+      const endTime = new Date(state.attemptEndTime!);
+      const remaining = Math.max(0, Math.floor((endTime.getTime() - now.getTime()) / 1000));
+
+      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
+      setTimeRemaining(remaining);
+
+      if (remaining === 0) {
+        // Auto-submit when time is up
+        if (state.status === 'active' && !busy) {
+          void submit();
+        }
+      }
+    };
+
+    // Update immediately
+    updateTimer();
+
+    // Update every second
+    countdownTimerRef.current = window.setInterval(updateTimer, 1000);
+
+    return () => {
+      if (countdownTimerRef.current) {
+        window.clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state?.attemptEndTime, state?.attemptStartedAt, state?.isTimeUp, state?.status, busy]);
 
   async function loadQuestions() {
     const res = await fetch(`/api/attempts/${props.attemptId}/questions`, { method: 'GET' });
@@ -416,6 +495,26 @@ export function AttemptClient(props: { attemptId: string }) {
     void load().catch(() => setIsOnline(false));
     void loadQuestions().catch(() => setIsOnline(false));
     void loadAnswers().catch(() => setIsOnline(false));
+    
+    // Auto-start attempt nếu session đã active và chưa start
+    void (async () => {
+      const stateRes = await fetch(`/api/attempts/${props.attemptId}/state`, { method: 'GET' });
+      if (stateRes.ok) {
+        const text = await stateRes.text();
+        if (text && text.trim().length > 0) {
+          try {
+            const stateJson = JSON.parse(text) as AttemptState & { error?: string };
+            // Nếu session đã active nhưng chưa bắt đầu làm bài, tự động start
+            if (stateJson.session.status === 'active' && !stateJson.attemptStartedAt && stateJson.status === 'active') {
+              await startAttempt();
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        }
+      }
+    })();
+    
     const id = window.setInterval(() => {
       if (!navigator.onLine) {
         return;
@@ -515,6 +614,8 @@ export function AttemptClient(props: { attemptId: string }) {
   }
 
   const blocked = state.isLocked || (state.due && state.session.status === 'active') || (!isOnline && state.session.status === 'active' && state.nextDueAt !== null);
+  const isTimeUp = state.isTimeUp || (timeRemaining !== null && timeRemaining <= 0);
+  const isDisabled = isTimeUp || state.status === 'submitted' || !state.attemptStartedAt;
   const q = questions[idx] ?? null;
   const progressPct = questions.length > 0 ? Math.round(((idx + 1) / questions.length) * 100) : 0;
 
@@ -538,35 +639,53 @@ export function AttemptClient(props: { attemptId: string }) {
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-semibold text-text-heading sm:text-base">{state.session.quiz.title}</div>
             <div className="mt-1 flex items-center gap-2 text-[10px] text-text-muted sm:text-xs">
-                <span>
-                  Câu
-                  {' '}
-                  <span className="font-mono font-semibold">{questions.length === 0 ? '-' : (idx + 1)}</span>
-                  /
-                  <span className="font-mono">{questions.length || '-'}</span>
-            </span>
-            <span>·</span>
-            <span>
-              Đã trả lời:
-              {' '}
-              <span className="font-mono font-semibold text-text-heading">{answeredCount}</span>
-              /
-              <span className="font-mono">{questions.length || '-'}</span>
-            </span>
-              {nextDueIn !== null && (
-                  <>
-                    <span>·</span>
-                    <span>
-                      <span className={cn(
-                        'font-mono font-semibold',
-                        nextDueIn <= 10 ? 'text-danger' : nextDueIn <= 30 ? 'text-warning' : 'text-text-heading',
-                      )}
-                      >
-                      {nextDueIn}
-                      </span>
-                    s
+              <span>
+                Câu
+                {' '}
+                <span className="font-mono font-semibold">{questions.length === 0 ? '-' : (idx + 1)}</span>
+                /
+                <span className="font-mono">{questions.length || '-'}</span>
+              </span>
+              <span>·</span>
+              <span>
+                Đã trả lời:
+                {' '}
+                <span className="font-mono font-semibold text-text-heading">{answeredCount}</span>
+                /
+                <span className="font-mono">{questions.length || '-'}</span>
+              </span>
+              {timeRemaining !== null && (
+                <>
+                  <span>·</span>
+                  <span>
+                    Còn lại:
+                    {' '}
+                    <span className={cn(
+                      'font-mono font-semibold',
+                      timeRemaining < 60 ? 'text-danger' : timeRemaining < 300 ? 'text-warning' : 'text-text-heading',
+                    )}
+                    >
+                      {timeRemaining < 60
+                        ? `${timeRemaining}s`
+                        : `${Math.floor(timeRemaining / 60)}:${String(timeRemaining % 60).padStart(2, '0')}`}
                     </span>
-                  </>
+                  </span>
+                </>
+              )}
+              {nextDueIn !== null && (
+                <>
+                  <span>·</span>
+                  <span>
+                    <span className={cn(
+                      'font-mono font-semibold',
+                      nextDueIn <= 10 ? 'text-danger' : nextDueIn <= 30 ? 'text-warning' : 'text-text-heading',
+                    )}
+                    >
+                      {nextDueIn}
+                    </span>
+                    s
+                  </span>
+                </>
               )}
             </div>
           </div>
@@ -574,8 +693,8 @@ export function AttemptClient(props: { attemptId: string }) {
             <Badge variant={isOnline ? 'success' : 'danger'} className="text-[9px] sm:text-[10px]">{isOnline ? 'Online' : 'Offline'}</Badge>
             {pendingCount > 0 && (
               <Badge variant="warning" className="text-[9px] sm:text-[10px]">
-                    <span className="font-mono">{pendingCount}</span>
-                  </Badge>
+                <span className="font-mono">{pendingCount}</span>
+              </Badge>
             )}
             {state.warning && !blocked && <Badge variant="warning" className="text-[9px] sm:text-[10px]">⚠️</Badge>}
             {blocked && <Badge variant="danger" className="text-[9px] sm:text-[10px]">🔒</Badge>}
@@ -602,9 +721,9 @@ export function AttemptClient(props: { attemptId: string }) {
         {syncError && (
           <div className="mt-1 text-[9px] text-danger sm:text-[10px]">
             Sync lỗi:
-                {' '}
-                <span className="font-mono">{syncError}</span>
-              </div>
+            {' '}
+            <span className="font-mono">{syncError}</span>
+          </div>
         )}
       </div>
 
@@ -653,9 +772,23 @@ export function AttemptClient(props: { attemptId: string }) {
           )
         : null}
 
+      {/* "Bắt đầu làm bài" button chỉ hiển thị nếu session chưa active (lobby) */}
+      {state && !state.attemptStartedAt && state.status === 'active' && state.session.status === 'lobby' && questions.length > 0 && (
+        <Card className="p-6 sm:p-8">
+          <div className="text-center">
+            <div className="mb-4 text-lg font-semibold text-text-heading sm:text-xl">
+              Đang chờ giảng viên bắt đầu
+            </div>
+            <div className="mb-6 text-sm text-text-muted sm:text-base">
+              Bạn có thể xem lại các câu hỏi. Thời gian sẽ bắt đầu tính khi giảng viên bắt đầu session.
+            </div>
+          </div>
+        </Card>
+      )}
+
       <Card className="p-4 sm:p-6">
         <div className="text-sm text-text-body">
-          {q
+          {q && (state?.attemptStartedAt || state?.status === 'submitted')
             ? (
                 <div>
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2 sm:mb-4">
@@ -689,7 +822,11 @@ export function AttemptClient(props: { attemptId: string }) {
                             <input
                               type="checkbox"
                               checked={isSelected}
+                              disabled={isDisabled}
                               onChange={(e) => {
+                                if (isDisabled) {
+                                  return;
+                                }
                                 if (q.type === 'mcq_single') {
                                   setSelected(e.target.checked ? [o.order] : []);
                                   return;
@@ -737,29 +874,29 @@ export function AttemptClient(props: { attemptId: string }) {
                               </Badge>
                             )}
                         <div className="text-[10px] text-text-muted sm:text-xs">
-                      Autosave bật: lưu local ngay lập tức, sync khi online.
+                          Autosave bật: lưu local ngay lập tức, sync khi online.
                         </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setIdx(i => Math.max(0, i - 1))}
-                        disabled={idx === 0}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setIdx(i => Math.max(0, i - 1))}
+                          disabled={idx === 0}
                           className="flex-1 sm:flex-initial"
-                      >
-                        Trước
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setIdx(i => Math.min(questions.length - 1, i + 1))}
-                        disabled={idx >= questions.length - 1}
+                        >
+                          Trước
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setIdx(i => Math.min(questions.length - 1, i + 1))}
+                          disabled={idx >= questions.length - 1}
                           className="flex-1 sm:flex-initial"
-                      >
-                        Sau
-                      </Button>
-                    </div>
+                        >
+                          Sau
+                        </Button>
+                      </div>
                     </div>
                     {!submittedQuestions.has(q.id) && (
                       <div className="flex items-center justify-end">
@@ -767,7 +904,7 @@ export function AttemptClient(props: { attemptId: string }) {
                           size="sm"
                           variant="primary"
                           onClick={() => void submitQuestion(q.id)}
-                          disabled={busy || !isOnline || state?.status !== 'active' || selected.length === 0}
+                          disabled={busy || !isOnline || state?.status !== 'active' || selected.length === 0 || isDisabled}
                           className="w-full sm:w-auto"
                         >
                           Submit câu này
@@ -785,18 +922,29 @@ export function AttemptClient(props: { attemptId: string }) {
         </div>
       </Card>
 
+      {/* Time up warning */}
+      {isTimeUp && state.status === 'active' && (
+        <Card className="border-danger bg-danger/10 p-4">
+          <div className="text-center text-sm font-semibold text-danger sm:text-base">
+            ⏰ Hết thời gian làm bài! Bài làm của bạn sẽ được tự động submit.
+          </div>
+        </Card>
+      )}
+
       <Card className="p-4 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button
             variant="primary"
-            disabled={busy || blocked || state.status !== 'active' || !isOnline || pendingCount > 0}
+            disabled={busy || blocked || state.status !== 'active' || !isOnline || pendingCount > 0 || isDisabled}
             onClick={() => setShowSubmitConfirm(true)}
             className="w-full sm:w-auto"
           >
             Submit
           </Button>
           <div className="text-[10px] text-text-muted sm:text-xs">
-            Chỉ submit khi online, không pending sync, và không bị checkpoint block.
+            {isTimeUp
+              ? 'Đã hết thời gian làm bài.'
+              : 'Chỉ submit khi online, không pending sync, và không bị checkpoint block.'}
           </div>
         </div>
       </Card>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAttemptAccess, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
+import { validateAttemptTimeLimit } from '@/server/attemptTimeLimit';
 
 type AnswerRow = Awaited<ReturnType<typeof prisma.answer.findMany>>[number];
 type SnapshotRow = {
@@ -111,6 +112,17 @@ export async function POST(_: Request, ctx: { params: Promise<{ attemptId: strin
   }
   if (attempt.status !== 'active') {
     return NextResponse.json({ error: 'ATTEMPT_NOT_ACTIVE' }, { status: 400 });
+  }
+
+  // Check time limit (nhưng vẫn cho phép submit nếu đã hết thời gian - auto-submit case)
+  const timeLimit = await validateAttemptTimeLimit(attemptId);
+  // Nếu hết thời gian nhưng chưa submit, vẫn cho phép submit (auto-submit)
+  // Nếu chưa bắt đầu làm bài, không cho submit
+  if (!timeLimit.valid && timeLimit.isTimeUp) {
+    // Hết thời gian - vẫn cho phép submit để lưu kết quả
+    // (auto-submit case)
+  } else if (!timeLimit.valid) {
+    return NextResponse.json({ error: 'TIME_LIMIT_EXCEEDED', timeRemaining: timeLimit.timeRemaining }, { status: 400 });
   }
 
   const snapshots = await prisma.sessionQuestionSnapshot.findMany({

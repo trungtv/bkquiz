@@ -46,6 +46,7 @@ model Attempt {
   status           AttemptStatus     @default(active)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime
+  attemptStartedAt DateTime?         // Thời điểm student thực sự bắt đầu làm bài
   nextDueAt        DateTime?
   lastVerifiedAt   DateTime?
   failedCount      Int               @default(0)

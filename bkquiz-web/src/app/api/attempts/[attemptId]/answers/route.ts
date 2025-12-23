@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAttemptAccess, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
+import { validateAttemptTimeLimit } from '@/server/attemptTimeLimit';
 
 type AnswerRow = Awaited<ReturnType<typeof prisma.answer.findMany>>[number];
 type OptionRow = { order: number };
@@ -66,6 +67,12 @@ export async function PUT(req: Request, ctx: { params: Promise<{ attemptId: stri
   }
   if (attemptFull.status !== 'active') {
     return NextResponse.json({ error: 'ATTEMPT_NOT_ACTIVE' }, { status: 400 });
+  }
+
+  // Validate time limit
+  const timeLimit = await validateAttemptTimeLimit(attemptId);
+  if (!timeLimit.valid) {
+    return NextResponse.json({ error: 'TIME_LIMIT_EXCEEDED', timeRemaining: timeLimit.timeRemaining, isTimeUp: timeLimit.isTimeUp }, { status: 400 });
   }
 
   const q = await prisma.sessionQuestionSnapshot.findUnique({

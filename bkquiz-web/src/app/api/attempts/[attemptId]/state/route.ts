@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAttemptAccess, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
+import { calculateAttemptEndTime } from '@/server/attemptTimeLimit';
 
 const GRACE_SECONDS_BEFORE_BLOCK = 5;
 
@@ -23,6 +24,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
     select: {
       id: true,
       status: true,
+      attemptStartedAt: true,
       nextDueAt: true,
       failedCount: true,
       cooldownUntil: true,
@@ -31,6 +33,8 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
         select: {
           id: true,
           status: true,
+          startedAt: true,
+          settings: true,
           quiz: { select: { title: true } },
         },
       },
@@ -50,10 +54,21 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
   const inCooldown = attempt.cooldownUntil ? attempt.cooldownUntil.getTime() > now.getTime() : false;
   const isLocked = attempt.lockedUntil ? attempt.lockedUntil.getTime() > now.getTime() : attempt.status === 'locked';
 
+  // Calculate time limit info
+  const attemptEndTime = calculateAttemptEndTime(attempt);
+  const timeRemaining = attemptEndTime
+    ? Math.max(0, Math.floor((attemptEndTime.getTime() - now.getTime()) / 1000))
+    : null;
+  const isTimeUp = attemptEndTime ? now >= attemptEndTime : false;
+
   return NextResponse.json({
     id: attempt.id,
     status: attempt.status,
     session: attempt.quizSession,
+    attemptStartedAt: attempt.attemptStartedAt,
+    attemptEndTime: attemptEndTime?.toISOString() ?? null,
+    timeRemaining,
+    isTimeUp,
     nextDueAt: attempt.nextDueAt,
     due,
     warning,

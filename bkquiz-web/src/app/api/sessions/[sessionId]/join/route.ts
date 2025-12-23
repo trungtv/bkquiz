@@ -89,6 +89,23 @@ export async function POST(_: Request, ctx: { params: Promise<{ sessionId: strin
     select: { id: true, sessionId: true, nextDueAt: true, status: true },
   });
 
+  // Nếu session đã active và attempt chưa bắt đầu, tự động start
+  if (session.status === 'active') {
+    const existingAttempt = await prisma.attempt.findUnique({
+      where: { id: attempt.id },
+      // @ts-expect-error - Prisma types may not be updated yet
+      select: { attemptStartedAt: true },
+    });
+    // @ts-expect-error - Prisma types may not be updated yet
+    if (!existingAttempt?.attemptStartedAt) {
+      await prisma.attempt.update({
+        where: { id: attempt.id },
+        // @ts-expect-error - Prisma types may not be updated yet
+        data: { attemptStartedAt: now },
+      });
+    }
+  }
+
   // best-effort log
   await prisma.checkpointLog.create({
     data: {
