@@ -6,6 +6,7 @@ services:
     container_name: bkquiz-postgres
     restart: unless-stopped
     environment:
+      # Dev credentials only - use environment variables in production
       POSTGRES_DB: bkquiz
       POSTGRES_USER: bkquiz
       POSTGRES_PASSWORD: bkquiz
