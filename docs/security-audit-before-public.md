@@ -53,7 +53,7 @@
 **File:** `bkquiz-web/checkly.config.ts`
 
 **Vấn đề:**
-- Line 18: `repoUrl: 'https://github.com/ixartz/Next-js-Boilerplate'`
+- ✅ Line 18: `repoUrl: 'https://github.com/trungtv/bkquiz'` (đã được cập nhật)
 - Đây là URL của Next.js Boilerplate template, không phải BKquiz
 
 **Đánh giá:**

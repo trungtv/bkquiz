@@ -1,6 +1,6 @@
 {
-  "name": "next-js-boilerplate",
-  "author": "Ixartz (https://github.com/ixartz)",
+  "name": "bkquiz-web",
+  "author": "TrungTV (https://github.com/trungtv)",
   "engines": {
     "node": ">=20"
   },
