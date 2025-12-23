@@ -199,7 +199,7 @@ Apache License 2.0 - xem [LICENSE](LICENSE) để biết thêm chi tiết.
 - ✅ **Enterprise-friendly**: Nhiều tổ chức giáo dục và doanh nghiệp ưa chuộng
 - ✅ **Vẫn rất permissive**: Giống MIT nhưng có thêm legal protections
 
-## 👥 Authors
+## 👥 Contributors
 
 - TrungTV
 
