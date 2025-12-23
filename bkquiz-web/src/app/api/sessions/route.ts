@@ -7,9 +7,17 @@ import { generateTotpSecret } from '@/server/totp';
 const CreateSessionSchema = z.object({
   classroomId: z.string().trim().min(1),
   quizId: z.string().trim().min(1),
+  sessionName: z.string().trim().min(1).optional(), // Tên session (mặc định là tên quiz)
   totpStepSeconds: z.number().int().min(15).max(120).optional(),
-  scheduledStartAt: z.string().datetime().optional(),
+  // Accept datetime-local format (YYYY-MM-DDTHH:mm) or ISO datetime
+  scheduledStartAt: z.string().refine((val) => {
+    if (!val) return true; // Optional
+    // Try to parse as Date - accepts both datetime-local and ISO formats
+    const date = new Date(val);
+    return !Number.isNaN(date.getTime());
+  }, { message: 'Invalid datetime format' }).optional(),
   durationSeconds: z.number().int().min(60).max(86400).optional(), // 1 phút đến 24 giờ
+  bufferMinutes: z.number().int().min(0).max(60).optional(), // Buffer time trước khi tự động đóng (0-60 phút)
 });
 
 export async function GET(_req: Request) {
@@ -159,29 +167,46 @@ export async function POST(req: Request) {
     select: { id: true, _count: { select: { rules: true } } },
   });
 
+  if (!quiz) {
+    return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
+  }
+
   if (quiz._count.rules === 0) {
     return NextResponse.json({ error: 'QUIZ_HAS_NO_RULES' }, { status: 400 });
   }
 
   // Prepare session data
   const sessionData: any = {
-      quizId: quiz.id,
-      classroomId: body.classroomId,
-      status: 'lobby',
-      totpSecret: generateTotpSecret(),
-      totpStepSeconds: body.totpStepSeconds ?? 45,
+    quizId: quiz.id,
+    classroomId: body.classroomId,
+    status: 'lobby',
+    totpSecret: generateTotpSecret(),
+    totpStepSeconds: body.totpStepSeconds ?? 45,
   };
 
-  // If scheduledStartAt is provided, set startedAt (will be used when session actually starts)
-  // Note: startedAt is used for both scheduled start and actual start
-  // TODO: Consider adding a separate scheduledStartAt field in schema for better clarity
+  // Store durationSeconds, sessionName, scheduledStartAt, and bufferMinutes in settings JSONB
+  const settings: any = {};
+  if (body.durationSeconds) {
+    settings.durationSeconds = body.durationSeconds;
+  }
+  if (body.sessionName) {
+    settings.sessionName = body.sessionName;
+  }
+  // Store scheduledStartAt in settings to distinguish from actual start time
   if (body.scheduledStartAt) {
+    settings.scheduledStartAt = body.scheduledStartAt;
+    // Also set startedAt for backward compatibility and actual start tracking
     sessionData.startedAt = new Date(body.scheduledStartAt);
   }
-
-  // Store durationSeconds in settings JSONB
-  if (body.durationSeconds) {
-    sessionData.settings = { durationSeconds: body.durationSeconds };
+  // Store bufferMinutes for auto-end (default 5 minutes if not specified)
+  if (body.bufferMinutes !== undefined) {
+    settings.bufferMinutes = body.bufferMinutes;
+  } else if (body.durationSeconds) {
+    // Default buffer is 5 minutes if duration is set but buffer not specified
+    settings.bufferMinutes = 5;
+  }
+  if (Object.keys(settings).length > 0) {
+    sessionData.settings = settings;
   }
 
   const session = await prisma.quizSession.create({

@@ -28,6 +28,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
       startedAt: true,
       endedAt: true,
       createdAt: true,
+      settings: true, // Include settings to get sessionName
       quiz: {
         select: {
           id: true,
@@ -44,15 +45,25 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
   });
 
   return NextResponse.json({
-    sessions: sessions.map(s => ({
-      id: s.id,
-      status: s.status,
-      startedAt: s.startedAt,
-      endedAt: s.endedAt,
-      createdAt: s.createdAt,
-      quiz: s.quiz,
-      attemptCount: s._count.attempts,
-    })),
+    sessions: sessions.map(s => {
+      // Parse settings from JSONB
+      const settings = s.settings as { sessionName?: string; durationSeconds?: number; scheduledStartAt?: string } | null;
+      const sessionName = settings?.sessionName;
+      const durationSeconds = settings?.durationSeconds;
+      const scheduledStartAt = settings?.scheduledStartAt;
+      return {
+        id: s.id,
+        status: s.status,
+        startedAt: s.startedAt,
+        endedAt: s.endedAt,
+        createdAt: s.createdAt,
+        quiz: s.quiz,
+        attemptCount: s._count.attempts,
+        sessionName: sessionName || null,
+        durationSeconds: durationSeconds || null, // Duration in seconds
+        scheduledStartAt: scheduledStartAt || null, // Scheduled start time (for lobby sessions)
+      };
+    }),
   });
 }
 

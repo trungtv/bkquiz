@@ -1,7 +1,6 @@
 'use client';
 
 import type { Session } from '../types';
-import { formatDate } from '../types';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -11,6 +10,28 @@ type SessionsListProps = {
   isStudent: boolean;
   onCreateSession?: () => void;
 };
+
+function formatDuration(seconds: number | null | undefined): string {
+  if (!seconds) {
+    return 'Không giới hạn';
+  }
+  if (seconds >= 3600) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  }
+  return `${Math.floor(seconds / 60)} phút`;
+}
+
+function formatDateShort(dateString: string): string {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('vi-VN', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
 
 export function SessionsList(props: SessionsListProps) {
   const { sessions, isStudent, onCreateSession } = props;
@@ -70,16 +91,45 @@ export function SessionsList(props: SessionsListProps) {
                   <div className="grid min-w-0 flex-1 grid-cols-[1fr_auto_auto_auto] items-center gap-4 md:grid-cols-[2fr_auto_120px_100px]">
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium text-text-heading">
-                        {s.quiz.title}
+                        {s.sessionName || s.quiz.title}
                       </div>
-                      <div className="mt-1 text-xs text-text-muted">
-                        {s.status === 'active' && 'Đang diễn ra'}
-                        {s.status === 'ended' && 'Đã kết thúc'}
-                        {s.status === 'lobby' && 'Chờ bắt đầu'}
-                        {' '}
-                        ·
-                        {' '}
-                        {formatDate(s.createdAt)}
+                      <div className="mt-1 space-y-0.5">
+                        <div className="text-xs text-text-muted">
+                          {s.status === 'active' && '🟢 Đang diễn ra'}
+                          {s.status === 'ended' && '⚫ Đã kết thúc'}
+                          {s.status === 'lobby' && '🟡 Chờ bắt đầu'}
+                          {s.durationSeconds && (
+                            <>
+                              {' '}
+                              ·
+                              {' '}
+                              ⏱️
+                              {' '}
+                              {
+                                formatDuration(s.durationSeconds)
+                              }
+                            </>
+                          )}
+                        </div>
+                        {((s.startedAt || s.scheduledStartAt) || s.endedAt) && (
+                          <div className="text-xs text-text-muted/80">
+                            {(s.startedAt || s.scheduledStartAt) && (
+                              <>
+                                {s.status === 'lobby' ? '📅 Bắt đầu:' : '▶️ Đã bắt đầu:'}
+                                {' '}
+                                {formatDateShort(s.startedAt || s.scheduledStartAt!)}
+                              </>
+                            )}
+                            {s.endedAt && s.status === 'ended' && (
+                              <>
+                                {(s.startedAt || s.scheduledStartAt) && ' · '}
+                                🏁 Kết thúc:
+                                {' '}
+                                {formatDateShort(s.endedAt)}
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <Badge
@@ -115,16 +165,47 @@ export function SessionsList(props: SessionsListProps) {
               <Link href={`/dashboard/sessions/${s.id}/teacher`} className="grid min-w-0 flex-1 grid-cols-[1fr_auto_auto_auto] items-center gap-4 md:grid-cols-[2fr_auto_120px_100px]">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium text-text-heading">
-                    {s.quiz.title}
+                    {s.sessionName || s.quiz.title}
                   </div>
-                  <div className="mt-1 text-xs text-text-muted">
-                    {s.attemptCount}
-                    {' '}
-                    attempts
-                    {' '}
-                    ·
-                    {' '}
-                    {formatDate(s.createdAt)}
+                  <div className="mt-1 space-y-0.5">
+                    <div className="text-xs text-text-muted">
+                      👥
+                      {' '}
+                      {s.attemptCount}
+                      {' '}
+                      attempts
+                      {s.durationSeconds && (
+                        <>
+                          {' '}
+                          ·
+                          {' '}
+                          ⏱️
+                          {' '}
+                          {
+                            formatDuration(s.durationSeconds)
+                          }
+                        </>
+                      )}
+                    </div>
+                    {((s.startedAt || s.scheduledStartAt) || s.endedAt) && (
+                      <div className="text-xs text-text-muted/80">
+                        {(s.startedAt || s.scheduledStartAt) && (
+                          <>
+                            {s.status === 'lobby' ? '📅 Bắt đầu:' : '▶️ Đã bắt đầu:'}
+                            {' '}
+                            {formatDateShort(s.startedAt || s.scheduledStartAt!)}
+                          </>
+                        )}
+                        {s.endedAt && s.status === 'ended' && (
+                          <>
+                            {(s.startedAt || s.scheduledStartAt) && ' · '}
+                            🏁 Kết thúc:
+                            {' '}
+                            {formatDateShort(s.endedAt)}
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <Badge

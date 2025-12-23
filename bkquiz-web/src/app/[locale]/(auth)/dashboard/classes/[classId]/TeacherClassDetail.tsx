@@ -33,6 +33,27 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [scheduledStartTime, setScheduledStartTime] = useState<string>('');
   const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
+  const [sessionName, setSessionName] = useState<string>('');
+  const [bufferMinutes, setBufferMinutes] = useState<number>(5); // Mặc định 5 phút
+
+  // Helper function: Tính thời gian với offset phút, làm tròn chẵn 5 phút
+  function getRoundedTime(minutesOffset: number): string {
+    const now = new Date();
+    const target = new Date(now.getTime() + minutesOffset * 60 * 1000);
+    // Làm tròn chẵn 5 phút (làm tròn lên)
+    const minutes = target.getMinutes();
+    const roundedMinutes = Math.ceil(minutes / 5) * 5;
+    target.setMinutes(roundedMinutes);
+    target.setSeconds(0);
+    target.setMilliseconds(0);
+    // Format cho datetime-local input (YYYY-MM-DDTHH:mm)
+    const year = target.getFullYear();
+    const month = String(target.getMonth() + 1).padStart(2, '0');
+    const day = String(target.getDate()).padStart(2, '0');
+    const hours = String(target.getHours()).padStart(2, '0');
+    const mins = String(target.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${mins}`;
+  }
   const [createSessionBusy, setCreateSessionBusy] = useState(false);
   const [createSessionError, setCreateSessionError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -149,6 +170,12 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
         classroomId: classId,
         quizId: selectedQuizId,
       };
+      // Add session name (use quiz title if empty)
+      if (sessionName.trim()) {
+        body.sessionName = sessionName.trim();
+      } else if (selectedQuiz) {
+        body.sessionName = selectedQuiz.title;
+      }
       if (scheduledStartTime) {
         body.scheduledStartAt = scheduledStartTime;
       }
@@ -158,6 +185,10 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
       } else if (selectedQuiz?.durationSeconds !== null && selectedQuiz.durationSeconds > 0) {
         // Fallback to quiz's duration if no override
         body.durationSeconds = selectedQuiz.durationSeconds;
+      }
+      // Add buffer minutes for auto-end
+      if (bufferMinutes > 0) {
+        body.bufferMinutes = bufferMinutes;
       }
       const res = await fetch('/api/sessions', {
         method: 'POST',
@@ -173,6 +204,8 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
       setSelectedQuizId('');
       setScheduledStartTime('');
       setDurationMinutes(null);
+      setSessionName('');
+      setBufferMinutes(5);
       setSelectedTags([]);
       setQuizSearchQuery('');
       setToast({ message: 'Đã tạo session thành công', type: 'success' });
@@ -228,7 +261,11 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
       <ClassHeader
         classInfo={classInfo}
         isOwner={isOwner}
-        onCreateSession={() => setShowCreateSessionModal(true)}
+        onCreateSession={() => {
+          setShowCreateSessionModal(true);
+          // Set default start time when opening modal
+          setScheduledStartTime(getRoundedTime(5));
+        }}
       />
 
       {/* Stats Cards */}
@@ -290,7 +327,11 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
             <SessionsList
               sessions={sessions}
               isStudent={false}
-              onCreateSession={() => setShowCreateSessionModal(true)}
+              onCreateSession={() => {
+          setShowCreateSessionModal(true);
+          // Set default start time when opening modal
+          setScheduledStartTime(getRoundedTime(5));
+        }}
             />
           )}
 
@@ -472,6 +513,8 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                                 type="button"
                                 onClick={() => {
                                   setSelectedQuizId(q.id);
+                                  // Auto-set session name to quiz title (default)
+                                  setSessionName(q.title);
                                   // Auto-set duration from quiz (always set when selecting a quiz)
                                   if (q.durationSeconds !== null) {
                                     setDurationMinutes(Math.floor(q.durationSeconds / 60));
@@ -596,18 +639,76 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                     return (
                       <>
                         <div>
-                          <label htmlFor="scheduledStartTime" className="mb-2 block text-sm font-medium text-text-heading">
-                            Thời gian bắt đầu (tùy chọn)
+                          <label htmlFor="sessionName" className="mb-2 block text-sm font-medium text-text-heading">
+                            Tên session
                           </label>
                           <Input
-                            id="scheduledStartTime"
-                            type="datetime-local"
-                            value={scheduledStartTime}
-                            onChange={e => setScheduledStartTime(e.target.value)}
+                            id="sessionName"
+                            type="text"
+                            value={sessionName}
+                            onChange={e => setSessionName(e.target.value)}
+                            placeholder={selectedQuiz?.title || 'Nhập tên session...'}
                             className="w-full"
                           />
                           <p className="mt-1 text-xs text-text-muted">
-                            Để trống nếu muốn bắt đầu ngay khi tạo session
+                            Mặc định là tên quiz. Bạn có thể thay đổi tên cho session này.
+                          </p>
+                        </div>
+
+                        <div>
+                          <label htmlFor="scheduledStartTime" className="mb-2 block text-sm font-medium text-text-heading">
+                            Thời gian bắt đầu (tùy chọn)
+                          </label>
+                          <div className="space-y-2">
+                            <Input
+                              id="scheduledStartTime"
+                              type="datetime-local"
+                              value={scheduledStartTime || getRoundedTime(5)}
+                              onChange={e => setScheduledStartTime(e.target.value)}
+                              className="w-full"
+                              min={new Date().toISOString().slice(0, 16)}
+                            />
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setScheduledStartTime(getRoundedTime(5))}
+                                className="text-xs"
+                              >
+                                ⏰ Mặc định (+5 phút)
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setScheduledStartTime(getRoundedTime(15))}
+                                className="text-xs"
+                              >
+                                +15 phút
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setScheduledStartTime(getRoundedTime(30))}
+                                className="text-xs"
+                              >
+                                +30 phút
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setScheduledStartTime('')}
+                                className="text-xs text-danger/80 hover:text-danger"
+                              >
+                                ✕ Xóa
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="mt-1 text-xs text-text-muted">
+                            Mặc định là hiện tại + 5 phút (làm tròn chẵn). Để trống nếu muốn bắt đầu ngay khi tạo session.
                           </p>
                         </div>
 
@@ -671,8 +772,37 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                             <p className="mt-1 text-xs text-text-muted">
                               Quiz này không có giới hạn thời gian. Bạn có thể đặt thời gian cho session này.
                             </p>
-                    )}
-              </div>
+                          )}
+                        </div>
+
+                        {durationMinutes && durationMinutes > 0 && (
+                          <div>
+                            <label htmlFor="bufferMinutes" className="mb-2 block text-sm font-medium text-text-heading">
+                              Thời gian buffer trước khi tự động đóng (phút)
+                            </label>
+                            <div className="flex items-center gap-3">
+                              <Input
+                                id="bufferMinutes"
+                                type="number"
+                                min={0}
+                                max={60}
+                                value={bufferMinutes}
+                                onChange={e => setBufferMinutes(Number(e.target.value))}
+                                className="w-32"
+                              />
+                              <span className="text-sm text-text-muted">
+                                Sau khi hết thời gian làm bài, session sẽ tự động đóng sau
+                                {' '}
+                                {bufferMinutes}
+                                {' '}
+                                phút nữa
+                              </span>
+                            </div>
+                            <p className="mt-1 text-xs text-text-muted">
+                              Mặc định 5 phút. Session sẽ tự động đóng sau khi hết thời gian làm bài + buffer time.
+                            </p>
+                          </div>
+                        )}
                       </>
                     );
                   })()}
@@ -696,6 +826,8 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                     setSelectedTags([]);
                     setScheduledStartTime('');
                     setDurationMinutes(null);
+                    setSessionName('');
+                    setBufferMinutes(5);
                     setCreateSessionError(null);
                   }}
                 >

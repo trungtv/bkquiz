@@ -110,7 +110,28 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
       setError(json.error ?? 'SESSION_NOT_FOUND');
       return;
     }
+    const newStatus = (json as SessionStatusResponse).status;
+    const prevStatus = session?.status;
+
     setSession(json as SessionStatusResponse);
+
+    // Nếu session vừa chuyển từ lobby → active (auto-start), hoặc status là active mà chưa có token
+    // thì fetch token ngay lập tức
+    if (newStatus === 'active' && (prevStatus === 'lobby' || !data)) {
+      void fetchToken();
+    }
+
+    // Trigger auto-start/auto-end endpoint (cho dev mode)
+    // Server sẽ tự kiểm tra và start/end sessions nếu cần
+    // - Lobby: check scheduledStartAt và start nếu đã quá giờ
+    // - Active: check durationSeconds + bufferMinutes và end nếu đã hết giờ
+    if (newStatus === 'lobby' || newStatus === 'active') {
+      // Trigger auto-management endpoint (không cần await, để chạy background)
+      // Server sẽ tự check và chỉ start/end nếu đã đến thời điểm
+      void fetch('/api/sessions/auto', { method: 'POST' }).catch((err) => {
+        console.error('Failed to trigger auto-management:', err);
+      });
+    }
   }
 
   async function fetchLogs() {
@@ -149,10 +170,12 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
       return;
     }
     setJoinedStudents(json.students ?? []);
-  };
+  }
 
   async function fetchToken() {
-    // Không fetch token nếu session đã ended
+    // Không fetch token nếu session đã ended (check từ state hiện tại)
+    // Lưu ý: Khi được gọi từ fetchStatus() sau auto-start, session state có thể chưa update
+    // nhưng API sẽ trả về lỗi nếu session đã ended, nên vẫn an toàn
     if (session?.status === 'ended') {
       return;
     }
@@ -160,7 +183,10 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
     const res = await fetch(`/api/sessions/${props.sessionId}/teacherToken`, { method: 'GET' });
     const json = await res.json() as Partial<TeacherTokenResponse> & { error?: string };
     if (!res.ok) {
-      setError(json.error ?? 'FORBIDDEN');
+      // Nếu session đã ended, không set error (đây là expected behavior)
+      if (json.error !== 'SESSION_ENDED') {
+        setError(json.error ?? 'FORBIDDEN');
+      }
       return;
     }
     setData(json as TeacherTokenResponse);

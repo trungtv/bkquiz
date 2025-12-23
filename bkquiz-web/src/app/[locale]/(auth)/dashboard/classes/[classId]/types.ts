@@ -26,6 +26,9 @@ export type Session = {
   createdAt: string;
   quiz: { id: string; title: string };
   attemptCount: number;
+  sessionName?: string | null; // Tên session (nếu có), mặc định là quiz.title
+  durationSeconds?: number | null; // Thời gian làm bài (giây)
+  scheduledStartAt?: string | null; // Thời gian bắt đầu đã lên lịch (cho lobby sessions)
 };
 
 export type QuizLite = {

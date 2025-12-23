@@ -30,8 +30,8 @@ export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }>
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
     if (error === 'QUIZ_NOT_FOUND') {
-      return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
-    }
+    return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
+  }
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 
@@ -63,8 +63,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ quizId: strin
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
     if (error === 'QUIZ_NOT_FOUND') {
-      return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
-    }
+    return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
+  }
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 
