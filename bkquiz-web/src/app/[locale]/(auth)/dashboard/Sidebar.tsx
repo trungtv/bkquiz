@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 
 type SidebarProps = {
@@ -12,6 +12,8 @@ type SidebarProps = {
   quizzesLink: string;
   questionBankLink: string;
   userProfileLink: string;
+  isMobileOpen?: boolean;
+  onMobileClose?: () => void;
 };
 
 export function Sidebar(props: SidebarProps) {
@@ -19,6 +21,8 @@ export function Sidebar(props: SidebarProps) {
   // Always start with true to match server render (avoid hydration mismatch)
   const [isExpanded, setIsExpanded] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
+  // Mobile sidebar state
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // Load from localStorage after mount (client-side only)
   // Use useLayoutEffect to sync before paint to minimize flash
@@ -61,13 +65,57 @@ export function Sidebar(props: SidebarProps) {
 
   const isActive = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
 
+  // Close mobile sidebar when route changes
+  useEffect(() => {
+    setIsMobileOpen(false);
+    document.body.removeAttribute('data-sidebar-open');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]); // Only depend on pathname, not isMobileOpen
+
+  // Check if mobile sidebar should be open (from data attribute or props)
+  useEffect(() => {
+    const checkMobileOpen = () => {
+      const isOpen = document.body.getAttribute('data-sidebar-open') === 'true';
+      setIsMobileOpen((prev) => {
+        // Only update if different to avoid unnecessary re-renders
+        return isOpen !== prev ? isOpen : prev;
+      });
+    };
+    // Check on mount and when attribute changes
+    checkMobileOpen();
+    const observer = new MutationObserver(checkMobileOpen);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-sidebar-open'] });
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount, then rely on MutationObserver
+
+  // Use external state if provided (for provider pattern), otherwise use internal state
+  const showMobile = props.isMobileOpen ?? isMobileOpen;
+  const handleMobileClose = props.onMobileClose ?? (() => {
+    setIsMobileOpen(false);
+    document.body.removeAttribute('data-sidebar-open');
+  });
+
   return (
-    <aside
-      suppressHydrationWarning
-      className={`hidden border-r border-border-subtle bg-bg-section/95 transition-all duration-300 lg:block ${
-        isExpanded ? 'w-64 px-4' : 'w-16 px-2'
-      }`}
-    >
+    <>
+      {/* Mobile overlay */}
+      {showMobile && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={handleMobileClose}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar - Desktop: always visible, Mobile: slide in/out */}
+      <aside
+        suppressHydrationWarning
+        className={`fixed left-0 top-0 z-50 h-full border-r border-border-subtle bg-bg-section/95 transition-transform duration-300 lg:relative lg:z-auto lg:translate-x-0 ${
+          showMobile ? 'translate-x-0' : '-translate-x-full'
+        } lg:block ${
+          isExpanded ? 'w-64 px-4' : 'w-16 px-2'
+        }`}
+      >
       <div
         onClick={toggle}
         onKeyDown={handleKeyDown}
@@ -348,5 +396,6 @@ export function Sidebar(props: SidebarProps) {
         </nav>
       </div>
     </aside>
+    </>
   );
 }

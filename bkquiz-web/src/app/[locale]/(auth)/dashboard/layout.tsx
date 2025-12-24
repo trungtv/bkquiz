@@ -1,8 +1,10 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import Link from 'next/link';
 import { signOut } from '@/auth';
 import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { getUserRole, requireUser } from '@/server/authz';
 import { AppConfig } from '@/utils/AppConfig';
+import { MobileMenuButton } from './MobileMenuButton';
 import { Sidebar } from './Sidebar';
 
 export default async function DashboardLayout(props: {
@@ -22,7 +24,7 @@ export default async function DashboardLayout(props: {
   return (
     <div className="min-h-screen bg-bg-page text-text-body antialiased">
       <div className="flex">
-        {/* Sidebar – Framer-style, hidden on mobile, với expand/collapse */}
+        {/* Sidebar – Desktop: always visible, Mobile: slide in/out */}
         <Sidebar
           role={role}
           dashboardLink={t('dashboard_link')}
@@ -37,9 +39,13 @@ export default async function DashboardLayout(props: {
           {/* Topbar */}
           <header className="flex h-14 items-center justify-between border-b border-border-subtle bg-bg-section/90 px-4 backdrop-blur md:px-6">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-text-heading">
+              <MobileMenuButton />
+              <Link
+                href={`/${locale}/`}
+                className="text-sm font-semibold text-text-heading hover:text-primary transition-colors"
+              >
                 {AppConfig.name}
-              </span>
+              </Link>
               <span className="hidden text-xs text-text-muted sm:inline">
                 Dashboard
               </span>
