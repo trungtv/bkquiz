@@ -34,6 +34,7 @@ type SessionStatusResponse = {
     name: string;
     classCode: string;
   };
+  sessionName?: string | null;
 };
 
 type TokenLogRow = {
@@ -336,13 +337,26 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
             </Link>
             <span>/</span>
             <Link
-              href={getI18nPath('/dashboard/sessions', locale)}
+              href={getI18nPath('/dashboard/classes', locale)}
               className="hover:text-white/80 transition-colors cursor-pointer"
             >
-              Sessions
+              Classes
             </Link>
+            {session?.classroom && (
+              <>
+                <span>/</span>
+                <Link
+                  href={getI18nPath(`/dashboard/classes/${session.classroom.id}`, locale)}
+                  className="hover:text-white/80 transition-colors cursor-pointer"
+                >
+                  {session.classroom.name}
+                </Link>
+              </>
+            )}
             <span>/</span>
-            <span className="text-white/40">Session</span>
+            <span className="text-white/40">
+              {session ? (session.sessionName || session.quiz.title) : 'Session'}
+            </span>
           </div>
         </div>
 

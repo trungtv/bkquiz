@@ -11,7 +11,9 @@ const CreateSessionSchema = z.object({
   totpStepSeconds: z.number().int().min(15).max(120).optional(),
   // Accept datetime-local format (YYYY-MM-DDTHH:mm) or ISO datetime
   scheduledStartAt: z.string().refine((val) => {
-    if (!val) return true; // Optional
+    if (!val) {
+      return true; // Optional
+    }
     // Try to parse as Date - accepts both datetime-local and ISO formats
     const date = new Date(val);
     return !Number.isNaN(date.getTime());
@@ -37,10 +39,19 @@ export async function GET(_req: Request) {
         startedAt: true,
         endedAt: true,
         createdAt: true,
+        // @ts-expect-error - settings is JSONB field, Prisma types may not include it
+        settings: true,
         quiz: {
           select: {
             id: true,
             title: true,
+          },
+        },
+        classroom: {
+          select: {
+            id: true,
+            name: true,
+            classCode: true,
           },
         },
         _count: {
@@ -53,15 +64,23 @@ export async function GET(_req: Request) {
     });
 
     return NextResponse.json({
-      sessions: sessions.map(s => ({
-        id: s.id,
-        status: s.status,
-        startedAt: s.startedAt,
-        endedAt: s.endedAt,
-        createdAt: s.createdAt,
-        quiz: s.quiz,
-        attemptCount: s._count.attempts,
-      })),
+      sessions: sessions.map((s) => {
+        // @ts-expect-error - settings is JSONB field
+        const settings = s.settings as { sessionName?: string; durationSeconds?: number; scheduledStartAt?: string } | null;
+        return {
+          id: s.id,
+          status: s.status,
+          startedAt: s.startedAt,
+          endedAt: s.endedAt,
+          createdAt: s.createdAt,
+          quiz: (s as any).quiz,
+          attemptCount: (s as any)._count.attempts,
+          sessionName: settings?.sessionName || null,
+          durationSeconds: settings?.durationSeconds || null,
+          scheduledStartAt: settings?.scheduledStartAt || null,
+          classroom: (s as any).classroom,
+        };
+      }),
     });
   }
 
@@ -95,10 +114,19 @@ export async function GET(_req: Request) {
       startedAt: true,
       endedAt: true,
       createdAt: true,
+      // @ts-expect-error - settings is JSONB field, Prisma types may not include it
+      settings: true,
       quiz: {
         select: {
           id: true,
           title: true,
+        },
+      },
+      classroom: {
+        select: {
+          id: true,
+          name: true,
+          classCode: true,
         },
       },
     },
@@ -124,23 +152,31 @@ export async function GET(_req: Request) {
   const attemptMap = new Map(attempts.map(a => [a.sessionId, a]));
 
   return NextResponse.json({
-    sessions: sessions.map(s => ({
-      id: s.id,
-      status: s.status,
-      startedAt: s.startedAt,
-      endedAt: s.endedAt,
-      createdAt: s.createdAt,
-      quiz: s.quiz,
-      attempt: attemptMap.get(s.id)
-        ? {
-            id: attemptMap.get(s.id)!.id,
-            status: attemptMap.get(s.id)!.status,
-            submittedAt: attemptMap.get(s.id)!.submittedAt,
-            score: attemptMap.get(s.id)!.score,
-            createdAt: attemptMap.get(s.id)!.createdAt,
-          }
-        : undefined,
-    })),
+    sessions: sessions.map((s) => {
+      // @ts-expect-error - settings is JSONB field
+      const settings = s.settings as { sessionName?: string; durationSeconds?: number; scheduledStartAt?: string } | null;
+      return {
+        id: s.id,
+        status: s.status,
+        startedAt: s.startedAt,
+        endedAt: s.endedAt,
+        createdAt: s.createdAt,
+        quiz: (s as any).quiz,
+        attempt: attemptMap.get(s.id)
+          ? {
+              id: attemptMap.get(s.id)!.id,
+              status: attemptMap.get(s.id)!.status,
+              submittedAt: attemptMap.get(s.id)!.submittedAt,
+              score: attemptMap.get(s.id)!.score,
+              createdAt: attemptMap.get(s.id)!.createdAt,
+            }
+          : undefined,
+        sessionName: settings?.sessionName || null,
+        durationSeconds: settings?.durationSeconds || null,
+        scheduledStartAt: settings?.scheduledStartAt || null,
+        classroom: (s as any).classroom,
+      };
+    }),
   });
 }
 

@@ -44,6 +44,24 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
     take: 50, // Limit để tránh quá nhiều data
   });
 
+  // Get user's attempts for these sessions (if student)
+  const sessionIds = sessions.map(s => s.id);
+  const userAttempts = await prisma.attempt.findMany({
+    where: {
+      userId,
+      sessionId: { in: sessionIds },
+    },
+    select: {
+      id: true,
+      sessionId: true,
+      score: true,
+      submittedAt: true,
+      status: true,
+    },
+  });
+
+  const attemptMap = new Map(userAttempts.map(a => [a.sessionId, a]));
+
   return NextResponse.json({
     sessions: sessions.map(s => {
       // Parse settings from JSONB
@@ -51,6 +69,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
       const sessionName = settings?.sessionName;
       const durationSeconds = settings?.durationSeconds;
       const scheduledStartAt = settings?.scheduledStartAt;
+      const userAttempt = attemptMap.get(s.id);
       return {
         id: s.id,
         status: s.status,
@@ -62,6 +81,14 @@ export async function GET(_: Request, ctx: { params: Promise<{ classId: string }
         sessionName: sessionName || null,
         durationSeconds: durationSeconds || null, // Duration in seconds
         scheduledStartAt: scheduledStartAt || null, // Scheduled start time (for lobby sessions)
+        attempt: userAttempt
+          ? {
+              id: userAttempt.id,
+              score: userAttempt.score,
+              submittedAt: userAttempt.submittedAt,
+              status: userAttempt.status,
+            }
+          : undefined,
       };
     }),
   });

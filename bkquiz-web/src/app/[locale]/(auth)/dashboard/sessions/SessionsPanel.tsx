@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -25,6 +25,14 @@ type Session = {
     createdAt: string;
   };
   attemptCount?: number;
+  sessionName?: string | null;
+  durationSeconds?: number | null;
+  scheduledStartAt?: string | null;
+  classroom?: {
+    id: string;
+    name: string;
+    classCode: string;
+  } | null;
 };
 
 export function SessionsPanel() {
@@ -50,16 +58,29 @@ export function SessionsPanel() {
     loadSessions();
   }, []);
 
-  function formatDate(dateStr: string | null) {
-    if (!dateStr) return '—';
+  function formatDateShort(dateStr: string | null) {
+    if (!dateStr) {
+      return '—';
+    }
     const date = new Date(dateStr);
     return new Intl.DateTimeFormat('vi-VN', {
-      day: 'numeric',
       month: 'short',
-      year: 'numeric',
+      day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     }).format(date);
+  }
+
+  function formatDuration(seconds: number | null | undefined): string {
+    if (!seconds) {
+      return '';
+    }
+    if (seconds >= 3600) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    }
+    return `${Math.floor(seconds / 60)} phút`;
   }
 
   function getStatusBadge(status: Session['status']) {
@@ -74,6 +95,23 @@ export function SessionsPanel() {
         return <Badge variant="neutral">{status}</Badge>;
     }
   }
+
+  const activeSessions = sessions.filter(s => s.status === 'active');
+  const pastSessions = sessions.filter(s => s.status === 'ended');
+  const lobbySessions = sessions.filter(s => s.status === 'lobby');
+
+  // Group past sessions by classroom
+  const pastSessionsByClass = useMemo(() => {
+    const grouped = new Map<string | null, Session[]>();
+    for (const session of pastSessions) {
+      const classId = session.classroom?.id || null;
+      if (!grouped.has(classId)) {
+        grouped.set(classId, []);
+      }
+      grouped.get(classId)!.push(session);
+    }
+    return grouped;
+  }, [pastSessions]);
 
   if (loading) {
     return (
@@ -103,18 +141,25 @@ export function SessionsPanel() {
     );
   }
 
-  const activeSessions = sessions.filter(s => s.status === 'active');
-  const pastSessions = sessions.filter(s => s.status === 'ended');
-  const lobbySessions = sessions.filter(s => s.status === 'lobby');
-
   return (
     <div className="space-y-7">
+      {/* Breadcrumb */}
+      <nav className="text-sm animate-fadeIn">
+        <div className="flex items-center gap-2 text-text-muted">
+          <Link href="/dashboard" className="hover:text-text-heading transition-colors">
+            Dashboard
+          </Link>
+          <span>·</span>
+          <span className="text-text-heading">My Sessions</span>
+        </div>
+      </nav>
+
       {/* Header */}
-      <Card className="p-6">
+      <Card className="p-5 md:p-6 animate-slideUp">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="text-sm text-text-muted">BKquiz Sessions</div>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-text-heading">
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-text-heading">
               My Sessions
             </h1>
             <div className="mt-2 text-sm text-text-muted">
@@ -126,50 +171,79 @@ export function SessionsPanel() {
 
       {/* Active Sessions */}
       {activeSessions.length > 0 && (
-        <Card className="p-6">
+        <Card className="p-5 md:p-6 animate-slideUp" style={{ animationDelay: '50ms' }}>
           <div className="text-lg font-semibold text-text-heading mb-4">
             Đang diễn ra ({activeSessions.length})
           </div>
           <div className="space-y-3">
-            {activeSessions.map(session => (
-              <div
-                key={session.id}
-                className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-colors hover:border-border-strong"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className="text-sm font-medium text-text-heading">
-                      {session.quiz.title}
+            {activeSessions.map((session, idx) => (
+              <Link key={session.id} href={session.attempt ? `/attempt/${session.attempt.id}` : `/session/${session.id}`}>
+                <div
+                  className="rounded-md border border-border-subtle bg-bg-section transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-primary/30 cursor-pointer"
+                  style={{ animationDelay: `${idx * 30}ms` }}
+                >
+                  <div className="flex items-center justify-between gap-4 px-4 py-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-text-heading">
+                        {session.sessionName || session.quiz.title}
+                      </div>
+                      <div className="mt-1 space-y-0.5">
+                        <div className="text-xs text-text-muted">
+                          {session.status === 'active' && '🟢 Đang diễn ra'}
+                          {session.durationSeconds && (
+                            <>
+                              {' '}
+                              ·
+                              {' '}
+                              ⏱️
+                              {' '}
+                              {formatDuration(session.durationSeconds)}
+                            </>
+                          )}
+                        </div>
+                        {((session.startedAt || session.scheduledStartAt) || session.endedAt) && (
+                          <div className="text-xs text-text-muted/80">
+                            {(session.startedAt || session.scheduledStartAt) && (
+                              <>
+                                {session.status === 'lobby' ? '📅 Bắt đầu:' : '▶️ Đã bắt đầu:'}
+                                {' '}
+                                {formatDateShort(session.startedAt || session.scheduledStartAt!)}
+                              </>
+                            )}
+                            {session.endedAt && session.status === 'ended' && (
+                              <>
+                                {(session.startedAt || session.scheduledStartAt) && ' · '}
+                                🏁 Kết thúc:
+                                {' '}
+                                {formatDateShort(session.endedAt)}
+                              </>
+                            )}
+                          </div>
+                        )}
+                        {session.classroom && (
+                          <div className="text-xs text-text-muted/80">
+                            📚 {session.classroom.name} ({session.classroom.classCode})
+                          </div>
+                        )}
+                        {session.attempt && (
+                          <div className="text-xs text-text-muted/80">
+                            Attempt: {session.attempt.status}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    {getStatusBadge(session.status)}
-                  </div>
-                  <div className="mt-1 text-xs text-text-muted">
-                    Bắt đầu: {formatDate(session.startedAt)}
-                  </div>
-                  {session.attempt && (
-                    <div className="mt-1 text-xs text-text-muted">
-                      Attempt: {session.attempt.status}
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Badge
+                        variant={session.status === 'active' ? 'success' : (session.status === 'ended' ? 'neutral' : 'info')}
+                        className="text-xs"
+                      >
+                        {session.status}
+                      </Badge>
+                      <span className="text-xs text-text-muted">→</span>
                     </div>
-                  )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {session.attempt
-                    ? (
-                        <Link href={`/attempt/${session.attempt.id}`}>
-                          <Button variant="primary" size="sm">
-                            Tiếp tục
-                          </Button>
-                        </Link>
-                      )
-                    : (
-                        <Link href={`/session/${session.id}`}>
-                          <Button variant="primary" size="sm">
-                            Join
-                          </Button>
-                        </Link>
-                      )}
-                </div>
-              </div>
+              </Link>
             ))}
           </div>
         </Card>
@@ -177,101 +251,206 @@ export function SessionsPanel() {
 
       {/* Lobby Sessions */}
       {lobbySessions.length > 0 && (
-        <Card className="p-6">
+        <Card className="p-5 md:p-6 animate-slideUp" style={{ animationDelay: '100ms' }}>
           <div className="text-lg font-semibold text-text-heading mb-4">
             Chờ bắt đầu ({lobbySessions.length})
           </div>
           <div className="space-y-3">
-            {lobbySessions.map(session => (
-              <div
-                key={session.id}
-                className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-colors hover:border-border-strong"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className="text-sm font-medium text-text-heading">
-                      {session.quiz.title}
+            {lobbySessions.map((session, idx) => (
+              <Link key={session.id} href={`/session/${session.id}`}>
+                <div
+                  className="rounded-md border border-border-subtle bg-bg-section transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-primary/30 cursor-pointer"
+                  style={{ animationDelay: `${idx * 30}ms` }}
+                >
+                  <div className="flex items-center justify-between gap-4 px-4 py-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-text-heading">
+                        {session.sessionName || session.quiz.title}
+                      </div>
+                      <div className="mt-1 space-y-0.5">
+                        <div className="text-xs text-text-muted">
+                          {session.status === 'lobby' && '🟡 Chờ bắt đầu'}
+                          {session.durationSeconds && (
+                            <>
+                              {' '}
+                              ·
+                              {' '}
+                              ⏱️
+                              {' '}
+                              {formatDuration(session.durationSeconds)}
+                            </>
+                          )}
+                        </div>
+                        {((session.startedAt || session.scheduledStartAt) || session.endedAt) && (
+                          <div className="text-xs text-text-muted/80">
+                            {(session.startedAt || session.scheduledStartAt) && (
+                              <>
+                                {session.status === 'lobby' ? '📅 Bắt đầu:' : '▶️ Đã bắt đầu:'}
+                                {' '}
+                                {formatDateShort(session.startedAt || session.scheduledStartAt!)}
+                              </>
+                            )}
+                            {session.endedAt && session.status === 'ended' && (
+                              <>
+                                {(session.startedAt || session.scheduledStartAt) && ' · '}
+                                🏁 Kết thúc:
+                                {' '}
+                                {formatDateShort(session.endedAt)}
+                              </>
+                            )}
+                          </div>
+                        )}
+                        {session.classroom && (
+                          <div className="text-xs text-text-muted/80">
+                            📚 {session.classroom.name} ({session.classroom.classCode})
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    {getStatusBadge(session.status)}
-                  </div>
-                  <div className="mt-1 text-xs text-text-muted">
-                    Tạo lúc: {formatDate(session.createdAt)}
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Badge
+                        variant={session.status === 'active' ? 'success' : (session.status === 'ended' ? 'neutral' : 'info')}
+                        className="text-xs"
+                      >
+                        {session.status}
+                      </Badge>
+                      <span className="text-xs text-text-muted">→</span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Link href={`/session/${session.id}`}>
-                    <Button variant="ghost" size="sm">
-                      Xem lobby
-                    </Button>
-                  </Link>
-                </div>
-              </div>
+              </Link>
             ))}
           </div>
         </Card>
       )}
 
-      {/* Past Sessions */}
+      {/* Past Sessions - Grouped by Class */}
       {pastSessions.length > 0 && (
-        <Card className="p-6">
+        <Card className="p-5 md:p-6 animate-slideUp" style={{ animationDelay: '150ms' }}>
           <div className="text-lg font-semibold text-text-heading mb-4">
             Đã kết thúc ({pastSessions.length})
           </div>
-          <div className="space-y-3">
-            {pastSessions.map(session => (
-              <div
-                key={session.id}
-                className="flex items-center justify-between gap-4 rounded-md border border-border-subtle bg-bg-section px-4 py-3 transition-colors hover:border-border-strong"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className="text-sm font-medium text-text-heading">
-                      {session.quiz.title}
-                    </div>
-                    {getStatusBadge(session.status)}
-                  </div>
-                  <div className="mt-1 text-xs text-text-muted">
-                    Kết thúc: {formatDate(session.endedAt)}
-                  </div>
-                  {session.attempt && (
-                    <div className="mt-1 text-xs text-text-muted">
-                      {session.attempt.submittedAt
-                        ? (
-                            <>
-                              Đã nộp: {formatDate(session.attempt.submittedAt)}
-                              {session.attempt.score !== null && (
-                                <span className="ml-2">
-                                  · Điểm: <span className="font-mono">{session.attempt.score.toFixed(1)}</span>
-                                </span>
-                              )}
-                            </>
-                          )
-                        : (
-                            'Chưa nộp'
-                          )}
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {session.attempt
+          <div className="space-y-6">
+            {Array.from(pastSessionsByClass.entries()).map(([classId, classSessions], groupIdx) => {
+              const classroom = classSessions[0]?.classroom;
+              return (
+                <div key={classId || 'no-class'} className="space-y-3">
+                  {/* Class Header */}
+                  {classroom
                     ? (
-                        <Link href={`/attempt/${session.attempt.id}`}>
-                          <Button variant="ghost" size="sm">
-                            Xem kết quả
-                          </Button>
-                        </Link>
+                        <div className="flex items-center gap-2 pb-2 border-b border-border-subtle">
+                          <Link
+                            href={`/dashboard/classes/${classroom.id}`}
+                            className="text-sm font-semibold text-text-heading hover:text-primary transition-colors cursor-pointer"
+                          >
+                            📚 {classroom.name}
+                          </Link>
+                          <Badge variant="neutral" className="text-xs">
+                            {classSessions.length} session{classSessions.length > 1 ? 's' : ''}
+                          </Badge>
+                        </div>
                       )
-                    : null}
+                    : (
+                        <div className="flex items-center gap-2 pb-2 border-b border-border-subtle">
+                          <span className="text-sm font-semibold text-text-muted">
+                            Khác
+                          </span>
+                          <Badge variant="neutral" className="text-xs">
+                            {classSessions.length} session{classSessions.length > 1 ? 's' : ''}
+                          </Badge>
+                        </div>
+                      )}
+                  {/* Sessions in this class */}
+                  <div className="space-y-3 pl-4">
+                    {classSessions.map((session, idx) => (
+                      <Link
+                        key={session.id}
+                        href={session.attempt ? `/attempt/${session.attempt.id}` : `/session/${session.id}`}
+                      >
+                        <div
+                          className="rounded-md border border-border-subtle bg-bg-section transition-all duration-200 hover:translate-x-1 hover:shadow-md hover:border-primary/30 cursor-pointer"
+                          style={{ animationDelay: `${(groupIdx * 100) + (idx * 30)}ms` }}
+                        >
+                          <div className="flex items-center justify-between gap-4 px-4 py-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium text-text-heading">
+                                {session.sessionName || session.quiz.title}
+                              </div>
+                              <div className="mt-1 space-y-0.5">
+                                <div className="text-xs text-text-muted">
+                                  {session.status === 'ended' && '⚫ Đã kết thúc'}
+                                  {session.durationSeconds && (
+                                    <>
+                                      {' '}
+                                      ·
+                                      {' '}
+                                      ⏱️
+                                      {' '}
+                                      {formatDuration(session.durationSeconds)}
+                                    </>
+                                  )}
+                                </div>
+                                {((session.startedAt || session.scheduledStartAt) || session.endedAt) && (
+                                  <div className="text-xs text-text-muted/80">
+                                    {(session.startedAt || session.scheduledStartAt) && (
+                                      <>
+                                        ▶️ Đã bắt đầu:
+                                        {' '}
+                                        {formatDateShort(session.startedAt || session.scheduledStartAt!)}
+                                      </>
+                                    )}
+                                    {session.endedAt && session.status === 'ended' && (
+                                      <>
+                                        {(session.startedAt || session.scheduledStartAt) && ' · '}
+                                        🏁 Kết thúc:
+                                        {' '}
+                                        {formatDateShort(session.endedAt)}
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                                {session.classroom && (
+                                  <div className="text-xs text-text-muted/80">
+                                    📚 {session.classroom.name} ({session.classroom.classCode})
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            {/* Score display for ended sessions with attempt - centered */}
+                            {session.attempt && session.attempt.score !== null && (
+                              <div className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary/10 border border-primary/30">
+                                <div className="text-sm font-medium text-text-muted uppercase tracking-wide">
+                                  Điểm:
+                                </div>
+                                <div className="text-2xl font-bold text-primary tabular-nums">
+                                  {session.attempt.score.toFixed(1)}
+                                </div>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-3 shrink-0">
+                              <Badge
+                                variant={session.status === 'active' ? 'success' : (session.status === 'ended' ? 'neutral' : 'info')}
+                                className="text-xs"
+                              >
+                                {session.status}
+                              </Badge>
+                              <span className="text-xs text-text-muted">→</span>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       )}
 
       {/* Empty State */}
       {sessions.length === 0 && (
-        <Card className="p-6">
+        <Card className="p-5 md:p-6 animate-slideUp" style={{ animationDelay: '200ms' }}>
           <div className="rounded-md border border-dashed border-border-subtle px-4 py-8 text-center">
             <div className="text-sm text-text-muted">
               Chưa có session nào.
@@ -279,10 +458,16 @@ export function SessionsPanel() {
             <div className="mt-2 text-xs text-text-muted">
               Tham gia lớp học để được mời vào các session.
             </div>
+            <div className="mt-4">
+              <Link href="/dashboard/classes">
+                <Button variant="primary" size="sm" className="hover:scale-105">
+                  Tham gia lớp học
+                </Button>
+              </Link>
+            </div>
           </div>
         </Card>
       )}
     </div>
   );
 }
-
