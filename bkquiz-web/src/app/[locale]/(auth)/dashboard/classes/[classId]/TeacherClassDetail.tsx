@@ -836,14 +836,15 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                             className="w-full rounded-md border border-border-subtle bg-bg-section px-3 py-2 text-sm text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                           >
                             <option value="">Không cho xem lại đáp án</option>
-                            <option value="10">Cho xem lại sau 10 phút</option>
-                            <option value="30">Cho xem lại sau 30 phút</option>
-                            <option value="60">Cho xem lại sau 60 phút</option>
+                            <option value="10">Cho xem lại trong 10 phút</option>
+                            <option value="20">Cho xem lại trong 20 phút</option>
+                            <option value="30">Cho xem lại trong 30 phút</option>
+                            <option value="60">Cho xem lại trong 60 phút</option>
                           </select>
                           <p className="mt-1 text-xs text-text-muted">
                             {reviewDelayMinutes === null
                               ? 'Student sẽ không thể xem lại đáp án sau khi session kết thúc.'
-                              : `Student sẽ có thể xem đáp án đúng/sai sau khi session kết thúc ${reviewDelayMinutes} phút.`}
+                              : `Student sẽ có thể xem đáp án đúng/sai trong vòng ${reviewDelayMinutes} phút từ khi session kết thúc.`}
                           </p>
                         </div>
                       </>

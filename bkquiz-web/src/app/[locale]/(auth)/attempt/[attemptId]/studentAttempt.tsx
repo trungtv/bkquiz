@@ -12,7 +12,7 @@ import { idbGet, idbSet } from '@/utils/idb';
 type AttemptState = {
   id: string;
   status: 'active' | 'submitted' | 'locked';
-  session: { id: string; status: 'lobby' | 'active' | 'ended'; quiz: { title: string } };
+  session: { id: string; status: 'lobby' | 'active' | 'ended'; quiz: { title: string }; sessionName?: string | null };
   attemptStartedAt: string | null;
   attemptEndTime: string | null;
   timeRemaining: number | null;
@@ -100,7 +100,7 @@ export function AttemptClient(props: { attemptId: string }) {
   const [submittedQuestions, setSubmittedQuestions] = useState<Set<string>>(() => new Set());
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [canReview, setCanReview] = useState(false);
-  const [reviewAvailableAt, setReviewAvailableAt] = useState<string | null>(null);
+  const [reviewWindowEnd, setReviewWindowEnd] = useState<string | null>(null); // Thời điểm hết cửa sổ xem lại
   const localAnswersRef = useRef<LocalAnswerStore>({});
   const syncTimerRef = useRef<number | null>(null);
   const prevIdxRef = useRef<number>(0);
@@ -412,7 +412,7 @@ export function AttemptClient(props: { attemptId: string }) {
     let json: {
       questions?: SnapshotQuestion[];
       canReview?: boolean;
-      reviewAvailableAt?: string | null;
+      reviewWindowEnd?: string | null; // Thời điểm hết cửa sổ xem lại
       attemptStatus?: string;
       sessionStatus?: string;
       error?: string;
@@ -427,7 +427,7 @@ export function AttemptClient(props: { attemptId: string }) {
     }
     setQuestions(json.questions ?? []);
     setCanReview(json.canReview ?? false);
-    setReviewAvailableAt(json.reviewAvailableAt ?? null);
+    setReviewWindowEnd(json.reviewWindowEnd ?? null);
   }
 
   async function loadAnswers() {
@@ -647,7 +647,7 @@ export function AttemptClient(props: { attemptId: string }) {
         {/* Row 1: Quiz title (compact) */}
         <div className="mb-1.5 flex items-center justify-between gap-2 sm:mb-2">
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold text-text-heading sm:text-base">{state.session.quiz.title}</div>
+            <div className="truncate text-sm font-semibold text-text-heading sm:text-base">{state.session.sessionName || state.session.quiz.title}</div>
             <div className="mt-1 flex items-center gap-2 text-[10px] text-text-muted sm:text-xs">
               <span>
                 Câu
@@ -796,50 +796,14 @@ export function AttemptClient(props: { attemptId: string }) {
         </Card>
       )}
 
-      {/* Waiting state: Submitted but cannot review yet */}
-      {state?.status === 'submitted' && !canReview && (
-        <Card className="border-warning bg-warning/10 p-6">
+      {/* Score summary: Always show when submitted (regardless of canReview) */}
+      {state?.status === 'submitted' && state.score !== null && state.score !== undefined && (
+        <Card className={cn(
+          'p-6',
+          canReview ? 'border-success bg-success/10' : 'border-primary bg-primary/10',
+        )}>
           <div className="text-center">
-            <div className="mb-2 text-lg font-semibold text-warning">
-              ⏳ Chưa thể xem kết quả
-            </div>
-            <div className="text-sm text-text-muted">
-              {state.session.status !== 'ended' && (
-                <>Session chưa kết thúc. Vui lòng đợi session kết thúc.</>
-              )}
-              {state.session.status === 'ended' && reviewAvailableAt && (() => {
-                const now = new Date();
-                const availableAt = new Date(reviewAvailableAt);
-                if (now < availableAt) {
-                  const diffMs = availableAt.getTime() - now.getTime();
-                  const diffMins = Math.ceil(diffMs / 60000);
-                  return (
-                    <>
-                      Kết quả sẽ được hiển thị sau:
-                      {' '}
-                      <span className="font-mono font-semibold">
-                        {diffMins}
-                        {' '}
-                        phút
-                      </span>
-                    </>
-                  );
-                }
-                return null;
-              })()}
-              {state.session.status === 'ended' && !reviewAvailableAt && (
-                <>Giảng viên không cho phép xem lại bài làm.</>
-              )}
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Review mode: Show score summary */}
-      {canReview && state?.status === 'submitted' && state.score !== null && state.score !== undefined && (
-        <Card className="border-success bg-success/10 p-6">
-          <div className="text-center">
-            <div className="mb-2 text-4xl font-bold text-success">
+            <div className="mb-2 text-4xl font-bold" style={{ color: canReview ? 'var(--success)' : 'var(--primary)' }}>
               {state.score.toFixed(1)}
               {' '}
               /
@@ -847,7 +811,52 @@ export function AttemptClient(props: { attemptId: string }) {
               {questions.length}
             </div>
             <div className="text-sm text-text-muted">
-              Đã hoàn thành bài làm
+              {canReview ? 'Đã hoàn thành bài làm' : 'Điểm số của bạn'}
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Waiting state: Submitted but cannot review yet */}
+      {state?.status === 'submitted' && !canReview && (
+        <Card className="border-warning bg-warning/10 p-6">
+          <div className="text-center">
+            <div className="mb-2 text-lg font-semibold text-warning">
+              ⏳ Chưa thể xem đáp án chi tiết
+            </div>
+            <div className="text-sm text-text-muted">
+              {state.session.status !== 'ended' && (
+                <>Session chưa kết thúc. Vui lòng đợi session kết thúc.</>
+              )}
+              {state.session.status === 'ended' && reviewWindowEnd && (() => {
+                const now = new Date();
+                const windowEnd = new Date(reviewWindowEnd);
+                if (now > windowEnd) {
+                  // Đã hết cửa sổ xem lại
+                  return (
+                    <>
+                      ⏰ Đã hết thời gian xem lại đáp án chi tiết. Cửa sổ xem lại đã đóng.
+                    </>
+                  );
+                }
+                // Còn trong cửa sổ, hiển thị countdown
+                const diffMs = windowEnd.getTime() - now.getTime();
+                const diffMins = Math.ceil(diffMs / 60000);
+                return (
+                  <>
+                    ⏳ Còn
+                    {' '}
+                    <span className="font-mono font-semibold">
+                      {diffMins}
+                    </span>
+                    {' '}
+                    phút để xem lại đáp án chi tiết. Sau đó cửa sổ sẽ đóng.
+                  </>
+                );
+              })()}
+              {state.session.status === 'ended' && !reviewWindowEnd && (
+                <>Giảng viên không cho phép xem lại đáp án chi tiết.</>
+              )}
             </div>
           </div>
         </Card>

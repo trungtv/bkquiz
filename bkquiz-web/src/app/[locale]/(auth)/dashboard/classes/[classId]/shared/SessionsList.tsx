@@ -77,13 +77,20 @@ export function SessionsList(props: SessionsListProps) {
       )}
       {sessions.map((s, idx) => {
         if (isStudent) {
+          // Determine link: if ended and has attempt, go to review; otherwise go to session lobby
+          const linkHref = (s.status === 'ended' && s.attempt) 
+            ? `/attempt/${s.attempt.id}` 
+            : `/session/${s.id}`;
+          
           return (
-            <Link key={s.id} href={`/session/${s.id}`}>
+            <Link key={s.id} href={linkHref}>
               <div
                 className={`rounded-md border bg-bg-section transition-all duration-200 hover:translate-x-1 hover:shadow-md ${
                   s.status === 'active'
                     ? 'border-indigo-500/50 bg-indigo-500/5 hover:border-indigo-500/70'
-                    : 'border-indigo-500/30 hover:border-indigo-500/50'
+                    : s.status === 'ended' && s.attempt
+                      ? 'border-primary/50 bg-primary/5 hover:border-primary/70'
+                      : 'border-indigo-500/30 hover:border-indigo-500/50'
                 }`}
                 style={{ animationDelay: `${idx * 30}ms` }}
               >
@@ -95,7 +102,8 @@ export function SessionsList(props: SessionsListProps) {
                     <div className="mt-1 space-y-0.5">
                       <div className="text-xs text-text-muted">
                         {s.status === 'active' && '🟢 Đang diễn ra'}
-                        {s.status === 'ended' && '⚫ Đã kết thúc'}
+                        {s.status === 'ended' && s.attempt && '📝 Xem lại bài làm'}
+                        {s.status === 'ended' && !s.attempt && '⚫ Đã kết thúc'}
                         {s.status === 'lobby' && '🟡 Chờ bắt đầu'}
                         {s.durationSeconds && (
                           <>

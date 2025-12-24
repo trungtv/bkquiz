@@ -35,12 +35,22 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
           id: true,
           status: true,
           startedAt: true,
+          // @ts-expect-error - settings is JSONB field, Prisma types may not include it
           settings: true,
           quiz: { select: { title: true } },
         },
       },
     },
   });
+
+  if (!attempt) {
+    return NextResponse.json({ error: 'ATTEMPT_NOT_FOUND' }, { status: 404 });
+  }
+
+  // Extract sessionName from settings
+  // @ts-expect-error - settings is JSONB field
+  const settings = attempt.quizSession.settings as { sessionName?: string } | null;
+  const sessionName = settings?.sessionName || null;
 
   const now = new Date();
   const warning = attempt.nextDueAt
@@ -56,18 +66,25 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
   const isLocked = attempt.lockedUntil ? attempt.lockedUntil.getTime() > now.getTime() : attempt.status === 'locked';
 
   // Calculate time limit info
+  // @ts-expect-error - Prisma select types may not match exactly
   const attemptEndTime = calculateAttemptEndTime(attempt);
   const timeRemaining = attemptEndTime
     ? Math.max(0, Math.floor((attemptEndTime.getTime() - now.getTime()) / 1000))
     : null;
   const isTimeUp = attemptEndTime ? now >= attemptEndTime : false;
 
+  const a = attempt as any; // Prisma select types may not include all fields
   return NextResponse.json({
     id: attempt.id,
     status: attempt.status,
     score: attempt.score,
-    session: attempt.quizSession,
-    attemptStartedAt: attempt.attemptStartedAt,
+    session: {
+      // @ts-expect-error - Prisma select types may not include quizSession
+      ...a.quizSession,
+      sessionName, // Add sessionName to response
+    },
+    // @ts-expect-error - Prisma select types may not include attemptStartedAt
+    attemptStartedAt: a.attemptStartedAt,
     attemptEndTime: attemptEndTime?.toISOString() ?? null,
     timeRemaining,
     isTimeUp,

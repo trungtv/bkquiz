@@ -53,22 +53,23 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
 
   // ✅ SECURITY: Server-side time check (không thể hack)
   const now = new Date(); // Server time
-  const reviewDelayMinutes = settings?.reviewDelayMinutes ?? null;
+  const reviewWindowMinutes = settings?.reviewDelayMinutes ?? null; // reviewDelayMinutes = cửa sổ thời gian cho phép xem (phút)
   const canReview =
     attemptFull.status === 'submitted' &&
     session.status === 'ended' &&
     session.endedAt !== null &&
-    reviewDelayMinutes !== null &&
+    reviewWindowMinutes !== null &&
     (() => {
-      const reviewAvailableAt = new Date(
-        session.endedAt.getTime() + reviewDelayMinutes * 60 * 1000,
+      const reviewWindowEnd = new Date(
+        session.endedAt.getTime() + reviewWindowMinutes * 60 * 1000,
       );
-      return now >= reviewAvailableAt; // ✅ Server-side comparison
+      // Cho xem trong khoảng thời gian: từ khi session kết thúc đến hết cửa sổ
+      return now >= session.endedAt && now <= reviewWindowEnd; // ✅ Server-side comparison
     })();
 
-  const reviewAvailableAt = session.endedAt && reviewDelayMinutes !== null
+  const reviewWindowEnd = session.endedAt && reviewWindowMinutes !== null
     ? new Date(
-        session.endedAt.getTime() + reviewDelayMinutes * 60 * 1000,
+        session.endedAt.getTime() + reviewWindowMinutes * 60 * 1000,
       )
     : null;
 
@@ -127,7 +128,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
       } : {}),
     })),
     canReview,
-    reviewAvailableAt: reviewAvailableAt?.toISOString() ?? null,
+    reviewWindowEnd: reviewWindowEnd?.toISOString() ?? null, // Thời điểm hết cửa sổ xem lại
     attemptStatus: attemptFull.status,
     sessionStatus: session.status,
   });
