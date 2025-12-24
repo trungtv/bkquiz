@@ -37,7 +37,16 @@ export function ClassesPanel(props: ClassesPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [tagFilter, setTagFilter] = useState('');
-  const [autoJoining, setAutoJoining] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [pendingClassCode, setPendingClassCode] = useState<string | null>(null);
+  const [classPreview, setClassPreview] = useState<{
+    id: string;
+    name: string;
+    classCode: string;
+    ownerTeacher: { name: string | null; email: string | null };
+    memberCount: number;
+  } | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   // Parse tag filter thành array
   const activeFilterTags = useMemo(() => {
@@ -190,20 +199,70 @@ export function ClassesPanel(props: ClassesPanelProps) {
     }
   }
 
-  // Auto-join khi có query param `join`
+  // Fetch class preview when join param is present
+  async function fetchClassPreview(classCode: string) {
+    setLoadingPreview(true);
+    try {
+      const res = await fetch(`/api/classes/preview?classCode=${encodeURIComponent(classCode)}`);
+      if (!res.ok) {
+        const json = await res.json() as { error?: string };
+        setError(json.error ?? 'CLASS_NOT_FOUND');
+        setShowJoinModal(false);
+        setPendingClassCode(null);
+        // Clear query param on error
+        router.replace('/dashboard/classes');
+        return;
+      }
+      const preview = await res.json() as {
+        id: string;
+        name: string;
+        classCode: string;
+        ownerTeacher: { name: string | null; email: string | null };
+        memberCount: number;
+      };
+      setClassPreview(preview);
+      setShowJoinModal(true);
+    } catch (err) {
+      setError(`PREVIEW_FAILED: ${err instanceof Error ? err.message : String(err)}`);
+      setShowJoinModal(false);
+      setPendingClassCode(null);
+      router.replace('/dashboard/classes');
+    } finally {
+      setLoadingPreview(false);
+    }
+  }
+
+  // Show join confirmation modal when join param is present
   useEffect(() => {
     const joinParam = searchParams.get('join');
-    if (joinParam && !autoJoining) {
-      setAutoJoining(true);
-      void joinClass(joinParam).then((classId) => {
-        if (classId) {
-          // Clear query param
-          router.replace('/dashboard/classes');
-        }
-      });
+    if (joinParam && !showJoinModal && !pendingClassCode) {
+      setPendingClassCode(joinParam);
+      void fetchClassPreview(joinParam);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  async function handleConfirmJoin() {
+    if (!pendingClassCode) {
+      return;
+    }
+    setShowJoinModal(false);
+    const classId = await joinClass(pendingClassCode);
+    setPendingClassCode(null);
+    setClassPreview(null);
+    if (classId) {
+      // Clear query param
+      router.replace('/dashboard/classes');
+    }
+  }
+
+  function handleCancelJoin() {
+    setShowJoinModal(false);
+    setPendingClassCode(null);
+    setClassPreview(null);
+    // Clear query param
+    router.replace('/dashboard/classes');
+  }
 
   return (
     <div className="space-y-7">
@@ -489,6 +548,69 @@ export function ClassesPanel(props: ClassesPanelProps) {
               </div>
             )}
       </Card>
+
+      {/* Join Confirmation Modal */}
+      {showJoinModal && classPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-md p-6 animate-slideUp">
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-text-heading mb-2">
+                Xác nhận tham gia lớp
+              </h2>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <div className="text-text-muted">Tên lớp:</div>
+                  <div className="font-semibold text-text-heading">{classPreview.name}</div>
+                </div>
+                <div>
+                  <div className="text-text-muted">Mã lớp:</div>
+                  <div className="font-mono font-semibold text-text-heading">{classPreview.classCode}</div>
+                </div>
+                <div>
+                  <div className="text-text-muted">Giảng viên:</div>
+                  <div className="font-semibold text-text-heading">
+                    {classPreview.ownerTeacher.name || classPreview.ownerTeacher.email || 'N/A'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-text-muted">Số thành viên:</div>
+                  <div className="font-semibold text-text-heading">{classPreview.memberCount}</div>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="ghost"
+                className="flex-1"
+                onClick={handleCancelJoin}
+                disabled={busy}
+              >
+                Hủy
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1 bg-indigo-500 hover:bg-indigo-600"
+                onClick={() => void handleConfirmJoin()}
+                disabled={busy}
+              >
+                {busy ? 'Đang tham gia...' : 'Đồng ý tham gia'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Loading overlay when fetching preview */}
+      {loadingPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <Card className="p-6">
+            <div className="text-center">
+              <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              <div className="text-sm text-text-muted">Đang tải thông tin lớp...</div>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {toast && (
