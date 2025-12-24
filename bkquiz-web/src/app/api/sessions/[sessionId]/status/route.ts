@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/server/prisma';
+import { requireUser } from '@/server/authz';
 
 export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = await ctx.params;
@@ -50,6 +51,19 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
   const settings = session.settings as { sessionName?: string } | null;
   const sessionName = settings?.sessionName || null;
 
+  // Check if current user has joined (has attempt) - optional, don't fail if not authenticated
+  let attemptId: string | null = null;
+  try {
+    const { userId } = await requireUser();
+    const attempt = await prisma.attempt.findUnique({
+      where: { sessionId_userId: { sessionId, userId } },
+      select: { id: true },
+    });
+    attemptId = attempt?.id ?? null;
+  } catch {
+    // User not authenticated, attemptId remains null
+  }
+
   return NextResponse.json({
     id: session.id,
     status: session.status,
@@ -57,10 +71,11 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
     endedAt: session.endedAt,
     createdAt: session.createdAt,
     totpStepSeconds: session.totpStepSeconds,
-    attemptCount: session._count.attempts,
-    quiz: session.quiz,
-    classroom: session.classroom,
+    attemptCount: (session as any)._count.attempts,
+    quiz: (session as any).quiz,
+    classroom: (session as any).classroom,
     sessionName,
+    attemptId, // null if not joined or not authenticated
   });
 }
 // EOF

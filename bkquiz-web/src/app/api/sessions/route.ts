@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getUserRole, requireQuizOwnership, requireTeacherInClassroom, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
+import { buildSessionSnapshotIfNeeded } from '@/server/quizSnapshot';
 import { generateTotpSecret } from '@/server/totp';
 
 const CreateSessionSchema = z.object({
@@ -20,6 +21,7 @@ const CreateSessionSchema = z.object({
   }, { message: 'Invalid datetime format' }).optional(),
   durationSeconds: z.number().int().min(60).max(86400).optional(), // 1 phút đến 24 giờ
   bufferMinutes: z.number().int().min(0).max(60).optional(), // Buffer time trước khi tự động đóng (0-60 phút)
+  reviewDelayMinutes: z.number().int().min(0).max(1440).nullable().optional(), // Phút sau khi session kết thúc mới cho xem đáp án (null = không cho xem)
 });
 
 export async function GET(_req: Request) {
@@ -241,6 +243,10 @@ export async function POST(req: Request) {
     // Default buffer is 5 minutes if duration is set but buffer not specified
     settings.bufferMinutes = 5;
   }
+  // Store reviewDelayMinutes (null = không cho xem, số = phút sau khi session kết thúc)
+  if (body.reviewDelayMinutes !== undefined) {
+    settings.reviewDelayMinutes = body.reviewDelayMinutes;
+  }
   if (Object.keys(settings).length > 0) {
     sessionData.settings = settings;
   }
@@ -249,6 +255,15 @@ export async function POST(req: Request) {
     data: sessionData,
     select: { id: true, totpStepSeconds: true, status: true },
   });
+
+  // Build session snapshot (questions from quiz rules) immediately after creation
+  try {
+    await buildSessionSnapshotIfNeeded(session.id);
+  } catch (err) {
+    console.error(`Error building snapshot for session ${session.id}:`, err);
+    // Continue even if snapshot build fails - it can be built later when needed
+    // But log the error so we know there's an issue
+  }
 
   return NextResponse.json({ sessionId: session.id, totpStepSeconds: session.totpStepSeconds, status: session.status });
 }

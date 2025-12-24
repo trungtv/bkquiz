@@ -26,6 +26,7 @@ type AttemptState = {
   lockedUntil: string | null;
   inCooldown: boolean;
   isLocked: boolean;
+  score?: number | null;
 };
 
 type SnapshotQuestion = {
@@ -33,7 +34,9 @@ type SnapshotQuestion = {
   type: 'mcq_single' | 'mcq_multi';
   prompt: string;
   order: number;
-  options: Array<{ order: number; content: string }>;
+  options: Array<{ order: number; content: string; isCorrect?: boolean }>;
+  studentSelected?: number[];
+  questionScore?: number | null;
 };
 
 type LocalAnswer = { selected: number[]; updatedAt: number; dirty: boolean; submittedAt?: number | null };
@@ -96,7 +99,8 @@ export function AttemptClient(props: { attemptId: string }) {
   const [answeredCount, setAnsweredCount] = useState(0);
   const [submittedQuestions, setSubmittedQuestions] = useState<Set<string>>(() => new Set());
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
-  const [isStarting, setIsStarting] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [reviewAvailableAt, setReviewAvailableAt] = useState<string | null>(null);
   const localAnswersRef = useRef<LocalAnswerStore>({});
   const syncTimerRef = useRef<number | null>(null);
   const prevIdxRef = useRef<number>(0);
@@ -307,7 +311,6 @@ export function AttemptClient(props: { attemptId: string }) {
   }
 
   async function startAttempt() {
-    setIsStarting(true);
     setError(null);
     try {
       const res = await fetch(`/api/attempts/${props.attemptId}/start`, { method: 'POST' });
@@ -330,7 +333,7 @@ export function AttemptClient(props: { attemptId: string }) {
       // Reload state để lấy time limit info
       await load();
     } finally {
-      setIsStarting(false);
+      setBusy(false);
     }
   }
 
@@ -406,7 +409,14 @@ export function AttemptClient(props: { attemptId: string }) {
     if (!text || text.trim().length === 0) {
       return;
     }
-    let json: { questions?: SnapshotQuestion[]; error?: string };
+    let json: {
+      questions?: SnapshotQuestion[];
+      canReview?: boolean;
+      reviewAvailableAt?: string | null;
+      attemptStatus?: string;
+      sessionStatus?: string;
+      error?: string;
+    };
     try {
       json = JSON.parse(text);
     } catch {
@@ -416,6 +426,8 @@ export function AttemptClient(props: { attemptId: string }) {
       return;
     }
     setQuestions(json.questions ?? []);
+    setCanReview(json.canReview ?? false);
+    setReviewAvailableAt(json.reviewAvailableAt ?? null);
   }
 
   async function loadAnswers() {
@@ -495,7 +507,6 @@ export function AttemptClient(props: { attemptId: string }) {
     void load().catch(() => setIsOnline(false));
     void loadQuestions().catch(() => setIsOnline(false));
     void loadAnswers().catch(() => setIsOnline(false));
-    
     // Auto-start attempt nếu session đã active và chưa start
     void (async () => {
       const stateRes = await fetch(`/api/attempts/${props.attemptId}/state`, { method: 'GET' });
@@ -514,7 +525,6 @@ export function AttemptClient(props: { attemptId: string }) {
         }
       }
     })();
-    
     const id = window.setInterval(() => {
       if (!navigator.onLine) {
         return;
@@ -786,6 +796,63 @@ export function AttemptClient(props: { attemptId: string }) {
         </Card>
       )}
 
+      {/* Waiting state: Submitted but cannot review yet */}
+      {state?.status === 'submitted' && !canReview && (
+        <Card className="border-warning bg-warning/10 p-6">
+          <div className="text-center">
+            <div className="mb-2 text-lg font-semibold text-warning">
+              ⏳ Chưa thể xem kết quả
+            </div>
+            <div className="text-sm text-text-muted">
+              {state.session.status !== 'ended' && (
+                <>Session chưa kết thúc. Vui lòng đợi session kết thúc.</>
+              )}
+              {state.session.status === 'ended' && reviewAvailableAt && (() => {
+                const now = new Date();
+                const availableAt = new Date(reviewAvailableAt);
+                if (now < availableAt) {
+                  const diffMs = availableAt.getTime() - now.getTime();
+                  const diffMins = Math.ceil(diffMs / 60000);
+                  return (
+                    <>
+                      Kết quả sẽ được hiển thị sau:
+                      {' '}
+                      <span className="font-mono font-semibold">
+                        {diffMins}
+                        {' '}
+                        phút
+                      </span>
+                    </>
+                  );
+                }
+                return null;
+              })()}
+              {state.session.status === 'ended' && !reviewAvailableAt && (
+                <>Giảng viên không cho phép xem lại bài làm.</>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Review mode: Show score summary */}
+      {canReview && state?.status === 'submitted' && state.score !== null && state.score !== undefined && (
+        <Card className="border-success bg-success/10 p-6">
+          <div className="text-center">
+            <div className="mb-2 text-4xl font-bold text-success">
+              {state.score.toFixed(1)}
+              {' '}
+              /
+              {' '}
+              {questions.length}
+            </div>
+            <div className="text-sm text-text-muted">
+              Đã hoàn thành bài làm
+            </div>
+          </div>
+        </Card>
+      )}
+
       <Card className="p-4 sm:p-6">
         <div className="text-sm text-text-body">
           {q && (state?.attemptStartedAt || state?.status === 'submitted')
@@ -804,47 +871,86 @@ export function AttemptClient(props: { attemptId: string }) {
                   <div className="text-sm text-text-heading sm:text-base">
                     <MathRenderer content={q.prompt} />
                   </div>
+                  {canReview && q.questionScore !== null && q.questionScore !== undefined && (
+                    <div className="mt-2 text-xs text-text-muted sm:text-sm">
+                      Điểm:
+                      {' '}
+                      <span className="font-mono font-semibold">
+                        {q.questionScore.toFixed(2)}
+                      </span>
+                      {' '}
+                      / 1.00
+                    </div>
+                  )}
                   <div className="mt-3 grid gap-2 sm:mt-4">
                     {q.options.map((o) => {
                       const optionLabel = String.fromCharCode(65 + o.order); // A, B, C, D...
-                      const isSelected = selected.includes(o.order);
+                      const isSelected = canReview
+                        ? (q.studentSelected?.includes(o.order) ?? false)
+                        : selected.includes(o.order);
+                      const isCorrect = canReview ? (o.isCorrect ?? false) : false;
+                      const isCorrectAnswer = canReview && isSelected && isCorrect;
+                      const isWrongAnswer = canReview && isSelected && !isCorrect;
+                      const isCorrectButNotSelected = canReview && isCorrect && !isSelected;
+
                       return (
                         <label
                           key={o.order}
                           aria-label={`option:${o.order}`}
                           className={cn(
-                            'flex cursor-pointer items-start gap-2 rounded-md border-2 p-2.5 transition-all duration-fast ease-soft sm:gap-3 sm:p-3',
-                            'bg-bg-section active:scale-[0.98] hover:bg-bg-elevated hover:scale-[1.01]',
-                            isSelected ? 'border-primary bg-primary/10 shadow-md' : 'border-border-subtle',
+                            'relative flex items-start gap-2 rounded-md border-2 p-2.5 transition-all duration-fast ease-soft sm:gap-3 sm:p-3',
+                            canReview
+                              ? 'cursor-default' // Read-only in review mode
+                              : 'cursor-pointer active:scale-[0.98] hover:bg-bg-elevated hover:scale-[1.01]',
+                            canReview && isCorrectAnswer && 'border-success bg-success/10',
+                            canReview && isWrongAnswer && 'border-danger bg-danger/10',
+                            canReview && isCorrectButNotSelected && 'border-success/30 bg-success/5',
+                            !canReview && isSelected && 'border-primary bg-primary/10 shadow-md',
+                            !canReview && !isSelected && 'border-border-subtle bg-bg-section',
                           )}
                         >
                           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              disabled={isDisabled}
-                              onChange={(e) => {
-                                if (isDisabled) {
-                                  return;
-                                }
-                                if (q.type === 'mcq_single') {
-                                  setSelected(e.target.checked ? [o.order] : []);
-                                  return;
-                                }
-                                setSelected((prev) => {
-                                  if (e.target.checked) {
-                                    return [...prev, o.order];
+                            {!canReview && (
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                disabled={isDisabled}
+                                onChange={(e) => {
+                                  if (isDisabled) {
+                                    return;
                                   }
-                                  return prev.filter(x => x !== o.order);
-                                });
-                              }}
-                              className="h-4 w-4 shrink-0 sm:h-5 sm:w-5"
-                            />
+                                  if (q.type === 'mcq_single') {
+                                    setSelected(e.target.checked ? [o.order] : []);
+                                    return;
+                                  }
+                                  setSelected((prev) => {
+                                    if (e.target.checked) {
+                                      return [...prev, o.order];
+                                    }
+                                    return prev.filter(x => x !== o.order);
+                                  });
+                                }}
+                                className="h-4 w-4 shrink-0 sm:h-5 sm:w-5"
+                              />
+                            )}
+                            {canReview && (
+                              <div className={cn(
+                                'flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs sm:h-6 sm:w-6',
+                                isCorrectAnswer && 'bg-success text-white',
+                                isWrongAnswer && 'bg-danger text-white',
+                                !isSelected && !isCorrect && 'bg-bg-section',
+                              )}
+                              >
+                                {isCorrectAnswer && '✓'}
+                                {isWrongAnswer && '✗'}
+                              </div>
+                            )}
                             <div className={cn(
                               'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 font-semibold text-xs sm:h-8 sm:w-8 sm:text-sm',
-                              isSelected
-                                ? 'border-primary bg-primary text-white'
-                                : 'border-border-subtle bg-bg-card text-text-muted',
+                              canReview && isCorrectAnswer && 'border-success bg-success text-white',
+                              canReview && isWrongAnswer && 'border-danger bg-danger text-white',
+                              !canReview && isSelected && 'border-primary bg-primary text-white',
+                              !canReview && !isSelected && 'border-border-subtle bg-bg-card text-text-muted',
                             )}
                             >
                               {optionLabel}
@@ -855,6 +961,13 @@ export function AttemptClient(props: { attemptId: string }) {
                               <MathRenderer content={o.content} />
                             </div>
                           </div>
+                          {canReview && isCorrect && (
+                            <div className="absolute right-2 top-2">
+                              <Badge variant="success" className="text-[9px] sm:text-[10px]">
+                                ✓ Đúng
+                              </Badge>
+                            </div>
+                          )}
                         </label>
                       );
                     })}
@@ -898,7 +1011,7 @@ export function AttemptClient(props: { attemptId: string }) {
                         </Button>
                       </div>
                     </div>
-                    {!submittedQuestions.has(q.id) && (
+                    {!submittedQuestions.has(q.id) && !canReview && (
                       <div className="flex items-center justify-end">
                         <Button
                           size="sm"
@@ -909,6 +1022,11 @@ export function AttemptClient(props: { attemptId: string }) {
                         >
                           Submit câu này
                         </Button>
+                      </div>
+                    )}
+                    {canReview && (
+                      <div className="text-xs text-text-muted sm:text-sm">
+                        Đã nộp bài - Chế độ xem lại
                       </div>
                     )}
                   </div>
@@ -923,7 +1041,7 @@ export function AttemptClient(props: { attemptId: string }) {
       </Card>
 
       {/* Time up warning */}
-      {isTimeUp && state.status === 'active' && (
+      {isTimeUp && state.status === 'active' && !canReview && (
         <Card className="border-danger bg-danger/10 p-4">
           <div className="text-center text-sm font-semibold text-danger sm:text-base">
             ⏰ Hết thời gian làm bài! Bài làm của bạn sẽ được tự động submit.
@@ -931,23 +1049,26 @@ export function AttemptClient(props: { attemptId: string }) {
         </Card>
       )}
 
-      <Card className="p-4 sm:p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Button
-            variant="primary"
-            disabled={busy || blocked || state.status !== 'active' || !isOnline || pendingCount > 0 || isDisabled}
-            onClick={() => setShowSubmitConfirm(true)}
-            className="w-full sm:w-auto"
-          >
-            Submit
-          </Button>
-          <div className="text-[10px] text-text-muted sm:text-xs">
-            {isTimeUp
-              ? 'Đã hết thời gian làm bài.'
-              : 'Chỉ submit khi online, không pending sync, và không bị checkpoint block.'}
+      {/* Submit button - only show when not in review mode */}
+      {!canReview && (
+        <Card className="p-4 sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Button
+              variant="primary"
+              disabled={busy || blocked || state.status !== 'active' || !isOnline || pendingCount > 0 || isDisabled}
+              onClick={() => setShowSubmitConfirm(true)}
+              className="w-full sm:w-auto"
+            >
+              Submit
+            </Button>
+            <div className="text-[10px] text-text-muted sm:text-xs">
+              {isTimeUp
+                ? 'Đã hết thời gian làm bài.'
+                : 'Chỉ submit khi online, không pending sync, và không bị checkpoint block.'}
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       {/* Checkpoint Modal */}
       {blocked

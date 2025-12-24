@@ -230,7 +230,13 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.sessionId]);
 
+  // Poll joined students every 3 seconds when session is lobby or active
   useEffect(() => {
+    if (session?.status === 'ended') {
+      return; // Don't poll if session ended
+    }
+    // Fetch immediately, then poll every 3 seconds
+    void fetchJoinedStudents();
     const id = window.setInterval(() => void fetchJoinedStudents(), 3000);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -388,7 +394,7 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
         {/* Session Info - Center, with padding for breadcrumb and controls */}
         <div className="flex items-center justify-center text-sm pl-32 pr-32">
           <div className="flex items-center gap-4">
-            <div className="font-semibold text-white">{session?.quiz?.title ?? 'Loading...'}</div>
+            <div className="font-semibold text-white">{session?.sessionName || session?.quiz?.title || 'Loading...'}</div>
             <span className="text-white/40">·</span>
             <div className="text-white/60">{session?.classroom?.name ?? '...'}</div>
             <span className="text-white/40">·</span>
@@ -398,18 +404,16 @@ export function TeacherScreen(props: { sessionId: string; userId: string | null 
             >
               {session?.status ?? 'loading'}
             </Badge>
-            {session?.status === 'lobby' && typeof session?.attemptCount === 'number'
-              ? (
-                  <>
-                    <span className="text-white/40">·</span>
-                    <div className="text-white/60">
-                      <span className="font-semibold text-white">{session.attemptCount}</span>
-                      {' '}
-                      sinh viên đã join
-                    </div>
-                  </>
-                )
-              : null}
+            {session?.status === 'lobby' && (
+              <>
+                <span className="text-white/40">·</span>
+                <div className="text-white/60">
+                  <span className="font-semibold text-white">{joinedStudents.length}</span>
+                  {' '}
+                  sinh viên đã join
+                </div>
+              </>
+            )}
             {session?.startedAt
               ? (
                   <>

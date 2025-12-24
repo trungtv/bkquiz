@@ -54,6 +54,7 @@ model Attempt {
   lockedUntil      DateTime?
   submittedAt      DateTime?
   score            Float?
+  questionScores   Json?             // Cache điểm từng câu { questionId: score }
   answers          Answer[]
   quizSession      QuizSession       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Toast } from '@/components/ui/Toast';
 import { TagInput } from '@/components/ui/TagInput';
+import { cn } from '@/utils/cn';
 import { ClassHeader } from './shared/ClassHeader';
 import { MembersList } from './shared/MembersList';
 import { SessionsList } from './shared/SessionsList';
@@ -35,6 +36,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
   const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
   const [sessionName, setSessionName] = useState<string>('');
   const [bufferMinutes, setBufferMinutes] = useState<number>(5); // Mặc định 5 phút
+  const [reviewDelayMinutes, setReviewDelayMinutes] = useState<number | null>(null); // null = không cho xem, số = phút sau khi session kết thúc
 
   // Helper function: Tính thời gian với offset phút, làm tròn chẵn 5 phút
   function getRoundedTime(minutesOffset: number): string {
@@ -157,15 +159,18 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
       setCreateSessionError('Vui lòng chọn quiz');
       return;
     }
-    const quiz = quizzes.find(q => q.id === selectedQuizId);
-    if (quiz && quiz.ruleCount === 0) {
+    const selectedQuiz = quizzes.find(q => q.id === selectedQuizId);
+    if (!selectedQuiz) {
+      setCreateSessionError('Vui lòng chọn quiz');
+      return;
+    }
+    if (selectedQuiz.ruleCount === 0) {
       setCreateSessionError('Quiz này chưa có rule. Vào Quizzes để cấu hình rule trước.');
       return;
     }
     setCreateSessionBusy(true);
     setCreateSessionError(null);
     try {
-      const selectedQuiz = quizzes.find(q => q.id === selectedQuizId);
       const body: any = {
         classroomId: classId,
         quizId: selectedQuizId,
@@ -182,13 +187,19 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
       // Use duration from input if set, otherwise use quiz's default duration
       if (durationMinutes !== null && durationMinutes > 0) {
         body.durationSeconds = durationMinutes * 60;
-      } else if (selectedQuiz?.durationSeconds !== null && selectedQuiz.durationSeconds > 0) {
+      } else if (selectedQuiz.durationSeconds !== null && selectedQuiz.durationSeconds > 0) {
         // Fallback to quiz's duration if no override
         body.durationSeconds = selectedQuiz.durationSeconds;
       }
       // Add buffer minutes for auto-end
       if (bufferMinutes > 0) {
         body.bufferMinutes = bufferMinutes;
+      }
+      // Add reviewDelayMinutes (null = không cho xem, số = phút sau khi session kết thúc)
+      if (reviewDelayMinutes !== null) {
+        body.reviewDelayMinutes = reviewDelayMinutes;
+      } else {
+        body.reviewDelayMinutes = null;
       }
       const res = await fetch('/api/sessions', {
         method: 'POST',
@@ -206,6 +217,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
       setDurationMinutes(null);
       setSessionName('');
       setBufferMinutes(5);
+      setReviewDelayMinutes(null);
       setSelectedTags([]);
       setQuizSearchQuery('');
       setToast({ message: 'Đã tạo session thành công', type: 'success' });
@@ -392,7 +404,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
       {/* Create Session Modal */}
       {showCreateSessionModal && (
         <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-2xl max-h-[90vh] flex flex-col p-6">
+          <Card className="w-full max-w-6xl max-h-[90vh] flex flex-col p-6">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-text-heading">Tạo Session</h2>
               <button
@@ -410,7 +422,14 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
               </button>
             </div>
 
-            <div className="flex flex-1 flex-col space-y-4 overflow-hidden">
+            <div className="flex flex-1 gap-6 overflow-hidden">
+              {/* Left: Quiz List */}
+              <div className={cn(
+                'flex flex-col space-y-4',
+                selectedQuizId ? 'w-1/3' : 'w-full',
+                selectedQuizId && 'border-r border-border-subtle pr-6',
+              )}
+              >
                 {quizzes.length === 0
                   ? (
                     <div className="flex flex-1 items-center justify-center rounded-md border border-dashed border-border-subtle px-4 py-8 text-center text-sm text-text-muted">
@@ -522,11 +541,12 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                                     setDurationMinutes(null);
                                   }
                                 }}
-                                className={`w-full rounded-md border transition-all duration-200 text-left ${
+                                className={cn(
+                                  'w-full rounded-md border transition-all duration-200 text-left',
                                   isSelected
                                     ? 'border-primary bg-primary/10 hover:border-primary/70'
-                                    : 'border-border-subtle bg-bg-section hover:border-primary/30 hover:translate-x-1 hover:shadow-md'
-                                }`}
+                                    : 'border-border-subtle bg-bg-section hover:border-primary/30 hover:translate-x-1 hover:shadow-md cursor-pointer',
+                                )}
                               >
                                 <div className="flex items-center justify-between gap-4 px-4 py-3">
                                   <div className="min-w-0 flex-1">
@@ -627,10 +647,11 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                       </div>
                     </>
                   )}
+              </div>
 
-              {/* Session Configuration - Show when quiz is selected */}
+              {/* Right: Session Configuration - Show when quiz is selected */}
               {selectedQuizId && (
-                <div className="space-y-4 border-t border-border-subtle pt-4">
+                <div className="w-2/3 space-y-4 overflow-y-auto pl-6">
                   {(() => {
                     const selectedQuiz = quizzes.find(q => q.id === selectedQuizId);
                     const quizDurationMinutes = selectedQuiz?.durationSeconds
@@ -803,45 +824,68 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                             </p>
                           </div>
                         )}
+
+                        <div>
+                          <label htmlFor="reviewDelayMinutes" className="mb-2 block text-sm font-medium text-text-heading">
+                            Cho phép xem lại đáp án
+                          </label>
+                          <select
+                            id="reviewDelayMinutes"
+                            value={reviewDelayMinutes === null ? '' : reviewDelayMinutes}
+                            onChange={e => setReviewDelayMinutes(e.target.value === '' ? null : Number(e.target.value))}
+                            className="w-full rounded-md border border-border-subtle bg-bg-section px-3 py-2 text-sm text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          >
+                            <option value="">Không cho xem lại đáp án</option>
+                            <option value="10">Cho xem lại sau 10 phút</option>
+                            <option value="30">Cho xem lại sau 30 phút</option>
+                            <option value="60">Cho xem lại sau 60 phút</option>
+                          </select>
+                          <p className="mt-1 text-xs text-text-muted">
+                            {reviewDelayMinutes === null
+                              ? 'Student sẽ không thể xem lại đáp án sau khi session kết thúc.'
+                              : `Student sẽ có thể xem đáp án đúng/sai sau khi session kết thúc ${reviewDelayMinutes} phút.`}
+                          </p>
+                        </div>
                       </>
                     );
                   })()}
+
+                  {createSessionError && (
+                    <div className="rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
+                      {createSessionError}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 border-t border-border-subtle pt-4">
+                    <Button
+                      variant="ghost"
+                      className="flex-1"
+                      onClick={() => {
+                        setShowCreateSessionModal(false);
+                        setSelectedQuizId('');
+                        setQuizSearchQuery('');
+                        setSelectedTags([]);
+                        setScheduledStartTime('');
+                        setDurationMinutes(null);
+                        setSessionName('');
+                        setBufferMinutes(5);
+                        setReviewDelayMinutes(null);
+                        setCreateSessionError(null);
+                      }}
+                    >
+                      Hủy
+                    </Button>
+                    <Button
+                      variant="primary"
+                      className="flex-1"
+                      disabled={createSessionBusy || !selectedQuizId}
+                      onClick={() => void createSession()}
+                    >
+                      {createSessionBusy ? 'Đang tạo...' : 'Tạo Session'}
+                    </Button>
+                  </div>
                 </div>
               )}
-
-              {createSessionError && (
-                <div className="rounded-md border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
-                  {createSessionError}
-                </div>
-              )}
-
-              <div className="flex gap-2 border-t border-border-subtle pt-4">
-                <Button
-                  variant="ghost"
-                  className="flex-1"
-                  onClick={() => {
-                    setShowCreateSessionModal(false);
-                    setSelectedQuizId('');
-                    setQuizSearchQuery('');
-                    setSelectedTags([]);
-                    setScheduledStartTime('');
-                    setDurationMinutes(null);
-                    setSessionName('');
-                    setBufferMinutes(5);
-                    setCreateSessionError(null);
-                  }}
-                >
-                  Hủy
-                </Button>
-                <Button
-                  variant="primary"
-                  className="flex-1"
-                  disabled={createSessionBusy || !selectedQuizId}
-                  onClick={() => void createSession()}
-                >
-                  {createSessionBusy ? 'Đang tạo...' : 'Tạo Session'}
-                </Button>
-              </div>
             </div>
           </Card>
         </div>

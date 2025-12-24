@@ -24,6 +24,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
     select: {
       id: true,
       status: true,
+      score: true,
       attemptStartedAt: true,
       nextDueAt: true,
       failedCount: true,
@@ -64,6 +65,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
   return NextResponse.json({
     id: attempt.id,
     status: attempt.status,
+    score: attempt.score,
     session: attempt.quizSession,
     attemptStartedAt: attempt.attemptStartedAt,
     attemptEndTime: attemptEndTime?.toISOString() ?? null,

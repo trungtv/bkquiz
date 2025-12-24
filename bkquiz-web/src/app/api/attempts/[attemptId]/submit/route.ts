@@ -149,6 +149,8 @@ export async function POST(_: Request, ctx: { params: Promise<{ attemptId: strin
 
   let score = 0;
   let correctCount = 0;
+  const questionScores: Record<string, number> = {}; // Cache điểm từng câu
+
   for (const q of (snapshots as unknown as SnapshotRow[])) {
     const optionCount = q.options.length;
     const correctOrders = q.options
@@ -174,6 +176,8 @@ export async function POST(_: Request, ctx: { params: Promise<{ attemptId: strin
       qScore = computePenalty(selected, correctSet, optionCount, penaltyPerWrongOption);
     }
 
+    // Cache điểm từng câu
+    questionScores[q.id] = roundScore(qScore, rounding);
     score += qScore;
   }
 
@@ -183,6 +187,8 @@ export async function POST(_: Request, ctx: { params: Promise<{ attemptId: strin
       status: 'submitted',
       submittedAt: new Date(),
       score: roundScore(score, rounding),
+      // @ts-expect-error - questionScores is JSONB field, Prisma types may not include it
+      questionScores, // Cache điểm từng câu
     },
     select: { id: true, status: true, submittedAt: true, score: true },
   });
