@@ -380,9 +380,12 @@ Any other context.
 
 ## ❓ Questions?
 
-- Open an issue với label `question`
+- **GitHub Discussions**: [Q&A](https://github.com/trungtv/bkquiz/discussions/categories/q-a) - Cho questions và discussions
+- **GitHub Issues**: Open an issue với label `question`
 - Check existing documentation
 - Review code comments
+
+Xem [Community Guide](../docs/COMMUNITY.md) để biết về các kênh giao tiếp.
 
 ---
 

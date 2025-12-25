@@ -93,12 +93,22 @@ Xem `bkquiz-web/.env.example` để biết các biến môi trường cần thi�
 
 ## 📚 Tài liệu
 
+### Core Documentation
 - [Kiến trúc hệ thống](docs/architecture.md)
 - [Database schema](docs/database.md)
 - [API documentation](docs/api.md)
 - [User flows](docs/flows.md)
 - [Markdown import format](docs/import.md)
 - [UI/UX guidelines](docs/uiux/README.md)
+
+### Setup & Deployment
+- [Deployment Guide](DEPLOYMENT.md) - Hướng dẫn deploy production
+- [Local Setup](bkquiz-web/LOCAL_SETUP.md) - Development setup với Docker
+- [Troubleshooting](TROUBLESHOOTING.md) - Xử lý lỗi thường gặp
+
+### Contributing
+- [Contributing Guide](CONTRIBUTING.md) - Hướng dẫn đóng góp
+- [Changelog](CHANGELOG.md) - Lịch sử thay đổi
 
 ## 🎯 Tính năng chính
 
@@ -190,6 +200,13 @@ Stack là cấu trúc dữ liệu hoạt động theo nguyên tắc nào?
 ( ) Random
 ```
 
+## 💬 Community
+
+- [GitHub Discussions](https://github.com/trungtv/bkquiz/discussions) - Q&A, Ideas, General discussions
+- [GitHub Issues](https://github.com/trungtv/bkquiz/issues) - Bug reports, Feature requests
+
+Xem [Community Guide](docs/COMMUNITY.md) để biết thêm về các kênh giao tiếp.
+
 ## 🤝 Contributing
 
 Mọi đóng góp đều được chào đón! Vui lòng:
@@ -198,6 +215,8 @@ Mọi đóng góp đều được chào đón! Vui lòng:
 2. Tạo feature branch
 3. Commit changes (theo [Conventional Commits](https://www.conventionalcommits.org/))
 4. Push và tạo Pull Request
+
+Xem [Contributing Guide](CONTRIBUTING.md) để biết chi tiết.
 
 ## 📄 License
 
