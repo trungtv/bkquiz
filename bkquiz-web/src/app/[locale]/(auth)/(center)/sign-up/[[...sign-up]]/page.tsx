@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Card } from '@/components/ui/Card';
 import { AppConfig } from '@/utils/AppConfig';
-import { SignInClient } from '../sign-in/[[...sign-in]]/SignInClient';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 
 type ISignUpPageProps = {
   params: Promise<{ locale: string }>;
@@ -51,7 +51,7 @@ export default async function SignUpPage(props: ISignUpPageProps) {
         </p>
 
         {/* Sign Up Form (same as sign-in) */}
-        <SignInClient />
+        <GoogleSignInButton />
 
         {/* Already have account */}
         <div className="mt-6 border-t border-border-subtle pt-6 text-center">
