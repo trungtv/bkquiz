@@ -91,6 +91,8 @@ Mở http://localhost:3000 để xem ứng dụng.
 
 Xem `bkquiz-web/.env.example` để biết các biến môi trường cần thiết.
 
+> **📘 Hướng dẫn thiết lập Google OAuth**: Xem [bkquiz-web/GOOGLE_OAUTH_SETUP.md](bkquiz-web/GOOGLE_OAUTH_SETUP.md) để biết cách tạo Google OAuth app và lấy Client ID/Secret.
+
 ## 📚 Tài liệu
 
 ### Core Documentation

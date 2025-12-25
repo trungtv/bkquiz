@@ -52,17 +52,17 @@ Tạo file `.env.local` với các biến sau:
 DATABASE_URL="postgresql://..."
 
 # Auth (NextAuth)
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your-secret-key"
-
-# Google OAuth (nếu dùng)
-GOOGLE_CLIENT_ID="..."
-GOOGLE_CLIENT_SECRET="..."
+AUTH_SECRET="your-secret-key"  # Generate: openssl rand -base64 32
+AUTH_GOOGLE_ID="..."           # Xem GOOGLE_OAUTH_SETUP.md
+AUTH_GOOGLE_SECRET="..."       # Xem GOOGLE_OAUTH_SETUP.md
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
 # Optional: Monitoring & Analytics
 NEXT_PUBLIC_SENTRY_DSN="..."
 NEXT_PUBLIC_POSTHOG_KEY="..."
 ```
+
+> **📘 Hướng dẫn thiết lập Google OAuth**: Xem [GOOGLE_OAUTH_SETUP.md](./GOOGLE_OAUTH_SETUP.md) để biết cách tạo Google OAuth app và lấy Client ID/Secret.
 
 Xem `.env.example` để biết đầy đủ các biến môi trường.
 

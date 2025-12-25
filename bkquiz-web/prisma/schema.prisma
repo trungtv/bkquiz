@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Account {
-  id                String  @id
+  id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
@@ -30,7 +30,7 @@ model Answer {
   attemptId         String
   sessionQuestionId String
   selected          Json                    @default("[]")
-  submittedAt       DateTime?               // When this answer was submitted (per-question submit)
+  submittedAt       DateTime? // When this answer was submitted (per-question submit)
   updatedAt         DateTime                @updatedAt
   attempt           Attempt                 @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   sessionQuestion   SessionQuestionSnapshot @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade)
@@ -46,7 +46,7 @@ model Attempt {
   status           AttemptStatus     @default(active)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime
-  attemptStartedAt DateTime?         // Thời điểm student thực sự bắt đầu làm bài
+  attemptStartedAt DateTime? // Thời điểm student thực sự bắt đầu làm bài
   nextDueAt        DateTime?
   lastVerifiedAt   DateTime?
   failedCount      Int               @default(0)
@@ -54,7 +54,7 @@ model Attempt {
   lockedUntil      DateTime?
   submittedAt      DateTime?
   score            Float?
-  questionScores   Json?             // Cache điểm từng câu { questionId: score }
+  questionScores   Json? // Cache điểm từng câu { questionId: score }
   answers          Answer[]
   quizSession      QuizSession       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -190,9 +190,9 @@ model QuestionTag {
 model ClassroomTag {
   classroomId String
   tagId       String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  tag         Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tag         Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([classroomId, tagId])
   @@index([tagId, classroomId])
@@ -212,7 +212,7 @@ model QuizTag {
 model QuestionPoolTag {
   poolId    String
   tagId     String
-  createdAt DateTime @default(now())
+  createdAt DateTime     @default(now())
   pool      QuestionPool @relation(fields: [poolId], references: [id], onDelete: Cascade)
   tag       Tag          @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
@@ -262,7 +262,7 @@ model QuizSession {
   endedAt           DateTime?
   totpSecret        String
   totpStepSeconds   Int                       @default(45)
-  settings          Json?                     // Store session-specific settings like durationSeconds
+  settings          Json? // Store session-specific settings like durationSeconds
   createdAt         DateTime                  @default(now())
   updatedAt         DateTime                  @updatedAt
   classroomId       String
@@ -277,7 +277,7 @@ model QuizSession {
 }
 
 model Session {
-  id           String   @id
+  id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
@@ -342,28 +342,29 @@ model Tag {
   quizRules                QuizRule[]
   sessionCommonQuestions   SessionCommonQuestion[]
   sessionQuestionSnapshots SessionQuestionSnapshot[]
-  classroomTags             ClassroomTag[]
+  classroomTags            ClassroomTag[]
   quizTags                 QuizTag[]
   poolTags                 QuestionPoolTag[]
 }
 
 model User {
-  id              String              @id
-  name            String?
-  email           String?             @unique
-  image           String?
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime
-  accounts        Account[]
-  attempts        Attempt[]
-  memberships     ClassMembership[]
+  id            String              @id @default(cuid())
+  name          String?
+  email         String?             @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  accounts      Account[]
+  attempts      Attempt[]
+  memberships   ClassMembership[]
   ownedClassrooms Classroom[]
-  questions       Question[]
-  questionPools   QuestionPool[]
-  poolShares      QuestionPoolShare[]
-  quizzes         Quiz[]
-  sessions        Session[]
-  roles           UserRole[]
+  questions     Question[]
+  questionPools QuestionPool[]
+  poolShares    QuestionPoolShare[]
+  quizzes       Quiz[]
+  sessions      Session[]
+  roles         UserRole[]
 }
 
 model UserRole {

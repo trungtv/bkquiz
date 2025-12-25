@@ -32,9 +32,9 @@ Sau đó chỉnh sửa `.env.local` với các giá trị phù hợp (đặc bi�
 DATABASE_URL="postgresql://bkquiz:bkquiz@localhost:5433/bkquiz?schema=public"
 
 # Auth.js / NextAuth
-AUTH_SECRET="please-change-me"
-AUTH_GOOGLE_ID="..."
-AUTH_GOOGLE_SECRET="..."
+AUTH_SECRET="please-change-me"  # Generate: openssl rand -base64 32
+AUTH_GOOGLE_ID="..."           # Xem GOOGLE_OAUTH_SETUP.md để lấy
+AUTH_GOOGLE_SECRET="..."       # Xem GOOGLE_OAUTH_SETUP.md để lấy
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
 # S3 (MinIO)
@@ -44,6 +44,8 @@ S3_ACCESS_KEY_ID="minioadmin"
 S3_SECRET_ACCESS_KEY="minioadmin"
 S3_BUCKET="bkquiz-media"
 ```
+
+> **📘 Lưu ý**: Để lấy `AUTH_GOOGLE_ID` và `AUTH_GOOGLE_SECRET`, xem hướng dẫn chi tiết trong [GOOGLE_OAUTH_SETUP.md](./GOOGLE_OAUTH_SETUP.md).
 
 ### 3) Prisma migrate
 
