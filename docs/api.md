@@ -11,6 +11,7 @@ Tài liệu này mô tả contract API ở mức endpoint + mục đích. Chi ti
 
 ## 2) Class
 - `POST /api/classes` (teacher)
+- `GET /api/classes/preview?classCode=...` (public: preview class info trước khi join)
 - `POST /api/classes/join` (student, classCode)
 - `GET /api/classes` (teacher/student: danh sách lớp)
 
@@ -52,11 +53,18 @@ Tài liệu này mô tả contract API ở mức endpoint + mục đích. Chi ti
 - QR code chứa URL join theo `sessionId` (ví dụ: `/join/session/{sessionId}`), student đăng nhập xong sẽ vào lobby/join attempt.
 
 ## 6) Attempt & answers
-- `GET /api/attempts/:attemptId/state` (student: blocked?, dueAt, questions snapshot, current answers)
+- `GET /api/attempts/:attemptId/state` (student: blocked?, dueAt, questions snapshot, current answers, sessionName)
   - variant-set: trả về danh sách câu theo `AttemptQuestion` (order theo attempt)
+  - `sessionName`: Tên session (từ settings) hoặc tên quiz
+- `GET /api/attempts/:attemptId/questions` (student: questions với review info nếu có)
+  - Response: `{ questions: [...], canReview: boolean, reviewWindowEnd?: Date, questionScores?: {...} }`
+  - `canReview`: Chỉ true khi session ended + trong review window + teacher cho phép
+  - `reviewWindowEnd`: Thời điểm kết thúc review window
+  - `questionScores`: Điểm từng câu (cached trong Attempt.questionScores)
 - `POST /api/attempts/:attemptId/answers` (student: lưu đáp án)
 - `POST /api/attempts/:attemptId/verifyToken` (student: verify checkpoint token)
 - `POST /api/attempts/:attemptId/submit` (student: submit)
+  - Tính và cache `questionScores` vào `Attempt.questionScores` (JSONB)
 
 ## 6b) Report (tối thiểu)
 - `GET /api/sessions/:sessionId/report/scoreboard` (teacher: bảng điểm cả lớp)

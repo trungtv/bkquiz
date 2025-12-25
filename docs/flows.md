@@ -51,6 +51,22 @@
 Khi session đã start:
 - sửa pool/question/option **không ảnh hưởng** session đang/đã diễn ra
 - hiển thị lại đề + chấm điểm dựa trên snapshot
+- **Question scores caching**: Điểm từng câu được cache trong `Attempt.questionScores` (JSONB) để tránh tính toán lại
+
+## 4) Mobile Navigation
+- **Responsive sidebar**: 
+  - Desktop: Sidebar luôn hiển thị
+  - Mobile: Sidebar ẩn mặc định, có hamburger menu button để mở
+  - Auto-close khi route thay đổi
+  - Overlay khi mobile sidebar mở
+- **Question scores caching**: Điểm từng câu được cache trong `Attempt.questionScores` (JSONB) để tránh tính toán lại
+
+## 4) Mobile Navigation
+- **Responsive sidebar**: 
+  - Desktop: Sidebar luôn hiển thị
+  - Mobile: Sidebar ẩn mặc định, có hamburger menu button để mở
+  - Auto-close khi route thay đổi
+  - Overlay khi mobile sidebar mở
 
 ```mermaid
 sequenceDiagram

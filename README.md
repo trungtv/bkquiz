@@ -18,9 +18,16 @@ BKquiz là nền tảng web fullstack (Next.js) phục vụ việc tổ chức v
 ## 🏗️ Kiến trúc
 
 - **Frontend**: Next.js 16+ App Router (Teacher UI + Student UI)
+  - Responsive design với mobile sidebar navigation
+  - Client-side state management với React hooks
+  - Real-time updates qua polling
 - **Backend**: Next.js Route Handlers (`app/api/...`)
+  - Server-side validation và authorization
+  - Time-based security checks (server-side)
 - **Auth**: Auth.js/NextAuth (Google OAuth)
 - **Database**: PostgreSQL + Prisma ORM
+  - JSONB fields cho flexible settings (sessionName, reviewWindowMinutes, etc.)
+  - Caching question scores trong Attempt model
 - **Styling**: Tailwind CSS 4 với custom design tokens
 - **i18n**: next-intl (hỗ trợ đa ngôn ngữ)
 
@@ -97,9 +104,10 @@ Xem `bkquiz-web/.env.example` để biết các biến môi trường cần thi�
 
 ### 1. Classroom Management
 - Tạo lớp học với class code
-- Join lớp bằng class code
+- Join lớp bằng class code (với confirmation modal)
 - Quản lý thành viên (teacher/student)
 - Xem danh sách sessions của lớp
+- Responsive mobile sidebar navigation
 
 ### 2. Question Bank
 - Tạo và quản lý question pools
@@ -116,17 +124,20 @@ Xem `bkquiz-web/.env.example` để biết các biến môi trường cần thi�
 - Preview đủ/thiếu câu hỏi theo rules
 
 ### 4. Session Runtime
-- Start/end session
+- Start/end session với tên session tùy chỉnh
 - Teacher Screen: QR code + TOTP token động
 - Materialize và snapshot câu hỏi
-- Real-time countdown
+- Real-time countdown và student count
+- Auto-start/auto-end với buffer time
 
 ### 5. Student Attempt
 - Join session bằng QR code hoặc link
+- Student lobby với explicit join button
 - Làm bài với navigation linh hoạt
 - Checkpoint token verification
-- Auto-save answers
-- Submit và xem điểm
+- Auto-save answers (offline/online sync)
+- Submit và xem điểm tổng ngay sau khi submit
+- **Review bài làm**: Xem đáp án đúng/sai trong cửa sổ thời gian (review window) sau khi session kết thúc
 
 ## 🛠️ Development
 
