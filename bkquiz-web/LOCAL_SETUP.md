@@ -18,7 +18,14 @@ Bucket dev mặc định: **`bkquiz-media`** (được tạo tự động bởi 
 
 ### 2) Env cho app
 
-Tạo file `.env` trong `bkquiz-web/`:
+Copy `.env.example` thành `.env.local` trong `bkquiz-web/`:
+
+```bash
+cd bkquiz-web
+cp .env.example .env.local
+```
+
+Sau đó chỉnh sửa `.env.local` với các giá trị phù hợp (đặc biệt là `DATABASE_URL` cho Docker setup):
 
 ```bash
 # Database
