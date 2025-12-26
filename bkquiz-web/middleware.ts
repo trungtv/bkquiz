@@ -31,6 +31,14 @@ function buildSignInUrl(req: NextRequest) {
 
 export default async function middleware(req: NextRequest, event: NextFetchEvent) {
   void event;
+  const pathname = req.nextUrl.pathname;
+
+  // CRITICAL: Let API routes pass-through FIRST (before any other processing)
+  // This must be checked before Arcjet to avoid any interference
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
   if (process.env.ARCJET_KEY) {
     const decision = await aj.protect(req);
     if (decision.isDenied()) {
@@ -38,20 +46,14 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
     }
   }
 
-  // Let API routes pass-through (avoid i18n rewrites on /api/*)
-  if (req.nextUrl.pathname.startsWith('/api/')) {
-    return NextResponse.next();
-  }
-
   // Redirect /privacy and /terms to default locale (for OAuth consent screen)
-  const pathname = req.nextUrl.pathname;
   if (pathname === '/privacy' || pathname === '/terms') {
     const defaultLocale = AppConfig.defaultLocale;
     return NextResponse.redirect(new URL(`/${defaultLocale}${pathname}`, req.url));
   }
 
   // Minimal protection for dashboard area. (We will later add role checks per page/API.)
-  if (isProtectedPathname(req.nextUrl.pathname)) {
+  if (isProtectedPathname(pathname)) {
     if (process.env.DEV_BYPASS_AUTH === '1') {
       return handleI18nRouting(req);
     }
@@ -68,8 +70,20 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
 
 export const config = {
   // Exclude API routes, static files, and Next.js internals from middleware
-  // CRITICAL: 'api' must be first to prevent i18n routing from intercepting NextAuth
+  // CRITICAL: Exclude '/api' completely to prevent i18n routing from intercepting NextAuth
+  // The regex matches all paths EXCEPT those starting with: /api, /_next, /_vercel, /monitoring, or containing a dot
   matcher: [
-    '/((?!api|_next/static|_next/image|_next|_vercel|monitoring|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - /api (API routes - MUST be excluded for NextAuth to work)
+     * - /_next/static (static files)
+     * - /_next/image (image optimization files)
+     * - /_next (Next.js internals)
+     * - /_vercel (Vercel internals)
+     * - /monitoring (Sentry tunnel)
+     * - favicon.ico, robots.txt, sitemap.xml
+     * - ... and the ones containing a dot (e.g. favicon.ico)
+     */
+    '/((?!api/|_next/static|_next/image|_next|_vercel|monitoring|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)',
   ],
 };
