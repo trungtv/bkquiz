@@ -1,9 +1,10 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import Link from 'next/link';
 import { LocaleSwitcher } from '@/components/LocaleSwitcher';
-import { getUserRole, requireUser } from '@/server/authz';
+import { getUserAvailableRoles, getUserRole, requireUser } from '@/server/authz';
 import { AppConfig } from '@/utils/AppConfig';
 import { MobileMenuButton } from './MobileMenuButton';
+import { RoleSwitcher } from './RoleSwitcher';
 import { Sidebar } from './Sidebar';
 import { SignOutButton } from './SignOutButton';
 
@@ -19,10 +20,14 @@ export default async function DashboardLayout(props: {
   });
 
   const { userId, devRole } = await requireUser();
-  const role = await getUserRole(
-    userId,
-    devRole as 'teacher' | 'student' | undefined,
-  );
+  // Gọi song song để tránh race condition
+  const [role, availableRoles] = await Promise.all([
+    getUserRole(userId, devRole as 'teacher' | 'student' | undefined),
+    getUserAvailableRoles(userId).catch(() => {
+      // Fallback: nếu có lỗi, trả về empty array
+      return [] as ('teacher' | 'student')[];
+    }),
+  ]);
 
   return (
     <div className="min-h-screen bg-bg-page text-text-body antialiased">
@@ -30,6 +35,7 @@ export default async function DashboardLayout(props: {
         {/* Sidebar – Desktop: always visible, Mobile: slide in/out */}
         <Sidebar
           role={role}
+          availableRoles={availableRoles}
           dashboardLink={t('dashboard_link')}
           classesLink={t('classes_link')}
           quizzesLink={t('quizzes_link')}
@@ -52,18 +58,10 @@ export default async function DashboardLayout(props: {
               <span className="hidden text-sm text-text-muted sm:inline">
                 Dashboard
               </span>
-              <span
-                className={`hidden rounded-sm px-2 py-1 text-xs font-medium sm:inline ${
-                  role === 'teacher'
-                    ? 'bg-primary/20 text-primary'
-                    : 'bg-indigo-500/20 text-indigo-400'
-                }`}
-              >
-                {role === 'teacher' ? 'Teacher' : 'Student'}
-              </span>
             </div>
             <div className="flex items-center gap-4 text-sm">
               <LocaleSwitcher />
+              <RoleSwitcher currentRole={role} availableRoles={availableRoles || []} />
               <SignOutButton label={t('sign_out')} />
             </div>
           </header>

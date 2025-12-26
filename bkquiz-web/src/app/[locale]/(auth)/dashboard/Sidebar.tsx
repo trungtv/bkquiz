@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 
 type SidebarProps = {
   role: 'teacher' | 'student';
+  availableRoles?: ('teacher' | 'student')[];
   dashboardLink: string;
   classesLink: string;
   quizzesLink: string;
@@ -394,7 +395,7 @@ export function Sidebar(props: SidebarProps) {
           </nav>
 
           {/* Sign Out Button - Bottom of sidebar */}
-          <div className="mt-auto border-t border-border-subtle pt-2">
+          <div>
           <button
             type="button"
             onClick={async (e) => {

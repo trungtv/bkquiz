@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
-import { setRequestLocale } from 'next-intl/server';
+import { getMessages, setRequestLocale } from 'next-intl/server';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { PostHogProvider } from '@/components/analytics/PostHogProvider';
@@ -59,13 +59,14 @@ export default async function RootLayout(props: {
   }
 
   setRequestLocale(locale);
+  const messages = await getMessages();
 
   return (
     // eslint-disable-next-line tailwindcss/no-custom-classname
     <html lang={locale} className={`dark ${inter.variable} ${mono.variable}`}>
       {/* eslint-disable-next-line tailwindcss/classnames-order */}
       <body className="min-h-dvh text-text-body antialiased [font-family:var(--font-sans)]">
-        <NextIntlClientProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           <PostHogProvider>
             {props.children}
           </PostHogProvider>

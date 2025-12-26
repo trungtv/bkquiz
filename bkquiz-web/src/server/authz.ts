@@ -24,6 +24,19 @@ async function getDevRoleFromCookies() {
   return v === 'student' ? 'student' : 'teacher';
 }
 
+/**
+ * Get user's selected role from cookie (if user has multiple roles)
+ * Returns null if no role is selected or cookie doesn't exist
+ */
+async function getSelectedRoleFromCookies(): Promise<'teacher' | 'student' | null> {
+  const c = await cookies();
+  const v = c.get('bkquiz_selected_role')?.value;
+  if (v === 'teacher' || v === 'student') {
+    return v;
+  }
+  return null;
+}
+
 async function getOrCreateDevUserId(role: 'teacher' | 'student') {
   const email = role === 'teacher' ? 'dev.teacher@bkquiz.local' : 'dev.student@bkquiz.local';
   const name = role === 'teacher' ? 'Dev Teacher' : 'Dev Student';
@@ -64,8 +77,20 @@ export async function requireUser() {
 }
 
 /**
+ * Get user's available system roles
+ */
+export async function getUserAvailableRoles(userId: string): Promise<('teacher' | 'student')[]> {
+  const userRoles = await prisma.userRole.findMany({
+    where: { userId },
+    select: { role: true },
+  });
+  return userRoles.map(r => r.role);
+}
+
+/**
  * Get user's system role (teacher or student)
  * Supports DEV_BYPASS_AUTH mode
+ * Supports role switching via cookie (bkquiz_selected_role)
  */
 export async function getUserRole(
   userId: string,
@@ -75,6 +100,22 @@ export async function getUserRole(
     return devRole;
   }
 
+  // Check if user has selected a specific role (for users with multiple roles)
+  const selectedRole = await getSelectedRoleFromCookies();
+  if (selectedRole) {
+    // Verify user actually has this role
+    const userRoles = await prisma.userRole.findMany({
+      where: { userId },
+      select: { role: true },
+    });
+
+    if (userRoles.some(r => r.role === selectedRole)) {
+      return selectedRole;
+    }
+    // If selected role is invalid, fall through to default logic
+  }
+
+  // Default: ưu tiên teacher role nếu có
   const userRoles = await prisma.userRole.findMany({
     where: { userId },
     select: { role: true },
