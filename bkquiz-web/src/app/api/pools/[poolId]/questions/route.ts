@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { nanoid } from 'nanoid';
 import { requireUser } from '@/server/authz';
 import { requirePoolPermission } from '@/server/poolAuthz';
 import { prisma } from '@/server/prisma';
@@ -72,15 +73,19 @@ export async function POST(req: Request, ctx: { params: Promise<{ poolId: string
 
   const q = await prisma.question.create({
     data: {
+      id: nanoid(),
       poolId,
       type: body.type,
       prompt: body.prompt,
       createdByTeacherId: userId,
+      updatedAt: new Date(),
       options: {
         create: body.options.map((o, idx) => ({
+          id: nanoid(),
           content: o.content,
           isCorrect: !!o.isCorrect,
           order: idx,
+          updatedAt: new Date(),
         })),
       },
     },

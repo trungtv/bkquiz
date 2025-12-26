@@ -11,7 +11,7 @@ const UpdateStatusSchema = z.object({
 export async function PATCH(req: Request, ctx: { params: Promise<{ quizId: string }> }) {
   try {
     const { userId, devRole } = await requireUser();
-    await requireTeacher(userId, devRole);
+    await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
     const { quizId } = await ctx.params;
     const body = UpdateStatusSchema.parse(await req.json());
     await requireQuizOwnership(userId, quizId);

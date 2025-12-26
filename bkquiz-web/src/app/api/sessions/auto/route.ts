@@ -47,7 +47,6 @@ export async function POST(req: Request) {
     });
 
     const sessionsToStart = allLobbySessions.filter((session) => {
-      // @ts-expect-error - settings is Json? field, TypeScript types may not recognize it
       const settings = session.settings as { scheduledStartAt?: string } | null;
       if (!settings?.scheduledStartAt) {
         return false;
@@ -59,7 +58,6 @@ export async function POST(req: Request) {
     for (const session of sessionsToStart) {
       try {
         // Check if session has scheduledStartAt in settings
-        // @ts-expect-error - settings is Json? field, TypeScript types may not recognize it
         const settings = session.settings as { scheduledStartAt?: string } | null;
         if (settings?.scheduledStartAt) {
           const scheduledTime = new Date(settings.scheduledStartAt);
@@ -105,7 +103,6 @@ export async function POST(req: Request) {
           continue;
         }
 
-        // @ts-expect-error - settings is Json? field, TypeScript types may not recognize it
         const settings = session.settings as { durationSeconds?: number; bufferMinutes?: number } | null;
         const durationSeconds = settings?.durationSeconds;
         const bufferMinutes = settings?.bufferMinutes ?? 5; // Default 5 minutes

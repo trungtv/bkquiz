@@ -190,7 +190,6 @@ export async function POST(_: Request, ctx: { params: Promise<{ attemptId: strin
       status: 'submitted',
       submittedAt: new Date(),
       score: roundScore(score, rounding),
-      // @ts-expect-error - questionScores is JSONB field, Prisma types may not include it
       questionScores, // Cache điểm từng câu
     },
     select: { id: true, status: true, submittedAt: true, score: true },

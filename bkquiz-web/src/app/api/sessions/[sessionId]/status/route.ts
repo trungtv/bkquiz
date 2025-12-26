@@ -14,7 +14,6 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
       endedAt: true,
       totpStepSeconds: true,
       createdAt: true,
-      // @ts-expect-error - settings is JSONB field, Prisma types may not include it
       settings: true,
       _count: {
         select: {
@@ -47,7 +46,6 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
     return NextResponse.json({ error: 'SESSION_NOT_FOUND' }, { status: 404 });
   }
 
-  // @ts-expect-error - settings is JSONB field
   const settings = session.settings as { sessionName?: string } | null;
   const sessionName = settings?.sessionName || null;
 

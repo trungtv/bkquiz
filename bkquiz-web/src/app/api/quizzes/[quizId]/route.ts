@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { AuthorizationError, requireQuizOwnership, requireTeacher, requireUser } from '@/server/authz';
+import { requireQuizOwnership, requireTeacher, requireUser } from '@/server/authz';
 import { handleAuthorizationError } from '@/server/authzHelpers';
 import { prisma } from '@/server/prisma';
 
 export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }> }) {
   try {
     const { userId, devRole } = await requireUser();
-    await requireTeacher(userId, devRole);
+    await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
     const { quizId } = await ctx.params;
     await requireQuizOwnership(userId, quizId);
 
@@ -20,6 +20,10 @@ export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }>
         createdAt: true,
       },
     });
+
+    if (!quiz) {
+      return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
+    }
 
     return NextResponse.json({
       id: quiz.id,

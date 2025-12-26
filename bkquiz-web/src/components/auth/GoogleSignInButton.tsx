@@ -1,41 +1,38 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 
 export function GoogleSignInButton() {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   const errorParam = searchParams.get('error');
 
-  // Show error from URL if present
-  useEffect(() => {
-    if (errorParam) {
-      const errorMessages: Record<string, string> = {
-        Configuration: 'Lỗi cấu hình. Vui lòng liên hệ quản trị viên.',
-        AccessDenied: 'Bạn không có quyền truy cập.',
-        Verification: 'Lỗi xác thực. Vui lòng thử lại.',
-        OAuthAccountNotLinked: 'Tài khoản với email này đã tồn tại. Vui lòng đăng nhập bằng phương thức ban đầu.',
-        Default: 'Không thể đăng nhập. Vui lòng thử lại.',
-      };
-      setError(errorMessages[errorParam] || errorMessages.Default);
-    }
-  }, [errorParam]);
+  // Compute error message from URL directly during render
+  const errorMessages: Record<string, string> = {
+    Configuration: 'Lỗi cấu hình. Vui lòng liên hệ quản trị viên.',
+    AccessDenied: 'Bạn không có quyền truy cập.',
+    Verification: 'Lỗi xác thực. Vui lòng thử lại.',
+    OAuthAccountNotLinked: 'Tài khoản với email này đã tồn tại. Vui lòng đăng nhập bằng phương thức ban đầu.',
+    Default: 'Không thể đăng nhập. Vui lòng thử lại.',
+  };
+  const urlError = errorParam ? ((errorMessages[errorParam] ?? errorMessages.Default) as string) : null;
+  const error = urlError || apiError;
 
   const handleSignIn = async () => {
     try {
       setIsLoading(true);
-      setError(null);
+      setApiError(null);
       await signIn('google', {
         callbackUrl: callbackUrl as string,
         redirect: true,
       });
-    } catch (err) {
-      setError('Đã xảy ra lỗi. Vui lòng thử lại.');
+    } catch {
+      setApiError('Đã xảy ra lỗi. Vui lòng thử lại.');
       setIsLoading(false);
     }
   };

@@ -12,7 +12,7 @@ const CreatePoolSchema = z.object({
 
 export async function GET(req: Request) {
   const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
+  await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
 
   const url = new URL(req.url);
   const tagsParam = url.searchParams.get('tags');
@@ -170,7 +170,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
+  await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
   const body = CreatePoolSchema.parse(await req.json());
 
   const now = new Date();

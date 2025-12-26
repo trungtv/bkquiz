@@ -8,7 +8,7 @@ type QuizSettings = { variant?: VariantSettings };
 
 export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }> }) {
   const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
+  await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
   const { quizId } = await ctx.params;
 
   try {
@@ -41,6 +41,10 @@ export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }>
       },
     },
   });
+
+  if (!quiz) {
+    return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
+  }
 
   const settings = (quiz.settings ?? {}) as QuizSettings;
   const variant = (settings.variant ?? {}) as VariantSettings;

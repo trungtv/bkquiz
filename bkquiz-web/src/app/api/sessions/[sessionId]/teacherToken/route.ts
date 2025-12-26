@@ -26,6 +26,10 @@ export async function GET(req: Request, ctx: { params: Promise<{ sessionId: stri
       },
     });
 
+    if (!session) {
+      return NextResponse.json({ error: 'SESSION_NOT_FOUND' }, { status: 404 });
+    }
+
     const { token, expiresInSeconds } = computeTotp({
       secret: session.totpSecret,
       stepSeconds: session.totpStepSeconds,

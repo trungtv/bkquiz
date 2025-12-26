@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { nanoid } from 'nanoid';
 import { requireUser } from '@/server/authz';
 import { parsePoolMarkdown } from '@/server/import/markdownPool';
 import { requirePoolPermission } from '@/server/poolAuthz';
@@ -112,10 +113,12 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ questionId: s
     // Create new options
     await tx.option.createMany({
       data: imported.options.map((o, idx) => ({
+        id: nanoid(),
         questionId,
         content: o.content,
         isCorrect: o.isCorrect,
         order: idx,
+        updatedAt: new Date(),
       })),
     });
 

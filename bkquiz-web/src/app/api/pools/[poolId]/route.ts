@@ -11,7 +11,7 @@ const UpdatePoolSchema = z.object({
 
 export async function GET(_: Request, ctx: { params: Promise<{ poolId: string }> }) {
   const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
+  await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
   const { poolId } = await ctx.params;
 
   const { pool, permission } = await requirePoolPermission(userId, poolId, 'view');
@@ -37,7 +37,6 @@ export async function GET(_: Request, ctx: { params: Promise<{ poolId: string }>
     name: pool.name,
     visibility: pool.visibility,
     ownerTeacherId: pool.ownerTeacherId,
-    updatedAt: pool.updatedAt,
     permission,
     questionCount,
     tagCount: tagGroups.length,
@@ -46,7 +45,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ poolId: string }>
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ poolId: string }> }) {
   const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
+  await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
   const { poolId } = await ctx.params;
   const body = UpdatePoolSchema.parse(await req.json());
 

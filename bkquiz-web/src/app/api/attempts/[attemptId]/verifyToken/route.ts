@@ -38,6 +38,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ attemptId: str
       quizSession: { select: { id: true, status: true, totpSecret: true, totpStepSeconds: true } },
     },
   });
+  if (!attempt) {
+    return NextResponse.json({ error: 'ATTEMPT_NOT_FOUND' }, { status: 404 });
+  }
   if (attempt.quizSession.status !== 'active') {
     return NextResponse.json({ error: 'SESSION_NOT_ACTIVE' }, { status: 400 });
   }

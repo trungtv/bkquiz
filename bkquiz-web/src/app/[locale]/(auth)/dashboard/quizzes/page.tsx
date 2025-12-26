@@ -20,7 +20,7 @@ export async function generateMetadata(props: {
 
 export default async function QuizzesPage() {
   const { userId, devRole } = await requireUser();
-  const role = await getUserRole(userId, devRole);
+  const role = await getUserRole(userId, devRole as 'teacher' | 'student' | undefined);
 
   if (role !== 'teacher') {
     redirect('/dashboard');

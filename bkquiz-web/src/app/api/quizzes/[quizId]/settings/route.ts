@@ -24,7 +24,7 @@ const PatchSettingsSchema = z.object({
 export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }> }) {
   try {
     const { userId, devRole } = await requireUser();
-    await requireTeacher(userId, devRole);
+    await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
     const { quizId } = await ctx.params;
     await requireQuizOwnership(userId, quizId);
 
@@ -32,6 +32,10 @@ export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }>
       where: { id: quizId },
       select: { id: true, settings: true },
     });
+
+    if (!quiz) {
+      return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
+    }
 
     const settings = (quiz.settings ?? {}) as QuizSettings;
     const variant = (settings.variant ?? {}) as VariantSettings;
@@ -55,7 +59,7 @@ export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }>
 export async function PATCH(req: Request, ctx: { params: Promise<{ quizId: string }> }) {
   try {
     const { userId, devRole } = await requireUser();
-    await requireTeacher(userId, devRole);
+    await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
     const { quizId } = await ctx.params;
     const body = PatchSettingsSchema.parse(await req.json());
     await requireQuizOwnership(userId, quizId);
@@ -64,6 +68,10 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ quizId: strin
     where: { id: quizId },
     select: { id: true, settings: true },
   });
+
+  if (!quiz) {
+    return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
+  }
 
   const settings = (quiz.settings ?? {}) as QuizSettings;
   const next: QuizSettings = { ...settings };

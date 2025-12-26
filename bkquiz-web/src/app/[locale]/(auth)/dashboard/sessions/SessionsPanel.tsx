@@ -83,19 +83,6 @@ export function SessionsPanel() {
     return `${Math.floor(seconds / 60)} phút`;
   }
 
-  function getStatusBadge(status: Session['status']) {
-    switch (status) {
-      case 'lobby':
-        return <Badge variant="neutral">Lobby</Badge>;
-      case 'active':
-        return <Badge variant="success">Đang diễn ra</Badge>;
-      case 'ended':
-        return <Badge variant="info">Đã kết thúc</Badge>;
-      default:
-        return <Badge variant="neutral">{status}</Badge>;
-    }
-  }
-
   const activeSessions = sessions.filter(s => s.status === 'active');
   const pastSessions = sessions.filter(s => s.status === 'ended');
   const lobbySessions = sessions.filter(s => s.status === 'lobby');

@@ -42,7 +42,6 @@ export async function GET(_req: Request) {
         startedAt: true,
         endedAt: true,
         createdAt: true,
-        // @ts-expect-error - settings is JSONB field, Prisma types may not include it
         settings: true,
         quiz: {
           select: {
@@ -68,7 +67,6 @@ export async function GET(_req: Request) {
 
     return NextResponse.json({
       sessions: sessions.map((s) => {
-        // @ts-expect-error - settings is JSONB field
         const settings = s.settings as { sessionName?: string; durationSeconds?: number; scheduledStartAt?: string } | null;
         return {
           id: s.id,
@@ -117,7 +115,6 @@ export async function GET(_req: Request) {
       startedAt: true,
       endedAt: true,
       createdAt: true,
-      // @ts-expect-error - settings is JSONB field, Prisma types may not include it
       settings: true,
       quiz: {
         select: {
@@ -156,7 +153,6 @@ export async function GET(_req: Request) {
 
   return NextResponse.json({
     sessions: sessions.map((s) => {
-      // @ts-expect-error - settings is JSONB field
       const settings = s.settings as { sessionName?: string; durationSeconds?: number; scheduledStartAt?: string } | null;
       return {
         id: s.id,

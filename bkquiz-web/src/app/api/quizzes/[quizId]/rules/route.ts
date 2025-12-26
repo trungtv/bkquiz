@@ -18,7 +18,7 @@ const UpsertRuleSchema = z.object({
 export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }> }) {
   try {
     const { userId, devRole } = await requireUser();
-    await requireTeacher(userId, devRole);
+    await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
     const { quizId } = await ctx.params;
     await requireQuizOwnership(userId, quizId);
 
@@ -148,7 +148,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ quizId: string
 export async function DELETE(req: Request, ctx: { params: Promise<{ quizId: string }> }) {
   try {
     const { userId, devRole } = await requireUser();
-    await requireTeacher(userId, devRole);
+    await requireTeacher(userId, devRole as 'teacher' | 'student' | undefined);
     const { quizId } = await ctx.params;
     const url = new URL(req.url);
     const ruleId = url.searchParams.get('ruleId');

@@ -93,14 +93,11 @@ export async function POST(_: Request, ctx: { params: Promise<{ sessionId: strin
   if (session.status === 'active') {
     const existingAttempt = await prisma.attempt.findUnique({
       where: { id: attempt.id },
-      // @ts-expect-error - Prisma types may not be updated yet
       select: { attemptStartedAt: true },
     });
-    // @ts-expect-error - Prisma types may not be updated yet
     if (!existingAttempt?.attemptStartedAt) {
       await prisma.attempt.update({
         where: { id: attempt.id },
-        // @ts-expect-error - Prisma types may not be updated yet
         data: { attemptStartedAt: now },
       });
     }

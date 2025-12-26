@@ -47,9 +47,8 @@ export async function PUT(req: Request, ctx: { params: Promise<{ attemptId: stri
   const { attemptId } = await ctx.params;
   const body = UpsertAnswerSchema.parse(await req.json());
 
-  let attempt;
   try {
-    attempt = await requireAttemptAccess(userId, attemptId);
+    await requireAttemptAccess(userId, attemptId);
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
     if (error === 'ATTEMPT_NOT_FOUND') {
@@ -90,20 +89,12 @@ export async function PUT(req: Request, ctx: { params: Promise<{ attemptId: stri
   }
 
   const now = new Date();
-  const updateData: {
-    selected: unknown;
-    updatedAt: Date;
-    submittedAt?: Date;
-  } = {
-    selected: unique as unknown as any,
+  const updateData = {
+    selected: unique as any,
     updatedAt: now,
+    ...(body.submit ? { submittedAt: now } : {}),
   };
   
-  // If submit=true, set submittedAt (only if not already submitted)
-  if (body.submit) {
-    updateData.submittedAt = now;
-  }
-
   await prisma.answer.upsert({
     where: { attemptId_sessionQuestionId: { attemptId, sessionQuestionId: body.sessionQuestionId } },
     update: updateData,

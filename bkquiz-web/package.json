@@ -11,6 +11,8 @@
     "build:next": "next build --webpack",
     "build-local": "run-p db-server:memory build:next --race",
     "build": "run-s prisma:generate build:next",
+    "build:vercel": "npm ci && npm run prisma:generate && npm run build:next",
+    "test:build": "npm run check:types && npm run build",
     "start": "next start",
     "build-stats": "cross-env ANALYZE=true npm run build",
     "clean": "rimraf .next out coverage",

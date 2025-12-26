@@ -15,6 +15,10 @@ export async function POST(_: Request, ctx: { params: Promise<{ sessionId: strin
       select: { id: true, status: true },
     });
 
+    if (!session) {
+      return NextResponse.json({ error: 'SESSION_NOT_FOUND' }, { status: 404 });
+    }
+
     const updated = await prisma.quizSession.update({
       where: { id: sessionId },
       data: {

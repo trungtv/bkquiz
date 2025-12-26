@@ -35,7 +35,6 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
           id: true,
           status: true,
           startedAt: true,
-          // @ts-expect-error - settings is JSONB field, Prisma types may not include it
           settings: true,
           quiz: { select: { title: true } },
         },
@@ -48,7 +47,6 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
   }
 
   // Extract sessionName from settings
-  // @ts-expect-error - settings is JSONB field
   const settings = attempt.quizSession.settings as { sessionName?: string } | null;
   const sessionName = settings?.sessionName || null;
 
@@ -66,7 +64,6 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
   const isLocked = attempt.lockedUntil ? attempt.lockedUntil.getTime() > now.getTime() : attempt.status === 'locked';
 
   // Calculate time limit info
-  // @ts-expect-error - Prisma select types may not match exactly
   const attemptEndTime = calculateAttemptEndTime(attempt);
   const timeRemaining = attemptEndTime
     ? Math.max(0, Math.floor((attemptEndTime.getTime() - now.getTime()) / 1000))
@@ -79,11 +76,9 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
     status: attempt.status,
     score: attempt.score,
     session: {
-      // @ts-expect-error - Prisma select types may not include quizSession
       ...a.quizSession,
       sessionName, // Add sessionName to response
     },
-    // @ts-expect-error - Prisma select types may not include attemptStartedAt
     attemptStartedAt: a.attemptStartedAt,
     attemptEndTime: attemptEndTime?.toISOString() ?? null,
     timeRemaining,

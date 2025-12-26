@@ -8,9 +8,8 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
   const { attemptId } = await ctx.params;
 
   // ✅ Security: Check user owns this attempt
-  let attempt;
   try {
-    attempt = await requireAttemptAccess(userId, attemptId);
+    await requireAttemptAccess(userId, attemptId);
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
     if (error === 'ATTEMPT_NOT_FOUND') {
@@ -116,16 +115,21 @@ export async function GET(_: Request, ctx: { params: Promise<{ attemptId: string
     ? (attemptFull.questionScores as Record<string, number>)
     : null;
 
-  const byId = new Map(raw.map((q: { id: string }) => [q.id, q]));
-  const questions = useAttemptOrder ? sessionQuestionIds.map((id: string) => byId.get(id)).filter(Boolean) : raw;
+  const byId = new Map(raw.map((q) => [q.id, q]));
+  type QuestionType = typeof raw[0];
+  const questions: QuestionType[] = useAttemptOrder 
+    ? sessionQuestionIds.map((id: string) => byId.get(id)).filter((q): q is QuestionType => q !== undefined)
+    : raw;
 
   return NextResponse.json({
-    questions: questions.map((q: { id: string; type: string; prompt: string; order: number; options: Array<{ order: number; content: string; isCorrect?: boolean }> }) => ({
+    questions: questions.map((q) => ({
       ...q,
-      ...(canReview ? {
-        studentSelected: answerMap.get(q.id) || [],
-        questionScore: questionScoresMap?.[q.id] ?? null,
-      } : {}),
+      ...(canReview
+        ? {
+            studentSelected: answerMap.get(q.id) || [],
+            questionScore: questionScoresMap?.[q.id] ?? null,
+          }
+        : {}),
     })),
     canReview,
     reviewWindowEnd: reviewWindowEnd?.toISOString() ?? null, // Thời điểm hết cửa sổ xem lại

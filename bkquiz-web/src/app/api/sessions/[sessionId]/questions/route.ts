@@ -10,11 +10,6 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
     const { sessionId } = await ctx.params;
     await requireSessionAccess(userId, sessionId, 'teacher');
 
-  const session = await prisma.quizSession.findUnique({
-    where: { id: sessionId },
-    select: { id: true, status: true },
-  });
-
   // Build snapshot if needed (will check internally if already built)
   await buildSessionSnapshotIfNeeded(sessionId);
 
