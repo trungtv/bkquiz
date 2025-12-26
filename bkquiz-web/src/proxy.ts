@@ -1,78 +1,73 @@
 import type { NextFetchEvent, NextRequest } from 'next/server';
 import { detectBot } from '@arcjet/next';
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import createMiddleware from 'next-intl/middleware';
 import { NextResponse } from 'next/server';
 import arcjet from '@/libs/Arcjet';
-import { routing } from './libs/I18nRouting';
+import { routing } from '@/libs/I18nRouting';
+import { AppConfig } from '@/utils/AppConfig';
 
 const handleI18nRouting = createMiddleware(routing);
 
-const isProtectedRoute = createRouteMatcher([
-  '/dashboard(.*)',
-  '/:locale/dashboard(.*)',
-]);
-
-const isAuthPage = createRouteMatcher([
-  '/sign-in(.*)',
-  '/:locale/sign-in(.*)',
-  '/sign-up(.*)',
-  '/:locale/sign-up(.*)',
-]);
-
-// Improve security with Arcjet
 const aj = arcjet.withRule(
   detectBot({
     mode: 'LIVE',
-    // Block all bots except the following
-    allow: [
-      // See https://docs.arcjet.com/bot-protection/identifying-bots
-      'CATEGORY:SEARCH_ENGINE', // Allow search engines
-      'CATEGORY:PREVIEW', // Allow preview links to show OG images
-      'CATEGORY:MONITOR', // Allow uptime monitoring services
-    ],
+    allow: ['CATEGORY:SEARCH_ENGINE', 'CATEGORY:PREVIEW', 'CATEGORY:MONITOR'],
   }),
 );
 
-export default async function proxy(
-  request: NextRequest,
-  event: NextFetchEvent,
-) {
-  // Verify the request with Arcjet
-  // Use `process.env` instead of Env to reduce bundle size in middleware
-  if (process.env.ARCJET_KEY) {
-    const decision = await aj.protect(request);
+function isProtectedPathname(pathname: string) {
+  return pathname === '/dashboard'
+    || pathname.startsWith('/dashboard/')
+    || pathname.endsWith('/dashboard')
+    || pathname.includes('/dashboard/');
+}
 
+function buildSignInUrl(req: NextRequest) {
+  const localePrefix = req.nextUrl.pathname.match(/^\/([a-z]{2})(\/|$)/i)?.[1];
+  const signInPath = localePrefix ? `/${localePrefix}/sign-in` : '/sign-in';
+  return new URL(signInPath, req.url);
+}
+
+export default async function middleware(req: NextRequest, event: NextFetchEvent) {
+  const pathname = req.nextUrl.pathname;
+
+  // 1. TRƯỜNG HỢP API: Cho qua ngay lập tức, không xử lý gì thêm
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
+  // 2. Redirect /privacy và /terms (cho Google OAuth)
+  if (pathname === '/privacy' || pathname === '/terms') {
+    return NextResponse.redirect(new URL(`/${AppConfig.defaultLocale}${pathname}`, req.url));
+  }
+
+  // 3. Bảo vệ bot bằng Arcjet (không chạy cho API)
+  void event;
+  if (process.env.ARCJET_KEY) {
+    const decision = await aj.protect(req);
     if (decision.isDenied()) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
   }
 
-  // Clerk keyless mode doesn't work with i18n, this is why we need to run the middleware conditionally
-  if (
-    isAuthPage(request) || isProtectedRoute(request)
-  ) {
-    return clerkMiddleware(async (auth, req) => {
-      if (isProtectedRoute(req)) {
-        const locale = req.nextUrl.pathname.match(/(\/.*)\/dashboard/)?.at(1) ?? '';
-
-        const signInUrl = new URL(`${locale}/sign-in`, req.url);
-
-        await auth.protect({
-          unauthenticatedUrl: signInUrl.toString(),
-        });
-      }
-
+  // 4. Kiểm tra Auth cho dashboard
+  if (isProtectedPathname(pathname)) {
+    if (process.env.DEV_BYPASS_AUTH === '1') {
       return handleI18nRouting(req);
-    })(request, event);
+    }
+    const hasSession = !!req.cookies.get('authjs.session-token')
+      || !!req.cookies.get('__Secure-authjs.session-token');
+
+    if (!hasSession) {
+      return NextResponse.redirect(buildSignInUrl(req));
+    }
   }
 
-  return handleI18nRouting(request);
+  // 5. Xử lý i18n cho các route còn lại
+  return handleI18nRouting(req);
 }
 
 export const config = {
-  // Match all pathnames except for
-  // - … if they start with `/_next`, `/_vercel` or `monitoring`
-  // - … the ones containing a dot (e.g. `favicon.ico`)
-  matcher: '/((?!_next|_vercel|monitoring|.*\\..*).*)',
+  // Matcher chuẩn để loại bỏ API và các file tĩnh
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)'],
 };
