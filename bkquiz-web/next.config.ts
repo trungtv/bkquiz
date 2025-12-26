@@ -18,19 +18,11 @@ const baseConfig: NextConfig = {
   experimental: {
     turbopackFileSystemCacheForDev: true,
   },
-  // CRITICAL: Rewrite /api/* to bypass i18n routing completely
-  // This ensures NextAuth routes work on Vercel production
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: '/api/:path*',
-      },
-    ];
-  },
 };
 
 // Initialize the Next-Intl plugin
+// Note: The plugin automatically handles i18n routing, but API routes are excluded
+// via middleware matcher and early return in middleware function
 let configWithPlugins = createNextIntlPlugin('./src/libs/I18n.ts')(baseConfig);
 
 // Conditionally enable bundle analysis
