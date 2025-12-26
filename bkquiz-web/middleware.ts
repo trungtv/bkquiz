@@ -34,7 +34,8 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
   const pathname = req.nextUrl.pathname;
 
   // CRITICAL: Let API routes pass-through FIRST (before any other processing)
-  // This must be checked before Arcjet to avoid any interference
+  // This must be checked before ANY other middleware logic to avoid i18n routing interference
+  // This check happens BEFORE next-intl middleware can rewrite the path
   if (pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
@@ -72,7 +73,15 @@ export const config = {
   // Exclude API routes, static files, and Next.js internals from middleware
   // CRITICAL: 'api' must be first in the negative lookahead to prevent i18n routing from intercepting NextAuth
   // If 'api' is not first → OAuth will fail 100%
+  // Using a more explicit pattern to ensure /api/* is completely excluded
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
+    /*
+     * Match all paths EXCEPT:
+     * - /api/* (API routes - MUST be excluded)
+     * - /_next/* (Next.js internals)
+     * - Static files (favicon.ico, robots.txt, sitemap.xml)
+     * - Files with extensions (.*\\..*)
+     */
+    '/((?!api/|_next/|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\..*).*)',
   ],
 };
