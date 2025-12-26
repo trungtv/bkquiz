@@ -70,20 +70,9 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
 
 export const config = {
   // Exclude API routes, static files, and Next.js internals from middleware
-  // CRITICAL: Exclude '/api' completely to prevent i18n routing from intercepting NextAuth
-  // The regex matches all paths EXCEPT those starting with: /api, /_next, /_vercel, /monitoring, or containing a dot
+  // CRITICAL: 'api' must be first in the negative lookahead to prevent i18n routing from intercepting NextAuth
+  // If 'api' is not first → OAuth will fail 100%
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - /api (API routes - MUST be excluded for NextAuth to work)
-     * - /_next/static (static files)
-     * - /_next/image (image optimization files)
-     * - /_next (Next.js internals)
-     * - /_vercel (Vercel internals)
-     * - /monitoring (Sentry tunnel)
-     * - favicon.ico, robots.txt, sitemap.xml
-     * - ... and the ones containing a dot (e.g. favicon.ico)
-     */
-    '/((?!api/|_next/static|_next/image|_next|_vercel|monitoring|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
   ],
 };
