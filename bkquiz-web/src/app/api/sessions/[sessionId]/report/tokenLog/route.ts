@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { requireSessionAccess, requireUser } from '@/server/authz';
-import { handleAuthorizationError } from '@/server/authzHelpers';
 import { prisma } from '@/server/prisma';
 
 function csvEscape(x: string) {
@@ -82,24 +81,17 @@ export async function GET(_: Request, ctx: { params: Promise<{ sessionId: string
     });
   }
 
-    return NextResponse.json({
-      logs: logs.map(l => ({
-        id: l.id,
-        type: l.type,
-        ok: l.ok,
-        createdAt: l.createdAt,
-        dueAt: l.dueAt,
-        enteredToken: l.enteredToken,
-        attemptId: l.attempt.id,
-        user: l.attempt.user,
-      })),
-    });
-  } catch (error) {
-    const authzResponse = handleAuthorizationError(error);
-    if (authzResponse) {
-      return authzResponse;
-    }
-    throw error;
-  }
+  return NextResponse.json({
+    logs: logs.map(l => ({
+      id: l.id,
+      type: l.type,
+      ok: l.ok,
+      createdAt: l.createdAt,
+      dueAt: l.dueAt,
+      enteredToken: l.enteredToken,
+      attemptId: l.attempt.id,
+      user: l.attempt.user,
+    })),
+  });
 }
 // EOF
