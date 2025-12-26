@@ -59,5 +59,9 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
 }
 
 export const config = {
-  matcher: '/((?!_next|_vercel|monitoring|.*\\..*).*)',
+  // Exclude API routes, static files, and Next.js internals from middleware
+  // CRITICAL: 'api' must be first to prevent i18n routing from intercepting NextAuth
+  matcher: [
+    '/((?!api|_next/static|_next/image|_next|_vercel|monitoring|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)',
+  ],
 };
