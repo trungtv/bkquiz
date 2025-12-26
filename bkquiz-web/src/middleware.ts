@@ -6,7 +6,6 @@ import arcjet from '@/libs/Arcjet';
 import { routing } from '@/libs/I18nRouting';
 import { AppConfig } from '@/utils/AppConfig';
 
-// Note: we keep i18n + Arcjet behavior from the boilerplate.
 const handleI18nRouting = createMiddleware(routing);
 
 const aj = arcjet.withRule(
@@ -32,12 +31,17 @@ function buildSignInUrl(req: NextRequest) {
 export default async function middleware(req: NextRequest, event: NextFetchEvent) {
   const pathname = req.nextUrl.pathname;
 
-  // CRITICAL: Let API routes pass-through FIRST (before any other processing)
-  // Returning immediately ensures NO OTHER LOGIC (i18n, Arcjet, etc.) can intercept
+  // 1. TRƯỜNG HỢP API: Cho qua ngay lập tức, không xử lý gì thêm
   if (pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
 
+  // 2. Redirect /privacy và /terms (cho Google OAuth)
+  if (pathname === '/privacy' || pathname === '/terms') {
+    return NextResponse.redirect(new URL(`/${AppConfig.defaultLocale}${pathname}`, req.url));
+  }
+
+  // 3. Bảo vệ bot bằng Arcjet (không chạy cho API)
   void event;
   if (process.env.ARCJET_KEY) {
     const decision = await aj.protect(req);
@@ -46,13 +50,7 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
     }
   }
 
-  // Redirect /privacy and /terms to default locale (for OAuth consent screen)
-  if (pathname === '/privacy' || pathname === '/terms') {
-    const defaultLocale = AppConfig.defaultLocale;
-    return NextResponse.redirect(new URL(`/${defaultLocale}${pathname}`, req.url));
-  }
-
-  // Minimal protection for dashboard area. (We will later add role checks per page/API.)
+  // 4. Kiểm tra Auth cho dashboard
   if (isProtectedPathname(pathname)) {
     if (process.env.DEV_BYPASS_AUTH === '1') {
       return handleI18nRouting(req);
@@ -65,22 +63,11 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
     }
   }
 
+  // 5. Xử lý i18n cho các route còn lại
   return handleI18nRouting(req);
 }
 
 export const config = {
-  // Exclude API routes, static files, and Next.js internals from middleware
-  // CRITICAL: 'api' must be first in the negative lookahead to prevent i18n routing from intercepting NextAuth
-  // If 'api' is not first → OAuth will fail 100%
-  // Using a more explicit pattern to ensure /api/* is completely excluded
-  matcher: [
-    /*
-     * Match all paths EXCEPT:
-     * - /api/* (API routes - MUST be excluded)
-     * - /_next/* (Next.js internals)
-     * - Static files (favicon.ico, robots.txt, sitemap.xml)
-     * - Files with extensions (.*\\..*)
-     */
-    '/((?!api/|_next/|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\..*).*)',
-  ],
+  // Matcher chuẩn để loại bỏ API và các file tĩnh
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)'],
 };
