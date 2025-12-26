@@ -7,6 +7,7 @@ import { prisma } from '@/server/prisma';
 import { normalizeTagName } from '@/utils/tags';
 
 export const runtime = 'nodejs';
+export const maxDuration = 10; // Vercel Hobby limit: 10 seconds
 
 export async function POST(req: Request) {
   try {
@@ -104,48 +105,92 @@ export async function POST(req: Request) {
           });
     }
 
-    let createdTags = 0;
-    let importedQuestions = 0;
-
+    // ✅ OPTIMIZED: Batch operations để tránh timeout
+    // Step 1: Collect all unique tags first
+    const uniqueTagNames = new Set<string>();
     for (const q of parsed.questions) {
-      const question = await prisma.question.create({
-        data: {
-          poolId: pool.id,
-          type: q.type,
-          prompt: q.prompt,
-          createdByTeacherId: userId,
-          options: {
-            create: q.options.map(o => ({
-              content: o.content,
-              isCorrect: o.isCorrect,
-              order: o.order,
-            })),
-          },
-        },
+      for (const tagName of q.tags) {
+        uniqueTagNames.add(tagName.trim());
+      }
+    }
+
+    // Step 2: Upsert all tags in batch
+    const tagMap = new Map<string, string>(); // normalizedName -> tagId
+    let createdTags = 0;
+
+    for (const tagName of uniqueTagNames) {
+      const normalizedName = normalizeTagName(tagName);
+      const before = await prisma.tag.findUnique({ where: { normalizedName }, select: { id: true } });
+      const tag = await prisma.tag.upsert({
+        where: { normalizedName },
+        update: { name: tagName },
+        create: { name: tagName, normalizedName },
         select: { id: true },
       });
+      tagMap.set(normalizedName, tag.id);
+      if (!before) {
+        createdTags += 1;
+      }
+    }
 
-      importedQuestions += 1;
+    // Step 3: Create all questions with nested options (Prisma supports nested create)
+    // Use transaction để đảm bảo atomicity và performance tốt hơn
+    const questions = await prisma.$transaction(
+      parsed.questions.map(q =>
+        prisma.question.create({
+          data: {
+            id: nanoid(),
+            poolId: pool.id,
+            type: q.type,
+            prompt: q.prompt,
+            createdByTeacherId: userId,
+            updatedAt: new Date(),
+            options: {
+              create: q.options.map(o => ({
+                id: nanoid(),
+                content: o.content,
+                isCorrect: o.isCorrect,
+                order: o.order,
+                updatedAt: new Date(),
+              })),
+            },
+          },
+          select: { id: true },
+        }),
+      ),
+    );
 
+    const importedQuestions = questions.length;
+
+    // Step 4: Create all questionTags in batch
+    const questionTags: Array<{ questionId: string; tagId: string }> = [];
+    for (let i = 0; i < parsed.questions.length; i++) {
+      const q = parsed.questions[i];
+      const question = questions[i];
+      if (!q || !question) {
+        continue;
+      }
+      const questionId = question.id;
       for (const tagName of q.tags) {
         const normalizedName = normalizeTagName(tagName);
-
-        const before = await prisma.tag.findUnique({ where: { normalizedName }, select: { id: true } });
-
-        const tag = await prisma.tag.upsert({
-          where: { normalizedName },
-          update: { name: tagName.trim() },
-          create: { name: tagName.trim(), normalizedName },
-          select: { id: true },
-        });
-        if (!before) {
-          createdTags += 1;
+        const tagId = tagMap.get(normalizedName);
+        if (tagId) {
+          questionTags.push({ questionId, tagId });
         }
-
-        await prisma.questionTag.create({
-          data: { questionId: question.id, tagId: tag.id },
-        }).catch(() => null);
       }
+    }
+
+    // Batch create questionTags (skip duplicates)
+    if (questionTags.length > 0) {
+      // Prisma createMany doesn't support skipDuplicates for composite keys,
+      // so we use Promise.all with catch for duplicates
+      await Promise.all(
+        questionTags.map(qt =>
+          prisma.questionTag.create({
+            data: qt,
+          }).catch(() => null), // Ignore duplicate errors
+        ),
+      );
     }
 
     return NextResponse.json({

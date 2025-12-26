@@ -4,6 +4,9 @@ import { requirePoolPermission } from '@/server/poolAuthz';
 import { prisma } from '@/server/prisma';
 import { generatePoolMarkdown } from '@/server/export/markdownPool';
 
+export const runtime = 'nodejs';
+export const maxDuration = 10; // Vercel Hobby limit: 10 seconds
+
 export async function GET(_: Request, ctx: { params: Promise<{ poolId: string }> }) {
   const { userId } = await requireUser();
   const { poolId } = await ctx.params;

@@ -3,6 +3,9 @@ import { requireAttemptAccess, requireUser } from '@/server/authz';
 import { prisma } from '@/server/prisma';
 import { validateAttemptTimeLimit } from '@/server/attemptTimeLimit';
 
+export const runtime = 'nodejs';
+export const maxDuration = 10; // Vercel Hobby limit: 10 seconds
+
 type AnswerRow = Awaited<ReturnType<typeof prisma.answer.findMany>>[number];
 type SnapshotRow = {
   id: string;

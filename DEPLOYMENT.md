@@ -6,8 +6,11 @@ Hướng dẫn deploy BKquiz lên production.
 
 BKquiz là Next.js fullstack application, có thể deploy lên:
 - **Vercel** (Recommended) - Optimized cho Next.js
+- **Supabase** - Database + Storage (xem [DEPLOYMENT_SUPABASE.md](./DEPLOYMENT_SUPABASE.md))
 - **Docker** - Self-hosted hoặc cloud platforms
 - **Other platforms** - Bất kỳ platform nào hỗ trợ Node.js
+
+> **📘 Hướng dẫn Supabase**: Xem [DEPLOYMENT_SUPABASE.md](./DEPLOYMENT_SUPABASE.md) để biết cách deploy với Supabase PostgreSQL và Storage.
 
 ---
 
