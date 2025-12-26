@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getUserRole, requireQuizOwnership, requireTeacherInClassroom, requireUser } from '@/server/authz';
+import { handleAuthorizationError } from '@/server/authzHelpers';
 import { prisma } from '@/server/prisma';
 import { buildSessionSnapshotIfNeeded } from '@/server/quizSnapshot';
 import { generateTotpSecret } from '@/server/totp';
@@ -183,24 +184,17 @@ export async function GET(_req: Request) {
 }
 
 export async function POST(req: Request) {
-  const { userId } = await requireUser();
-  const body = CreateSessionSchema.parse(await req.json());
-
-  // Check teacher có trong classroom
-  await requireTeacherInClassroom(userId, body.classroomId);
-
-  // Check quiz tồn tại và teacher sở hữu quiz
   try {
-    await requireQuizOwnership(userId, body.quizId);
-  } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
-    if (error === 'QUIZ_NOT_FOUND') {
-      return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
-    }
-    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
-  }
+    const { userId } = await requireUser();
+    const body = CreateSessionSchema.parse(await req.json());
 
-  const quiz = await prisma.quiz.findUnique({
+    // Check teacher có trong classroom
+    await requireTeacherInClassroom(userId, body.classroomId);
+
+    // Check quiz tồn tại và teacher sở hữu quiz
+    await requireQuizOwnership(userId, body.quizId);
+
+    const quiz = await prisma.quiz.findUnique({
     where: { id: body.quizId },
     select: { id: true, _count: { select: { rules: true } } },
   });
@@ -265,6 +259,16 @@ export async function POST(req: Request) {
     // But log the error so we know there's an issue
   }
 
-  return NextResponse.json({ sessionId: session.id, totpStepSeconds: session.totpStepSeconds, status: session.status });
+    return NextResponse.json({ sessionId: session.id, totpStepSeconds: session.totpStepSeconds, status: session.status });
+  } catch (error) {
+    const authzResponse = handleAuthorizationError(error);
+    if (authzResponse) {
+      return authzResponse;
+    }
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'INVALID_INPUT', details: error.issues }, { status: 400 });
+    }
+    throw error;
+  }
 }
 // EOF

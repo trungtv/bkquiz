@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireQuizOwnership, requireTeacher, requireUser } from '@/server/authz';
+import { handleAuthorizationError } from '@/server/authzHelpers';
 import { prisma } from '@/server/prisma';
 import { normalizeTagName } from '@/utils/tags';
 
@@ -15,35 +16,34 @@ const UpsertRuleSchema = z.object({
 });
 
 export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }> }) {
-  const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
-  const { quizId } = await ctx.params;
-
   try {
+    const { userId, devRole } = await requireUser();
+    await requireTeacher(userId, devRole);
+    const { quizId } = await ctx.params;
     await requireQuizOwnership(userId, quizId);
-  } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
-    if (error === 'QUIZ_NOT_FOUND') {
-      return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
+
+    const rules = await prisma.quizRule.findMany({
+      where: { quizId },
+      orderBy: { updatedAt: 'desc' },
+      select: {
+        id: true,
+        count: true,
+        commonCount: true,
+        variantCount: true,
+        extraPercent: true,
+        filters: true,
+        tag: { select: { id: true, name: true, normalizedName: true } },
+      },
+    });
+
+    return NextResponse.json({ rules });
+  } catch (error) {
+    const authzResponse = handleAuthorizationError(error);
+    if (authzResponse) {
+      return authzResponse;
     }
-    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+    throw error;
   }
-
-  const rules = await prisma.quizRule.findMany({
-    where: { quizId },
-    orderBy: { updatedAt: 'desc' },
-    select: {
-      id: true,
-      count: true,
-      commonCount: true,
-      variantCount: true,
-      extraPercent: true,
-      filters: true,
-      tag: { select: { id: true, name: true, normalizedName: true } },
-    },
-  });
-
-  return NextResponse.json({ rules });
 }
 
 export async function POST(req: Request, ctx: { params: Promise<{ quizId: string }> }) {
@@ -53,15 +53,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ quizId: string
     const { quizId } = await ctx.params;
     const body = UpsertRuleSchema.parse(await req.json());
 
-    try {
-      await requireQuizOwnership(userId, quizId);
-    } catch (err) {
-      const error = err instanceof Error ? err.message : String(err);
-      if (error === 'QUIZ_NOT_FOUND') {
-        return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
-      }
-      return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
-    }
+    await requireQuizOwnership(userId, quizId);
 
     const normalized = normalizeTagName(body.tag);
     let tag;
@@ -141,6 +133,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ quizId: string
 
     return NextResponse.json({ ok: true, rule });
   } catch (error) {
+    const authzResponse = handleAuthorizationError(error);
+    if (authzResponse) {
+      return authzResponse;
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'INVALID_INPUT', details: error.issues }, { status: 400 });
     }
@@ -150,30 +146,30 @@ export async function POST(req: Request, ctx: { params: Promise<{ quizId: string
 }
 
 export async function DELETE(req: Request, ctx: { params: Promise<{ quizId: string }> }) {
-  const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
-  const { quizId } = await ctx.params;
-  const url = new URL(req.url);
-  const ruleId = url.searchParams.get('ruleId');
-
-  if (!ruleId) {
-    return NextResponse.json({ error: 'MISSING_RULE_ID' }, { status: 400 });
-  }
-
   try {
-    await requireQuizOwnership(userId, quizId);
-  } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
-    if (error === 'QUIZ_NOT_FOUND') {
-      return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
+    const { userId, devRole } = await requireUser();
+    await requireTeacher(userId, devRole);
+    const { quizId } = await ctx.params;
+    const url = new URL(req.url);
+    const ruleId = url.searchParams.get('ruleId');
+
+    if (!ruleId) {
+      return NextResponse.json({ error: 'MISSING_RULE_ID' }, { status: 400 });
     }
-    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+
+    await requireQuizOwnership(userId, quizId);
+
+    await prisma.quizRule.delete({
+      where: { id: ruleId },
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const authzResponse = handleAuthorizationError(error);
+    if (authzResponse) {
+      return authzResponse;
+    }
+    throw error;
   }
-
-  await prisma.quizRule.delete({
-    where: { id: ruleId },
-  });
-
-  return NextResponse.json({ ok: true });
 }
 // EOF

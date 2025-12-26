@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireQuizOwnership, requireTeacher, requireUser } from '@/server/authz';
+import { handleAuthorizationError } from '@/server/authzHelpers';
 import { prisma } from '@/server/prisma';
 
 type VariantSettings = {
@@ -21,52 +22,43 @@ const PatchSettingsSchema = z.object({
 });
 
 export async function GET(_: Request, ctx: { params: Promise<{ quizId: string }> }) {
-  const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
-  const { quizId } = await ctx.params;
-
   try {
+    const { userId, devRole } = await requireUser();
+    await requireTeacher(userId, devRole);
+    const { quizId } = await ctx.params;
     await requireQuizOwnership(userId, quizId);
-  } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
-    if (error === 'QUIZ_NOT_FOUND') {
-    return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
-  }
-    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
-  }
 
-  const quiz = await prisma.quiz.findUnique({
-    where: { id: quizId },
-    select: { id: true, settings: true },
-  });
+    const quiz = await prisma.quiz.findUnique({
+      where: { id: quizId },
+      select: { id: true, settings: true },
+    });
 
-  const settings = (quiz.settings ?? {}) as QuizSettings;
-  const variant = (settings.variant ?? {}) as VariantSettings;
-  return NextResponse.json({
-    quizId: quiz.id,
-    durationSeconds: typeof settings.durationSeconds === 'number' ? settings.durationSeconds : null,
-    variant: {
-      defaultExtraPercent: typeof variant.defaultExtraPercent === 'number' ? variant.defaultExtraPercent : 0.2,
-      perTagExtraPercent: variant.perTagExtraPercent ?? {},
-    },
-  });
+    const settings = (quiz.settings ?? {}) as QuizSettings;
+    const variant = (settings.variant ?? {}) as VariantSettings;
+    return NextResponse.json({
+      quizId: quiz.id,
+      durationSeconds: typeof settings.durationSeconds === 'number' ? settings.durationSeconds : null,
+      variant: {
+        defaultExtraPercent: typeof variant.defaultExtraPercent === 'number' ? variant.defaultExtraPercent : 0.2,
+        perTagExtraPercent: variant.perTagExtraPercent ?? {},
+      },
+    });
+  } catch (error) {
+    const authzResponse = handleAuthorizationError(error);
+    if (authzResponse) {
+      return authzResponse;
+    }
+    throw error;
+  }
 }
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ quizId: string }> }) {
-  const { userId, devRole } = await requireUser();
-  await requireTeacher(userId, devRole);
-  const { quizId } = await ctx.params;
-  const body = PatchSettingsSchema.parse(await req.json());
-
   try {
+    const { userId, devRole } = await requireUser();
+    await requireTeacher(userId, devRole);
+    const { quizId } = await ctx.params;
+    const body = PatchSettingsSchema.parse(await req.json());
     await requireQuizOwnership(userId, quizId);
-  } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
-    if (error === 'QUIZ_NOT_FOUND') {
-    return NextResponse.json({ error: 'QUIZ_NOT_FOUND' }, { status: 404 });
-  }
-    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
-  }
 
   const quiz = await prisma.quiz.findUnique({
     where: { id: quizId },
@@ -85,13 +77,23 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ quizId: strin
     next.variant.defaultExtraPercent = body.variant.defaultExtraPercent;
   }
 
-  const updated = await prisma.quiz.update({
-    where: { id: quizId },
-    data: { settings: next as unknown as any },
-    select: { id: true, settings: true },
-  });
+    const updated = await prisma.quiz.update({
+      where: { id: quizId },
+      data: { settings: next as unknown as any },
+      select: { id: true, settings: true },
+    });
 
-  return NextResponse.json({ ok: true, quizId: updated.id, settings: updated.settings });
+    return NextResponse.json({ ok: true, quizId: updated.id, settings: updated.settings });
+  } catch (error) {
+    const authzResponse = handleAuthorizationError(error);
+    if (authzResponse) {
+      return authzResponse;
+    }
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'INVALID_INPUT', details: error.issues }, { status: 400 });
+    }
+    throw error;
+  }
 }
 
 // EOF

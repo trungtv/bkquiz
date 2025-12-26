@@ -3,6 +3,21 @@ import { cookies } from 'next/headers';
 import { auth } from '@/auth';
 import { prisma } from '@/server/prisma';
 
+/**
+ * Custom error class for authorization errors
+ * Provides consistent error handling across the application
+ */
+export class AuthorizationError extends Error {
+  constructor(
+    public code: string,
+    public statusCode: number = 403,
+    message?: string,
+  ) {
+    super(message ?? code);
+    this.name = 'AuthorizationError';
+  }
+}
+
 async function getDevRoleFromCookies() {
   const c = await cookies();
   const v = c.get('bkquiz_dev_role')?.value;
@@ -70,23 +85,23 @@ export async function getUserRole(
 
 /**
  * Require user to have teacher system role
- * Throws error if user is not a teacher
+ * Throws AuthorizationError if user is not a teacher
  */
 export async function requireTeacher(userId: string, devRole?: 'teacher' | 'student') {
   const role = await getUserRole(userId, devRole);
   if (role !== 'teacher') {
-    throw new Error('FORBIDDEN: Teacher role required');
+    throw new AuthorizationError('FORBIDDEN', 403, 'Teacher role required');
   }
 }
 
 /**
  * Require user to have student system role
- * Throws error if user is not a student
+ * Throws AuthorizationError if user is not a student
  */
 export async function requireStudent(userId: string, devRole?: 'teacher' | 'student') {
   const role = await getUserRole(userId, devRole);
   if (role !== 'student') {
-    throw new Error('FORBIDDEN: Student role required');
+    throw new AuthorizationError('FORBIDDEN', 403, 'Student role required');
   }
 }
 
@@ -97,17 +112,17 @@ export async function requireTeacherInClassroom(userId: string, classroomId: str
   });
 
   if (!membership || membership.status !== 'active') {
-    throw new Error('CLASSROOM_FORBIDDEN');
+    throw new AuthorizationError('CLASSROOM_FORBIDDEN', 403, 'Classroom access denied');
   }
   if (membership.roleInClass !== 'teacher' && membership.roleInClass !== 'ta') {
-    throw new Error('CLASSROOM_FORBIDDEN');
+    throw new AuthorizationError('CLASSROOM_FORBIDDEN', 403, 'Teacher or TA role required in classroom');
   }
   return membership;
 }
 
 /**
  * Require user to own the quiz
- * Throws error if user is not the quiz owner
+ * Throws AuthorizationError if user is not the quiz owner
  * Returns the quiz for convenience
  */
 export async function requireQuizOwnership(userId: string, quizId: string) {
@@ -117,17 +132,17 @@ export async function requireQuizOwnership(userId: string, quizId: string) {
   });
 
   if (!quiz) {
-    throw new Error('QUIZ_NOT_FOUND');
+    throw new AuthorizationError('QUIZ_NOT_FOUND', 404, 'Quiz not found');
   }
   if (quiz.createdByTeacherId !== userId) {
-    throw new Error('FORBIDDEN: Quiz ownership required');
+    throw new AuthorizationError('FORBIDDEN', 403, 'Quiz ownership required');
   }
   return quiz;
 }
 
 /**
  * Require user to own the pool
- * Throws error if user is not the pool owner
+ * Throws AuthorizationError if user is not the pool owner
  * Returns the pool for convenience
  */
 export async function requirePoolOwnership(userId: string, poolId: string) {
@@ -137,17 +152,17 @@ export async function requirePoolOwnership(userId: string, poolId: string) {
   });
 
   if (!pool) {
-    throw new Error('POOL_NOT_FOUND');
+    throw new AuthorizationError('POOL_NOT_FOUND', 404, 'Pool not found');
   }
   if (pool.ownerTeacherId !== userId) {
-    throw new Error('FORBIDDEN: Pool ownership required');
+    throw new AuthorizationError('FORBIDDEN', 403, 'Pool ownership required');
   }
   return pool;
 }
 
 /**
  * Require user to own the classroom
- * Throws error if user is not the classroom owner
+ * Throws AuthorizationError if user is not the classroom owner
  * Returns the classroom for convenience
  */
 export async function requireClassroomOwnership(userId: string, classroomId: string) {
@@ -157,10 +172,10 @@ export async function requireClassroomOwnership(userId: string, classroomId: str
   });
 
   if (!classroom) {
-    throw new Error('CLASSROOM_NOT_FOUND');
+    throw new AuthorizationError('CLASSROOM_NOT_FOUND', 404, 'Classroom not found');
   }
   if (classroom.ownerTeacherId !== userId) {
-    throw new Error('FORBIDDEN: Classroom ownership required');
+    throw new AuthorizationError('FORBIDDEN', 403, 'Classroom ownership required');
   }
   return classroom;
 }
@@ -186,7 +201,7 @@ export async function requireSessionAccess(
   });
 
   if (!session) {
-    throw new Error('SESSION_NOT_FOUND');
+    throw new AuthorizationError('SESSION_NOT_FOUND', 404, 'Session not found');
   }
 
   // Check if user is teacher who owns the quiz
@@ -205,11 +220,11 @@ export async function requireSessionAccess(
   const userRole = isQuizOwner || isTeacherInClass ? 'teacher' : (isActiveMember ? 'student' : null);
 
   if (!userRole) {
-    throw new Error('FORBIDDEN: Session access denied');
+    throw new AuthorizationError('FORBIDDEN', 403, 'Session access denied');
   }
 
   if (requiredRole && userRole !== requiredRole) {
-    throw new Error(`FORBIDDEN: ${requiredRole} role required for this session`);
+    throw new AuthorizationError('FORBIDDEN', 403, `${requiredRole} role required for this session`);
   }
 
   return { session, userRole, isQuizOwner, isTeacherInClass };
@@ -227,10 +242,10 @@ export async function requireAttemptAccess(userId: string, attemptId: string) {
   });
 
   if (!attempt) {
-    throw new Error('ATTEMPT_NOT_FOUND');
+    throw new AuthorizationError('ATTEMPT_NOT_FOUND', 404, 'Attempt not found');
   }
   if (attempt.userId !== userId) {
-    throw new Error('FORBIDDEN: Attempt access denied');
+    throw new AuthorizationError('FORBIDDEN', 403, 'Attempt access denied');
   }
   return attempt;
 }

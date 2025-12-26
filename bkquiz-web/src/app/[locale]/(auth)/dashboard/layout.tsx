@@ -1,11 +1,11 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
-import Link from "next/link";
-import { LocaleSwitcher } from "@/components/LocaleSwitcher";
-import { getUserRole, requireUser } from "@/server/authz";
-import { AppConfig } from "@/utils/AppConfig";
-import { MobileMenuButton } from "./MobileMenuButton";
-import { Sidebar } from "./Sidebar";
-import { SignOutButton } from "./SignOutButton";
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+import Link from 'next/link';
+import { LocaleSwitcher } from '@/components/LocaleSwitcher';
+import { getUserRole, requireUser } from '@/server/authz';
+import { AppConfig } from '@/utils/AppConfig';
+import { MobileMenuButton } from './MobileMenuButton';
+import { Sidebar } from './Sidebar';
+import { SignOutButton } from './SignOutButton';
 
 export default async function DashboardLayout(props: {
   children: React.ReactNode;
@@ -15,13 +15,13 @@ export default async function DashboardLayout(props: {
   setRequestLocale(locale);
   const t = await getTranslations({
     locale,
-    namespace: "DashboardLayout",
+    namespace: 'DashboardLayout',
   });
 
   const { userId, devRole } = await requireUser();
   const role = await getUserRole(
     userId,
-    devRole as "teacher" | "student" | undefined,
+    devRole as 'teacher' | 'student' | undefined,
   );
 
   return (
@@ -30,11 +30,11 @@ export default async function DashboardLayout(props: {
         {/* Sidebar – Desktop: always visible, Mobile: slide in/out */}
         <Sidebar
           role={role}
-          dashboardLink={t("dashboard_link")}
-          classesLink={t("classes_link")}
-          quizzesLink={t("quizzes_link")}
-          questionBankLink={t("question_bank_link")}
-          userProfileLink={t("user_profile_link")}
+          dashboardLink={t('dashboard_link')}
+          classesLink={t('classes_link')}
+          quizzesLink={t('quizzes_link')}
+          questionBankLink={t('question_bank_link')}
+          userProfileLink={t('user_profile_link')}
         />
 
         {/* Main column */}
@@ -54,17 +54,17 @@ export default async function DashboardLayout(props: {
               </span>
               <span
                 className={`hidden rounded-sm px-2 py-1 text-xs font-medium sm:inline ${
-                  role === "teacher"
-                    ? "bg-primary/20 text-primary"
-                    : "bg-indigo-500/20 text-indigo-400"
+                  role === 'teacher'
+                    ? 'bg-primary/20 text-primary'
+                    : 'bg-indigo-500/20 text-indigo-400'
                 }`}
               >
-                {role === "teacher" ? "Teacher" : "Student"}
+                {role === 'teacher' ? 'Teacher' : 'Student'}
               </span>
             </div>
             <div className="flex items-center gap-4 text-sm">
               <LocaleSwitcher />
-              <SignOutButton label={t("sign_out")} />
+              <SignOutButton label={t('sign_out')} />
             </div>
           </header>
 
