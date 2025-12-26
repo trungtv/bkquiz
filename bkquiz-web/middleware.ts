@@ -4,6 +4,7 @@ import createMiddleware from 'next-intl/middleware';
 import { NextResponse } from 'next/server';
 import arcjet from '@/libs/Arcjet';
 import { routing } from '@/libs/I18nRouting';
+import { AppConfig } from '@/utils/AppConfig';
 
 // Note: we keep i18n + Arcjet behavior from the boilerplate.
 const handleI18nRouting = createMiddleware(routing);
@@ -40,6 +41,13 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
   // Let API routes pass-through (avoid i18n rewrites on /api/*)
   if (req.nextUrl.pathname.startsWith('/api/')) {
     return NextResponse.next();
+  }
+
+  // Redirect /privacy and /terms to default locale (for OAuth consent screen)
+  const pathname = req.nextUrl.pathname;
+  if (pathname === '/privacy' || pathname === '/terms') {
+    const defaultLocale = AppConfig.defaultLocale;
+    return NextResponse.redirect(new URL(`/${defaultLocale}${pathname}`, req.url));
   }
 
   // Minimal protection for dashboard area. (We will later add role checks per page/API.)
