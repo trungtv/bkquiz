@@ -18,6 +18,16 @@ const baseConfig: NextConfig = {
   experimental: {
     turbopackFileSystemCacheForDev: true,
   },
+  // CRITICAL: Rewrite /api/* to bypass i18n routing completely
+  // This ensures NextAuth routes work on Vercel production
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: '/api/:path*',
+      },
+    ];
+  },
 };
 
 // Initialize the Next-Intl plugin

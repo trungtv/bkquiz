@@ -35,7 +35,7 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
 
   // CRITICAL: Let API routes pass-through FIRST (before any other processing)
   // This must be checked before ANY other middleware logic to avoid i18n routing interference
-  // This check happens BEFORE next-intl middleware can rewrite the path
+  // Return immediately without calling handleI18nRouting to completely bypass i18n
   if (pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
