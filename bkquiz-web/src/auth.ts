@@ -8,6 +8,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   adapter: CustomPrismaAdapter(prisma),
   session: { strategy: 'database' },
+  pages: {
+    signIn: '/sign-in',
+  },
+  trustHost: true, // Required for Vercel production
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
