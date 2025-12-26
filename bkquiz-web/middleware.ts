@@ -30,16 +30,15 @@ function buildSignInUrl(req: NextRequest) {
 }
 
 export default async function middleware(req: NextRequest, event: NextFetchEvent) {
-  void event;
   const pathname = req.nextUrl.pathname;
 
   // CRITICAL: Let API routes pass-through FIRST (before any other processing)
-  // This must be checked before ANY other middleware logic to avoid i18n routing interference
-  // Return immediately without calling handleI18nRouting to completely bypass i18n
+  // Returning immediately ensures NO OTHER LOGIC (i18n, Arcjet, etc.) can intercept
   if (pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
 
+  void event;
   if (process.env.ARCJET_KEY) {
     const decision = await aj.protect(req);
     if (decision.isDenied()) {
