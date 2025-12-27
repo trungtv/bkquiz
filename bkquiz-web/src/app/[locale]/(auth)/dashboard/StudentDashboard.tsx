@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -9,10 +10,16 @@ type StudentDashboardProps = {
   classes: Array<{ id: string; name: string; classCode: string }>;
   myActiveSessionsCount: number;
   myAttemptsCount: number;
+  locale: string;
 };
 
 export async function StudentDashboard(props: StudentDashboardProps) {
-  const { userId, classes, myActiveSessionsCount, myAttemptsCount } = props;
+  const { userId, classes, myActiveSessionsCount, myAttemptsCount, locale } = props;
+  setRequestLocale(locale);
+  const t = await getTranslations({
+    locale,
+    namespace: 'Dashboard.student',
+  });
 
   // Fetch active sessions (priority display)
   const activeSessions = await prisma.attempt.findMany({
@@ -107,19 +114,19 @@ export async function StudentDashboard(props: StudentDashboardProps) {
       <Card className="p-6 border-indigo-500/30 animate-slideUp">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <div className="text-sm text-indigo-400 uppercase tracking-wide">BKquiz Dashboard</div>
+            <div className="text-sm text-indigo-400 uppercase tracking-wide">{t('header_subtitle')}</div>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight text-text-heading">
-              Tổng quan
+              {t('header_title')}
             </h1>
             <div className="mt-2 text-sm text-text-muted">
-              Xem các lớp bạn tham gia và theo dõi các session đang diễn ra.
+              {t('header_description')}
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
             <Link href="/dashboard/sessions">
               <Button variant="primary" className="bg-indigo-500 hover:bg-indigo-600 hover:scale-105">
-                Xem các session của bạn
+                {t('view_my_sessions')}
               </Button>
             </Link>
           </div>
@@ -130,20 +137,20 @@ export async function StudentDashboard(props: StudentDashboardProps) {
       <div className="grid gap-4 md:grid-cols-3 animate-slideUp" style={{ animationDelay: '50ms' }}>
         <Link href="/dashboard/classes">
           <Card interactive className="p-6 cursor-pointer border-indigo-500/20 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-indigo-500/40">
-            <div className="text-sm text-text-muted">Classes</div>
+            <div className="text-sm text-text-muted">{t('classes_label')}</div>
             <div className="mt-1 flex items-baseline gap-2">
               <div className="text-3xl font-semibold text-indigo-400">{classes.length}</div>
               <Badge variant="neutral">active</Badge>
             </div>
             <div className="mt-2 text-xs text-text-muted">
-              Số lớp bạn đang tham gia.
+              {t('classes_description')}
             </div>
           </Card>
         </Link>
 
         <Link href="/dashboard/sessions">
           <Card interactive className="p-6 cursor-pointer border-indigo-500/20 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-indigo-500/40">
-            <div className="text-sm text-text-muted">My Active Sessions</div>
+            <div className="text-sm text-text-muted">{t('my_active_sessions_label')}</div>
             <div className="mt-1 flex items-baseline gap-2">
               <div className="text-3xl font-semibold text-indigo-400">{myActiveSessionsCount}</div>
               <Badge variant={myActiveSessionsCount > 0 ? 'success' : 'neutral'}>
@@ -151,20 +158,20 @@ export async function StudentDashboard(props: StudentDashboardProps) {
               </Badge>
             </div>
             <div className="mt-2 text-xs text-text-muted">
-              Sessions bạn đang tham gia.
+              {t('my_active_sessions_description')}
             </div>
           </Card>
         </Link>
 
         <Link href="/dashboard/sessions">
           <Card interactive className="p-6 cursor-pointer border-indigo-500/20 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-indigo-500/40">
-            <div className="text-sm text-text-muted">My Attempts</div>
+            <div className="text-sm text-text-muted">{t('my_attempts_label')}</div>
             <div className="mt-1 flex items-baseline gap-2">
               <div className="text-3xl font-semibold text-indigo-400">{myAttemptsCount}</div>
               <Badge variant="info">total</Badge>
             </div>
             <div className="mt-2 text-xs text-text-muted">
-              Tổng số bài bạn đã làm.
+              {t('my_attempts_description')}
             </div>
           </Card>
         </Link>
@@ -174,9 +181,7 @@ export async function StudentDashboard(props: StudentDashboardProps) {
       {activeSessions.length > 0 && (
         <Card className="p-6 border-indigo-500/30 animate-slideUp" style={{ animationDelay: '100ms' }}>
           <div className="text-lg font-semibold text-text-heading mb-4">
-            Đang làm bài (
-            {activeSessions.length}
-            )
+            {t('active_sessions_title', { count: activeSessions.length })}
           </div>
           <div className="space-y-3">
             {activeSessions.map((attempt, idx) => (
@@ -192,13 +197,13 @@ export async function StudentDashboard(props: StudentDashboardProps) {
                         {attempt.quizSession.quiz.title}
                       </div>
                       <div className="mt-1 text-xs text-text-muted">
-                        Bắt đầu:
+                        {t('started_at')}
                         {' '}
                         {formatDate(attempt.quizSession.startedAt)}
                       </div>
                     </div>
                     <Button variant="primary" size="sm" className="bg-indigo-500 hover:bg-indigo-600">
-                      Tiếp tục →
+                      {t('continue')}
                     </Button>
                   </div>
                 </Card>
@@ -214,14 +219,14 @@ export async function StudentDashboard(props: StudentDashboardProps) {
         <Card className="p-6 lg:col-span-2 border-indigo-500/20">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-lg font-semibold text-text-heading">My Classes</div>
+              <div className="text-lg font-semibold text-text-heading">{t('my_classes_title')}</div>
               <div className="mt-1 text-sm text-text-muted">
-                Các lớp bạn đang tham gia. Click để xem chi tiết.
+                {t('my_classes_description')}
               </div>
             </div>
             <Link href="/dashboard/classes">
               <Button variant="ghost" size="sm">
-                Xem tất cả
+                {t('view_all')}
               </Button>
             </Link>
           </div>
@@ -230,12 +235,12 @@ export async function StudentDashboard(props: StudentDashboardProps) {
               ? (
                   <div className="rounded-md border border-dashed border-indigo-500/30 px-4 py-8 text-center">
                     <div className="text-sm text-text-muted">
-                      Chưa có lớp nào.
+                      {t('no_classes_yet')}
                     </div>
                     <div className="mt-2">
                       <Link href="/dashboard/classes">
                         <Button variant="primary" size="sm" className="bg-indigo-500 hover:bg-indigo-600">
-                          Join lớp
+                          {t('join_class')}
                         </Button>
                       </Link>
                     </div>
@@ -266,19 +271,19 @@ export async function StudentDashboard(props: StudentDashboardProps) {
 
         {/* Performance Summary */}
         <Card className="p-6 border-indigo-500/30">
-          <div className="text-lg font-semibold text-text-heading mb-4">Performance</div>
+          <div className="text-lg font-semibold text-text-heading mb-4">{t('performance_title')}</div>
           {averageScore !== null
             ? (
                 <div className="space-y-4">
                   <div>
-                    <div className="text-xs text-text-muted">Điểm trung bình</div>
+                    <div className="text-xs text-text-muted">{t('average_score')}</div>
                     <div className="mt-1 text-3xl font-semibold text-indigo-400">
                       {averageScore.toFixed(1)}
                     </div>
                   </div>
                   {highestScore !== null && (
                     <div>
-                      <div className="text-xs text-text-muted">Điểm cao nhất</div>
+                      <div className="text-xs text-text-muted">{t('highest_score')}</div>
                       <div className="mt-1 text-2xl font-semibold text-indigo-400">
                         {highestScore.toFixed(1)}
                       </div>
@@ -286,18 +291,18 @@ export async function StudentDashboard(props: StudentDashboardProps) {
                   )}
                   <Link href="/dashboard/performance">
                     <Button variant="ghost" size="sm" className="w-full border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10">
-                      Xem chi tiết →
+                      {t('view_details')}
                     </Button>
                   </Link>
                 </div>
               )
             : (
                 <div className="text-center py-6 text-sm text-text-muted">
-                  Chưa có điểm số.
+                  {t('no_scores_yet')}
                   <div className="mt-2">
                     <Link href="/dashboard/sessions">
                       <Button variant="ghost" size="sm" className="border-indigo-500/30 text-indigo-400">
-                        Làm bài ngay
+                        {t('take_quiz_now')}
                       </Button>
                     </Link>
                   </div>
@@ -310,9 +315,7 @@ export async function StudentDashboard(props: StudentDashboardProps) {
       {upcomingSessions.length > 0 && (
         <Card className="p-6 border-indigo-500/20 animate-slideUp" style={{ animationDelay: '200ms' }}>
           <div className="text-lg font-semibold text-text-heading mb-4">
-            Chờ bắt đầu (
-            {upcomingSessions.length}
-            )
+            {t('upcoming_sessions_title', { count: upcomingSessions.length })}
           </div>
           <div className="space-y-3">
             {upcomingSessions.map((attempt, idx) => (
@@ -326,13 +329,13 @@ export async function StudentDashboard(props: StudentDashboardProps) {
                       {attempt.quizSession.quiz.title}
                     </div>
                     <div className="mt-1 text-xs text-text-muted">
-                      Tạo lúc:
+                      {t('created_at')}
                       {' '}
                       {formatDate(attempt.quizSession.createdAt)}
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" className="border-indigo-500/30 text-indigo-400">
-                    Xem lobby
+                    {t('view_lobby')}
                   </Button>
                 </div>
               </Link>
@@ -346,7 +349,7 @@ export async function StudentDashboard(props: StudentDashboardProps) {
         <details className="group">
           <summary className="cursor-pointer text-xs font-medium uppercase tracking-wide text-indigo-400 list-none transition-colors hover:text-indigo-300">
             <div className="flex items-center justify-between">
-              <span>Getting started</span>
+              <span>{t('getting_started')}</span>
               <span className="text-indigo-400 group-open:rotate-180 transition-transform duration-200">▼</span>
             </div>
           </summary>
@@ -354,12 +357,10 @@ export async function StudentDashboard(props: StudentDashboardProps) {
             <li>
               <span className="font-mono text-text-muted">1.</span>
               {' '}
-              Tham gia lớp học bằng
+              {t('getting_started_step1')}{' '}
+              <span className="font-mono">{t('class_code')}</span>
               {' '}
-              <span className="font-mono">class code</span>
-              {' '}
-              trong
-              {' '}
+              in{' '}
               <Link href="/dashboard/classes" className="text-indigo-400 hover:underline">
                 Classes
               </Link>
@@ -368,12 +369,10 @@ export async function StudentDashboard(props: StudentDashboardProps) {
             <li>
               <span className="font-mono text-text-muted">2.</span>
               {' '}
-              Xem các
+              {t('getting_started_step2')}{' '}
+              <span className="font-medium">{t('ongoing_sessions')}</span>
               {' '}
-              <span className="font-medium">session đang diễn ra</span>
-              {' '}
-              trong
-              {' '}
+              in{' '}
               <Link href="/dashboard/sessions" className="text-indigo-400 hover:underline">
                 My Sessions
               </Link>
@@ -382,12 +381,12 @@ export async function StudentDashboard(props: StudentDashboardProps) {
             <li>
               <span className="font-mono text-text-muted">3.</span>
               {' '}
-              Join session và làm bài quiz theo hướng dẫn của giáo viên.
+              {t('getting_started_step3')}
             </li>
             <li>
               <span className="font-mono text-text-muted">4.</span>
               {' '}
-              Xem kết quả và điểm số sau khi nộp bài.
+              {t('getting_started_step4')}
             </li>
           </ol>
         </details>

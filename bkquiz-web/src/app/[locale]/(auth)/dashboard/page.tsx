@@ -19,7 +19,10 @@ export async function generateMetadata(props: {
   };
 }
 
-export default async function Dashboard() {
+export default async function Dashboard(props: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await props.params;
   const { userId, devRole } = await requireUser();
   const role = await getUserRole(userId, devRole as 'teacher' | 'student' | undefined);
 
@@ -83,6 +86,7 @@ export default async function Dashboard() {
         quizCount={quizCount}
         poolCount={poolCount}
         activeSessionCount={activeSessionCount}
+        locale={locale}
       />
     );
   }
@@ -93,6 +97,7 @@ export default async function Dashboard() {
       classes={initial}
       myActiveSessionsCount={myActiveSessionsCount}
       myAttemptsCount={myAttemptsCount}
+      locale={locale}
     />
   );
 }
