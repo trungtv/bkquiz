@@ -1,6 +1,6 @@
 'use client';
 
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -34,7 +34,7 @@ type SessionStatus = {
   };
 };
 
-function formatDuration(startTime: string): string {
+function formatDuration(startTime: string, locale: string): string {
   const start = new Date(startTime).getTime();
   const now = Date.now();
   const seconds = Math.floor((now - start) / 1000);
@@ -43,15 +43,18 @@ function formatDuration(startTime: string): string {
   }
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) {
-    return `${minutes} phút`;
+    return locale === 'vi' ? `${minutes} phút` : `${minutes} minutes`;
   }
   const hours = Math.floor(minutes / 60);
-  return `${hours} giờ ${minutes % 60} phút`;
+  return locale === 'vi'
+    ? `${hours} giờ ${minutes % 60} phút`
+    : `${hours} hours ${minutes % 60} minutes`;
 }
 
 export function Lobby(props: { sessionId: string }) {
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations('SessionLobby');
   const [data, setData] = useState<SessionStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -139,13 +142,13 @@ export function Lobby(props: { sessionId: string }) {
     if (!data || data.status !== 'lobby') {
       return null;
     }
-    return formatDuration(data.createdAt);
-  }, [data]);
+    return formatDuration(data.createdAt, locale);
+  }, [data, locale]);
 
   if (error) {
     return (
       <Card className="p-6">
-        <div className="text-lg font-semibold">Không vào được session</div>
+        <div className="text-lg font-semibold">{t('cannot_access_session')}</div>
         <div className="mt-2 text-sm text-danger">{error}</div>
       </Card>
     );
@@ -168,7 +171,7 @@ export function Lobby(props: { sessionId: string }) {
           href={getI18nPath('/dashboard', locale)}
           className="hover:text-text-heading transition-colors"
         >
-          Dashboard
+          {t('breadcrumb_dashboard')}
         </Link>
         <span>/</span>
         <Link
@@ -178,7 +181,7 @@ export function Lobby(props: { sessionId: string }) {
           {data.classroom.name}
         </Link>
         <span>/</span>
-        <span className="text-text-muted">Session</span>
+        <span className="text-text-muted">{t('breadcrumb_session')}</span>
       </div>
 
       {/* Session Info Card */}
@@ -187,19 +190,19 @@ export function Lobby(props: { sessionId: string }) {
           <div className="text-xl font-semibold text-text-heading">{data.sessionName || data.quiz.title}</div>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-text-muted">
             <span>
-              Lớp:
+              {t('class')}
               {' '}
               <span className="font-semibold text-text-body">{data.classroom.name}</span>
             </span>
             <span>·</span>
             <span>
-              Mã lớp:
+              {t('class_code')}
               {' '}
               <span className="font-mono font-semibold text-text-body">{data.classroom.classCode}</span>
             </span>
             <span>·</span>
             <span>
-              Giảng viên:
+              {t('teacher')}
               {' '}
               <span className="font-semibold text-text-body">{data.quiz.createdBy.name}</span>
             </span>
@@ -232,14 +235,14 @@ export function Lobby(props: { sessionId: string }) {
                             <polyline points="12 6 12 12 16 14" />
                           </svg>
                         </div>
-                        <div className="text-xl font-semibold text-text-heading mb-2">Đã tham gia, đang chờ giảng viên bắt đầu</div>
+                        <div className="text-xl font-semibold text-text-heading mb-2">{t('joined_waiting')}</div>
                         <div className="text-sm text-text-body mb-4">
-                          Màn hình sẽ tự động chuyển khi session bắt đầu
+                          {t('auto_redirect_hint')}
                         </div>
                         {waitDuration
                           ? (
                               <div className="text-xs text-text-muted">
-                                Đã chờ:
+                                {t('waited')}
                                 {' '}
                                 <span className="font-mono font-semibold">{waitDuration}</span>
                               </div>
@@ -269,9 +272,9 @@ export function Lobby(props: { sessionId: string }) {
                             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                           </svg>
                         </div>
-                        <div className="text-xl font-semibold text-text-heading mb-2">Tham gia session</div>
+                        <div className="text-xl font-semibold text-text-heading mb-2">{t('join_session')}</div>
                         <div className="text-sm text-text-body mb-6">
-                          Bấm nút bên dưới để tham gia. Sau đó bạn sẽ chờ giảng viên bắt đầu.
+                          {t('join_session_hint')}
                         </div>
                         <Button
                           variant="primary"
@@ -306,12 +309,12 @@ export function Lobby(props: { sessionId: string }) {
                                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                     />
                                   </svg>
-                                  Đang tham gia...
+                                  {t('joining')}
                                 </>
                               )
                             : (
                                 <>
-                                  Tham gia session
+                                  {t('join')}
                                   <svg
                                     className="ml-2 h-5 w-5"
                                     xmlns="http://www.w3.org/2000/svg"
@@ -355,16 +358,16 @@ export function Lobby(props: { sessionId: string }) {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <div className="text-xl font-semibold text-text-heading mb-1">Session đã bắt đầu</div>
+                    <div className="text-xl font-semibold text-text-heading mb-1">{t('session_started')}</div>
                     <div className="text-base text-text-body">
-                      Bấm nút bên dưới để vào làm bài
+                      {t('click_to_start_quiz')}
                     </div>
                     {data.startedAt
                       ? (
                           <div className="mt-2 text-xs text-text-muted">
-                            Bắt đầu lúc:
+                            {t('started_at')}
                             {' '}
-                            <span className="font-mono">{new Date(data.startedAt).toLocaleTimeString('vi-VN')}</span>
+                            <span className="font-mono">{new Date(data.startedAt).toLocaleTimeString('en-US')}</span>
                           </div>
                         )
                       : null}
@@ -403,12 +406,12 @@ export function Lobby(props: { sessionId: string }) {
                               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                             />
                           </svg>
-                          Đang vào...
+                          {t('entering')}
                         </>
                       )
                     : (
                         <>
-                          Vào làm bài
+                          {t('start_quiz')}
                           <svg
                             className="ml-2 h-5 w-5"
                             xmlns="http://www.w3.org/2000/svg"
@@ -448,16 +451,16 @@ export function Lobby(props: { sessionId: string }) {
                       <polyline points="22 4 12 14.01 9 11.01" />
                     </svg>
                   </div>
-                  <div className="text-xl font-semibold text-text-heading mb-2">Session đã kết thúc</div>
+                  <div className="text-xl font-semibold text-text-heading mb-2">{t('session_ended')}</div>
                   <div className="text-sm text-text-muted mb-4">
-                    Hỏi giảng viên nếu cần xem lại kết quả
+                    {t('ask_teacher_for_results')}
                   </div>
                   {data.endedAt
                     ? (
                         <div className="text-xs text-text-muted">
-                          Kết thúc lúc:
+                          {t('ended_at')}
                           {' '}
-                          <span className="font-mono">{new Date(data.endedAt).toLocaleTimeString('vi-VN')}</span>
+                          <span className="font-mono">{new Date(data.endedAt).toLocaleTimeString('en-US')}</span>
                         </div>
                       )
                     : null}
@@ -466,7 +469,7 @@ export function Lobby(props: { sessionId: string }) {
                       variant="ghost"
                       onClick={() => router.push(getI18nPath(`/dashboard/classes/${data.classroom.id}`, locale))}
                     >
-                      Quay lại lớp học
+                      {t('back_to_class')}
                     </Button>
                   </div>
                 </div>

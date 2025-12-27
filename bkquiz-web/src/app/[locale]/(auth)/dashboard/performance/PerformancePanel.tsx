@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -19,6 +20,7 @@ type PerformanceData = {
 };
 
 export function PerformancePanel() {
+  const t = useTranslations('Performance');
   const [data, setData] = useState<PerformanceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,9 +44,11 @@ export function PerformancePanel() {
   }, []);
 
   function formatDate(dateStr: string | null) {
-    if (!dateStr) return '—';
+    if (!dateStr) {
+      return '—';
+    }
     const date = new Date(dateStr);
-    return new Intl.DateTimeFormat('vi-VN', {
+    return new Intl.DateTimeFormat('en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -75,8 +79,10 @@ export function PerformancePanel() {
   if (error) {
     return (
       <Card className="p-6">
-        <div className="text-sm text-text-muted">Lỗi</div>
-        <div className="mt-2 text-text-body">{error}</div>
+        <div className="text-sm text-text-muted">{t('error')}</div>
+        <div className="mt-2 text-text-body">
+          {error}
+        </div>
       </Card>
     );
   }
@@ -91,12 +97,12 @@ export function PerformancePanel() {
       <Card className="p-6 border-indigo-500/30">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <div className="text-sm text-indigo-400 uppercase tracking-wide">My Performance</div>
+            <div className="text-sm text-indigo-400 uppercase tracking-wide">{t('title')}</div>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight text-text-heading">
-              Thống kê của tôi
+              {t('subtitle')}
             </h1>
             <div className="mt-2 text-sm text-text-muted">
-              Xem điểm số và thống kê các bài quiz bạn đã làm.
+              {t('description')}
             </div>
           </div>
         </div>
@@ -105,18 +111,18 @@ export function PerformancePanel() {
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="p-6 border-indigo-500/20">
-          <div className="text-sm text-text-muted">Tổng số bài đã làm</div>
+          <div className="text-sm text-text-muted">{t('total_attempts')}</div>
           <div className="mt-1 flex items-baseline gap-2">
             <div className="text-3xl font-semibold text-indigo-400">{data.totalAttempts}</div>
-            <Badge variant="info">attempts</Badge>
+            <Badge variant="info">{t('attempts')}</Badge>
           </div>
           <div className="mt-2 text-xs text-text-muted">
-            Số bài quiz bạn đã nộp.
+            {t('total_attempts_description')}
           </div>
         </Card>
 
         <Card className="p-6 border-indigo-500/20">
-          <div className="text-sm text-text-muted">Điểm trung bình</div>
+          <div className="text-sm text-text-muted">{t('average_score')}</div>
           <div className="mt-1 flex items-baseline gap-2">
             <div className="text-3xl font-semibold text-indigo-400">
               {data.averageScore !== null ? data.averageScore.toFixed(1) : '—'}
@@ -126,12 +132,12 @@ export function PerformancePanel() {
             )}
           </div>
           <div className="mt-2 text-xs text-text-muted">
-            Điểm trung bình tất cả các bài.
+            {t('average_score_description')}
           </div>
         </Card>
 
         <Card className="p-6 border-indigo-500/20">
-          <div className="text-sm text-text-muted">Điểm cao nhất</div>
+          <div className="text-sm text-text-muted">{t('highest_score')}</div>
           <div className="mt-1 flex items-baseline gap-2">
             <div className="text-3xl font-semibold text-indigo-400">
               {data.highestScore !== null ? data.highestScore.toFixed(1) : '—'}
@@ -141,7 +147,7 @@ export function PerformancePanel() {
             )}
           </div>
           <div className="mt-2 text-xs text-text-muted">
-            Điểm cao nhất bạn đạt được.
+            {t('highest_score_description')}
           </div>
         </Card>
       </div>
@@ -150,7 +156,7 @@ export function PerformancePanel() {
       {data.recentAttempts.length > 0 && (
         <Card className="p-6">
           <div className="text-lg font-semibold text-text-heading mb-4">
-            Bài làm gần đây ({data.recentAttempts.length})
+            {t('recent_attempts', { count: data.recentAttempts.length })}
           </div>
           <div className="space-y-2">
             {data.recentAttempts.map(attempt => (
@@ -161,7 +167,9 @@ export function PerformancePanel() {
                       {attempt.quizTitle}
                     </div>
                     <div className="mt-1 text-xs text-text-muted">
-                      Nộp lúc: {formatDate(attempt.submittedAt)}
+                      {t('submitted_at')}
+                      {' '}
+                      {formatDate(attempt.submittedAt)}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -171,12 +179,14 @@ export function PerformancePanel() {
                             variant={attempt.score >= 8 ? 'success' : (attempt.score >= 5 ? 'info' : 'neutral')}
                             className="text-xs"
                           >
-                            {attempt.score.toFixed(1)} / 10
+                            {attempt.score.toFixed(1)}
+                            {' '}
+                            / 10
                           </Badge>
                         )
                       : (
                           <Badge variant="neutral" className="text-xs">
-                            Chưa có điểm
+                            {t('no_score')}
                           </Badge>
                         )}
                     <span className="text-xs text-text-muted">→</span>
@@ -193,15 +203,18 @@ export function PerformancePanel() {
         <Card className="p-6">
           <div className="rounded-md border border-dashed border-indigo-500/30 px-4 py-8 text-center">
             <div className="text-sm text-text-muted">
-              Chưa có bài làm nào.
+              {t('no_attempts')}
             </div>
             <div className="mt-2 text-xs text-text-muted">
-              Tham gia các session để bắt đầu làm bài quiz.
+              {t('join_sessions_hint')}
             </div>
             <div className="mt-4">
               <Link href="/dashboard/sessions">
-                <button className="rounded-md bg-indigo-500/20 px-4 py-2 text-sm font-medium text-indigo-400 hover:bg-indigo-500/30 transition-colors">
-                  Xem Sessions
+                <button
+                  type="button"
+                  className="rounded-md bg-indigo-500/20 px-4 py-2 text-sm font-medium text-indigo-400 hover:bg-indigo-500/30 transition-colors"
+                >
+                  {t('view_sessions')}
                 </button>
               </Link>
             </div>
@@ -211,4 +224,3 @@ export function PerformancePanel() {
     </div>
   );
 }
-
