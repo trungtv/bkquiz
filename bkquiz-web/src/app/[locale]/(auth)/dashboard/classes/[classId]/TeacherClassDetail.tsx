@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -23,6 +24,8 @@ type TeacherClassDetailProps = {
 export function TeacherClassDetail(props: TeacherClassDetailProps) {
   const { classId } = props;
   const router = useRouter();
+  const t = useTranslations('Classes.detail');
+  const tClasses = useTranslations('Classes');
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -220,13 +223,13 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
       setReviewDelayMinutes(null);
       setSelectedTags([]);
       setQuizSearchQuery('');
-      setToast({ message: 'Đã tạo session thành công', type: 'success' });
+      setToast({ message: t('session_created_success'), type: 'success' });
       await loadSessions();
       setTimeout(() => {
         router.push(`/dashboard/sessions/${json.sessionId}/teacher`);
       }, 1000);
     } catch {
-      setCreateSessionError('Không tạo được session. Vui lòng thử lại.');
+      setCreateSessionError(t('cannot_create_session'));
     } finally {
       setCreateSessionBusy(false);
     }
@@ -241,7 +244,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
     return (
       <div className="space-y-7">
         <Card className="p-5 md:p-6">
-          <div className="text-center text-text-muted">Đang tải...</div>
+          <div className="text-center text-text-muted">{t('loading')}</div>
         </Card>
       </div>
     );
@@ -255,16 +258,16 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
       <nav className="text-sm animate-slideUp">
         <div className="flex items-center gap-2 text-text-muted">
           <Link href="/dashboard" className="hover:text-text-heading transition-colors">
-            Dashboard
+            {tClasses('breadcrumb_dashboard')}
           </Link>
           <span>·</span>
           <Link href="/dashboard/classes" className="hover:text-text-heading transition-colors">
-            Classes
+            {tClasses('my_classes')}
           </Link>
           <span>·</span>
           <span className="text-text-heading">{classInfo.name}</span>
           <Badge variant="success" className="text-[10px] px-1.5 py-0.5 ml-2">
-            Teacher
+            {t('teacher')}
           </Badge>
         </div>
       </nav>
@@ -295,7 +298,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
             }`}
             onClick={() => setActiveTab('members')}
           >
-            Members
+            {t('members')}
           </button>
           <button
             type="button"
@@ -306,7 +309,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
             }`}
             onClick={() => setActiveTab('sessions')}
           >
-            Sessions
+            {t('sessions')}
           </button>
           {isOwner && (
             <button
@@ -318,7 +321,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
               }`}
               onClick={() => setActiveTab('settings')}
             >
-              Settings
+              {t('settings')}
             </button>
           )}
         </div>
@@ -350,7 +353,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
           {activeTab === 'settings' && isOwner && (
             <div className="space-y-4">
               <div className="rounded-md border border-border-subtle bg-bg-section p-4">
-                <div className="text-sm font-medium text-text-heading">Class Code</div>
+                <div className="text-sm font-medium text-text-heading">{t('class_code_label')}</div>
                 <div className="mt-2 flex items-center gap-2">
                   <code className="rounded bg-bg-card px-3 py-2 font-mono text-sm">
                     {classInfo.classCode}
@@ -362,18 +365,18 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                       navigator.clipboard.writeText(classInfo.classCode);
                     }}
                   >
-                    Copy
+                    {t('copy')}
                   </Button>
                 </div>
                 <div className="mt-2 text-xs text-text-muted">
-                  Share class code này để học sinh join lớp.
+                  {t('share_class_code_hint')}
                 </div>
               </div>
 
               <Card className="p-5 md:p-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-text-heading">
-                    Tags
+                    {t('tags')}
                   </label>
                   <TagInput
                     value={tagsInput}
@@ -382,18 +385,18 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                     tags={tags}
                     showSaveButton={true}
                     disabled={tagsBusy}
-                    placeholder="2025, IT, HCM..."
+                    placeholder={t('tags_placeholder')}
                   />
                   <p className="text-xs text-text-muted">
-                    Gắn tags để phân loại và tìm kiếm lớp học dễ dàng hơn
+                    {t('tags_hint')}
                   </p>
                 </div>
               </Card>
 
               <div className="rounded-md border border-dashed border-border-subtle p-4">
-                <div className="text-sm font-medium text-text-heading">Danger Zone</div>
+                <div className="text-sm font-medium text-text-heading">{t('danger_zone')}</div>
                 <div className="mt-2 text-xs text-text-muted">
-                  Các thao tác nguy hiểm sẽ được thêm sau (archive, delete).
+                  {t('danger_zone_hint')}
                 </div>
               </div>
             </div>
@@ -406,7 +409,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
         <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4">
           <Card className="w-full max-w-6xl max-h-[90vh] flex flex-col p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-text-heading">Tạo Session</h2>
+              <h2 className="text-lg font-semibold text-text-heading">{t('create_session')}</h2>
               <button
                 type="button"
                 onClick={() => {
@@ -434,11 +437,11 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                   ? (
                     <div className="flex flex-1 items-center justify-center rounded-md border border-dashed border-border-subtle px-4 py-8 text-center text-sm text-text-muted">
                       <div>
-                        <div>Chưa có quiz nào.</div>
+                        <div>{t('no_quizzes_yet')}</div>
                         <div className="mt-2">
                           <Link href="/dashboard/quizzes">
                             <Button variant="primary" size="sm" className="hover:scale-105">
-                              Tạo quiz mới
+                              {t('create_new_quiz')}
                             </Button>
                           </Link>
                         </div>
@@ -451,7 +454,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                       <div>
                         <Input
                           type="text"
-                          placeholder="Tìm kiếm quiz..."
+                          placeholder={t('search_quiz_placeholder')}
                           value={quizSearchQuery}
                           onChange={e => setQuizSearchQuery(e.target.value)}
                           className="w-full"
@@ -461,7 +464,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                       {/* Selected Tags Filter */}
                       {selectedTags.length > 0 && (
                         <div className="flex flex-wrap items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2">
-                          <span className="text-xs text-text-muted">Filter:</span>
+                          <span className="text-xs text-text-muted">{t('filter')}</span>
                           {selectedTags.map((tag, idx) => (
                             <Badge
                               key={idx}
@@ -494,7 +497,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                               setSelectedTags([]);
                             }}
                           >
-                            Clear
+                            {t('clear')}
                           </Button>
                         </div>
                       )}
@@ -604,14 +607,14 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                                             </>
                                           )
                                         : (
-                                            <span className="text-xs text-text-muted">Không có tags</span>
+                                            <span className="text-xs text-text-muted">{t('no_tags')}</span>
                                           )}
                                     </div>
                                     <div className="mt-1 flex items-center gap-2 text-xs text-text-muted">
                                       <span>
                                         {q.ruleCount}
                                         {' '}
-                                        rules
+                                        {t('rules')}
                                       </span>
                                       {q.durationSeconds !== null && (
                                         <span>
@@ -619,12 +622,12 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                                           {' '}
                                           {q.durationSeconds >= 3600
                                             ? `${Math.floor(q.durationSeconds / 3600)}h ${Math.floor((q.durationSeconds % 3600) / 60)}m`
-                                            : `${Math.floor(q.durationSeconds / 60)} phút`}
+                                            : `${Math.floor(q.durationSeconds / 60)} ${t('minutes')}`}
                                         </span>
                                       )}
                                       {q.ruleCount === 0 && (
                                         <Badge variant="neutral" className="text-xs bg-yellow-500/20 border-yellow-500/40 text-yellow-400">
-                                          ⚠️ Chưa có rule
+                                          {t('no_rules_warning')}
                                         </Badge>
                                       )}
                                     </div>
@@ -661,24 +664,24 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                       <>
                         <div>
                           <label htmlFor="sessionName" className="mb-2 block text-sm font-medium text-text-heading">
-                            Tên session
+                            {t('session_name')}
                           </label>
                           <Input
                             id="sessionName"
                             type="text"
                             value={sessionName}
                             onChange={e => setSessionName(e.target.value)}
-                            placeholder={selectedQuiz?.title || 'Nhập tên session...'}
+                            placeholder={selectedQuiz?.title || t('session_name_placeholder')}
                             className="w-full"
                           />
                           <p className="mt-1 text-xs text-text-muted">
-                            Mặc định là tên quiz. Bạn có thể thay đổi tên cho session này.
+                            {t('session_name_hint')}
                           </p>
                         </div>
 
                         <div>
                           <label htmlFor="scheduledStartTime" className="mb-2 block text-sm font-medium text-text-heading">
-                            Thời gian bắt đầu (tùy chọn)
+                            {t('scheduled_start_time')}
                           </label>
                           <div className="space-y-2">
                             <Input
@@ -697,7 +700,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                                 onClick={() => setScheduledStartTime(getRoundedTime(5))}
                                 className="text-xs"
                               >
-                                ⏰ Mặc định (+5 phút)
+                                {t('default_plus_5')}
                               </Button>
                               <Button
                                 type="button"
@@ -706,7 +709,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                                 onClick={() => setScheduledStartTime(getRoundedTime(15))}
                                 className="text-xs"
                               >
-                                +15 phút
+                                {t('plus_15_minutes')}
                               </Button>
                               <Button
                                 type="button"
@@ -715,7 +718,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                                 onClick={() => setScheduledStartTime(getRoundedTime(30))}
                                 className="text-xs"
                               >
-                                +30 phút
+                                {t('plus_30_minutes')}
                               </Button>
                               <Button
                                 type="button"
@@ -724,25 +727,27 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                                 onClick={() => setScheduledStartTime('')}
                                 className="text-xs text-danger/80 hover:text-danger"
                               >
-                                ✕ Xóa
+                                {t('remove')}
                               </Button>
                             </div>
                           </div>
                           <p className="mt-1 text-xs text-text-muted">
-                            Mặc định là hiện tại + 5 phút (làm tròn chẵn). Để trống nếu muốn bắt đầu ngay khi tạo session.
+                            {t('scheduled_start_time_hint')}
                           </p>
                         </div>
 
                         <div>
                           <div className="mb-2 flex items-center justify-between">
                             <label htmlFor="durationMinutes" className="text-sm font-medium text-text-heading">
-                              Thời gian làm bài (phút)
+                              {t('duration_minutes')}
                             </label>
                             {quizDurationMinutes && (
                               <Badge variant="info" className="text-xs">
-                                Quiz: {quizDurationMinutes >= 60
-                                  ? `${Math.floor(quizDurationMinutes / 60)}h ${quizDurationMinutes % 60 > 0 ? `${quizDurationMinutes % 60}m` : ''}`
-                                  : `${quizDurationMinutes} phút`}
+                                {t('quiz_duration', { 
+                                  duration: quizDurationMinutes >= 60
+                                    ? `${Math.floor(quizDurationMinutes / 60)}h ${quizDurationMinutes % 60 > 0 ? `${quizDurationMinutes % 60}m` : ''}`
+                                    : `${quizDurationMinutes} ${t('minutes')}`
+                                })}
                               </Badge>
                             )}
                           </div>
@@ -757,7 +762,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                                 const val = e.target.value === '' ? null : Number(e.target.value);
                                 setDurationMinutes(val);
                               }}
-                              placeholder={quizDurationMinutes ? `${quizDurationMinutes} phút` : 'Không giới hạn'}
+                              placeholder={quizDurationMinutes ? `${quizDurationMinutes} ${t('minutes')}` : t('unlimited')}
                               className="w-32"
                             />
                             <span className="text-sm text-text-muted">
@@ -766,32 +771,32 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                                     <>
                                       (
                                       {durationMinutes >= 60
-                                        ? `${Math.floor(durationMinutes / 60)} giờ ${durationMinutes % 60 > 0 ? `${durationMinutes % 60} phút` : ''}`
-                                        : `${durationMinutes} phút`}
+                                        ? `${Math.floor(durationMinutes / 60)} giờ ${durationMinutes % 60 > 0 ? `${durationMinutes % 60} ${t('minutes')}` : ''}`
+                                        : `${durationMinutes} ${t('minutes')}`}
                                       )
                                     </>
                                   )
                                 : quizDurationMinutes
                                   ? (
                                       <span className="text-text-muted">
-                                        Đang dùng mặc định từ quiz:
-                                        {' '}
-                                        {quizDurationMinutes >= 60
-                                          ? `${Math.floor(quizDurationMinutes / 60)}h ${quizDurationMinutes % 60}m`
-                                          : `${quizDurationMinutes} phút`}
+                                        {t('using_default_from_quiz', {
+                                          duration: quizDurationMinutes >= 60
+                                            ? `${Math.floor(quizDurationMinutes / 60)}h ${quizDurationMinutes % 60}m`
+                                            : `${quizDurationMinutes} ${t('minutes')}`
+                                        })}
                                       </span>
                                     )
-                                  : 'Không giới hạn'}
+                                  : t('unlimited')}
                             </span>
                           </div>
                           {quizDurationMinutes && (
                             <p className="mt-1 text-xs text-text-muted">
-                              Giá trị mặc định từ cấu hình quiz. Bạn có thể thay đổi cho session này nếu cần.
+                              {t('duration_hint_with_default')}
                             </p>
                           )}
                           {!quizDurationMinutes && (
                             <p className="mt-1 text-xs text-text-muted">
-                              Quiz này không có giới hạn thời gian. Bạn có thể đặt thời gian cho session này.
+                              {t('duration_hint_no_default')}
                             </p>
                           )}
                         </div>
@@ -799,7 +804,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                         {durationMinutes && durationMinutes > 0 && (
                           <div>
                             <label htmlFor="bufferMinutes" className="mb-2 block text-sm font-medium text-text-heading">
-                              Thời gian buffer trước khi tự động đóng (phút)
+                              {t('buffer_minutes')}
                             </label>
                             <div className="flex items-center gap-3">
                               <Input
@@ -812,22 +817,18 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                                 className="w-32"
                               />
                               <span className="text-sm text-text-muted">
-                                Sau khi hết thời gian làm bài, session sẽ tự động đóng sau
-                                {' '}
-                                {bufferMinutes}
-                                {' '}
-                                phút nữa
+                                {t('buffer_hint', { minutes: bufferMinutes })}
                               </span>
                             </div>
                             <p className="mt-1 text-xs text-text-muted">
-                              Mặc định 5 phút. Session sẽ tự động đóng sau khi hết thời gian làm bài + buffer time.
+                              {t('buffer_default_hint')}
                             </p>
                           </div>
                         )}
 
                         <div>
                           <label htmlFor="reviewDelayMinutes" className="mb-2 block text-sm font-medium text-text-heading">
-                            Cho phép xem lại đáp án
+                            {t('allow_review')}
                           </label>
                           <select
                             id="reviewDelayMinutes"
@@ -835,16 +836,16 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                             onChange={e => setReviewDelayMinutes(e.target.value === '' ? null : Number(e.target.value))}
                             className="w-full rounded-md border border-border-subtle bg-bg-section px-3 py-2 text-sm text-text-heading focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                           >
-                            <option value="">Không cho xem lại đáp án</option>
-                            <option value="10">Cho xem lại trong 10 phút</option>
-                            <option value="20">Cho xem lại trong 20 phút</option>
-                            <option value="30">Cho xem lại trong 30 phút</option>
-                            <option value="60">Cho xem lại trong 60 phút</option>
+                            <option value="">{t('no_review')}</option>
+                            <option value="10">{t('allow_review_10')}</option>
+                            <option value="20">{t('allow_review_20')}</option>
+                            <option value="30">{t('allow_review_30')}</option>
+                            <option value="60">{t('allow_review_60')}</option>
                           </select>
                           <p className="mt-1 text-xs text-text-muted">
                             {reviewDelayMinutes === null
-                              ? 'Student sẽ không thể xem lại đáp án sau khi session kết thúc.'
-                              : `Student sẽ có thể xem đáp án đúng/sai trong vòng ${reviewDelayMinutes} phút từ khi session kết thúc.`}
+                              ? t('no_review_hint')
+                              : t('review_hint', { minutes: reviewDelayMinutes })}
                           </p>
                         </div>
                       </>
@@ -874,7 +875,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                         setCreateSessionError(null);
                       }}
                     >
-                      Hủy
+                      {t('cancel')}
                     </Button>
                     <Button
                       variant="primary"
@@ -882,7 +883,7 @@ export function TeacherClassDetail(props: TeacherClassDetailProps) {
                       disabled={createSessionBusy || !selectedQuizId}
                       onClick={() => void createSession()}
                     >
-                      {createSessionBusy ? 'Đang tạo...' : 'Tạo Session'}
+                      {createSessionBusy ? t('creating') : t('create_session_button')}
                     </Button>
                   </div>
                 </div>
