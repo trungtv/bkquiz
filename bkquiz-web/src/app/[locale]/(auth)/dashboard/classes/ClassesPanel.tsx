@@ -461,12 +461,12 @@ export function ClassesPanel(props: ClassesPanelProps) {
           ? (
               <div className="mt-6 rounded-md border border-dashed border-border-subtle px-4 py-8 text-center">
                 <div className="text-sm text-text-muted">
-                  Chưa có lớp nào.
+                  {t('no_classes_yet')}
                 </div>
                 <div className="mt-2 text-xs text-text-muted">
                   {role === 'teacher'
-                    ? 'Tạo lớp mới hoặc join lớp bằng class code ở phía trên.'
-                    : 'Join lớp bằng class code ở phía trên.'}
+                    ? t('create_or_join_hint_teacher')
+                    : t('create_or_join_hint_student')}
                 </div>
               </div>
             )
