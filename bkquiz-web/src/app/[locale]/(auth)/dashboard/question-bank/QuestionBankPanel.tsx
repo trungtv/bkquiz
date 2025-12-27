@@ -198,7 +198,7 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
               variant="ghost"
               onClick={() => setShowCreateForm(!showCreateForm)}
             >
-              {showCreateForm ? 'Hủy' : 'Tạo pool mới'}
+              {showCreateForm ? t('cancel') : t('create_new_pool')}
             </Button>
           </div>
         </div>
@@ -208,11 +208,11 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
           ? (
               <div className="mt-4 rounded-md border border-border-subtle bg-bg-section p-4">
                 <div className="text-sm font-medium text-text-heading mb-3">
-                  Tạo pool mới
+                  {t('create_new_pool')}
                 </div>
                 <div className="flex gap-3">
                   <Input
-                    placeholder="Tên pool..."
+                    placeholder={t('pool_name_placeholder')}
                     value={newPoolName}
                     onChange={e => setNewPoolName(e.target.value)}
                     disabled={createBusy}
@@ -223,7 +223,7 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
                     onClick={createPool}
                     disabled={createBusy || !newPoolName.trim()}
                   >
-                    {createBusy ? 'Đang tạo...' : 'Tạo'}
+                    {createBusy ? t('creating') : t('create')}
                   </Button>
                 </div>
               </div>
@@ -232,14 +232,14 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
 
         <div className="mt-4">
           <div className="flex items-center justify-between mb-3">
-            <div className="text-sm font-medium text-text-heading">Import từ Markdown/ZIP</div>
+            <div className="text-sm font-medium text-text-heading">{t('import_from_markdown_zip')}</div>
             <a
               href="/docs/import.md"
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-primary hover:underline"
             >
-              Xem hướng dẫn →
+              {t('view_guide')}
             </a>
           </div>
 
@@ -270,23 +270,19 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
                       onClick={() => setFile(null)}
                       disabled={busy}
                     >
-                      Xóa file
+                      {t('remove_file')}
                     </Button>
                   </div>
                 )
               : (
                   <label className="block p-8 text-center cursor-pointer">
                     <div className="text-sm text-text-muted mb-2">
-                      Kéo thả file vào đây hoặc click để chọn
+                      {t('drag_drop_or_click')}
                     </div>
                     <div className="text-xs text-text-muted">
-                      Hỗ trợ file
+                      {t('supported_files')}
                       {' '}
-                      <span className="font-mono">.md</span>
-                      {' '}
-                      hoặc
-                      {' '}
-                      <span className="font-mono">.zip</span>
+                      <span className="font-mono">{t('md_or_zip')}</span>
                     </div>
                     <input
                       type="file"
@@ -301,7 +297,7 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
 
           <div className="mt-3 flex justify-end">
             <Button variant="primary" onClick={importFile} disabled={busy || !file}>
-              {busy ? 'Đang import...' : 'Import'}
+              {busy ? t('importing') : t('import')}
             </Button>
           </div>
         </div>
@@ -327,11 +323,11 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
       <Card className="p-5 md:p-6 animate-slideUp" style={{ animationDelay: '100ms' }}>
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-lg font-semibold text-text-heading">Pools của bạn</div>
+            <div className="text-lg font-semibold text-text-heading">{t('your_pools')}</div>
             <div className="mt-1 text-sm text-text-muted">
               {sorted.length}
               {' '}
-              pools
+              {t('pools')}
             </div>
           </div>
         </div>
@@ -347,10 +343,10 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
             ? (
                 <div className="mt-6 rounded-md border border-dashed border-border-subtle px-4 py-8 text-center">
                   <div className="text-sm text-text-muted">
-                    Chưa có question pool nào.
+                    {t('no_pools_yet')}
                   </div>
                   <div className="mt-2 text-xs text-text-muted">
-                    Bắt đầu bằng cách import từ Markdown/ZIP hoặc tạo pool mới.
+                    {t('get_started_hint')}
                     </div>
                   </div>
                 )
