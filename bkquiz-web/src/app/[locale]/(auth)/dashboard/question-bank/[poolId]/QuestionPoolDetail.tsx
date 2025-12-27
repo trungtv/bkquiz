@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { MathRenderer } from '@/components/MathRenderer';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -42,6 +43,8 @@ type QuestionOption = {
 };
 
 export function QuestionPoolDetail(props: { poolId: string; userId: string | null }) {
+  const t = useTranslations('QuestionBank.detail');
+  const tQB = useTranslations('QuestionBank');
   const [pool, setPool] = useState<Pool | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [shares, setShares] = useState<Share[]>([]);
@@ -154,13 +157,13 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
       const json = await res.json() as { tags?: Array<{ id: string; name: string; normalizedName: string }>; error?: string };
       if (res.ok) {
         setPoolTags(json.tags ?? []);
-        setToast({ message: 'Đã lưu tags thành công', type: 'success' });
+        setToast({ message: t('tags_saved_success'), type: 'success' });
       } else {
-        setToast({ message: json.error ?? 'Lỗi khi lưu tags', type: 'error' });
+        setToast({ message: json.error ?? t('error_saving_tags'), type: 'error' });
       }
     } catch (err) {
       console.error('Error saving pool tags:', err);
-      setToast({ message: 'Lỗi khi lưu tags', type: 'error' });
+      setToast({ message: t('error_saving_tags'), type: 'error' });
     } finally {
       setPoolTagsBusy(false);
     }
@@ -178,16 +181,16 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
     try {
       const validOptions = qOptions.filter(o => o.content.trim());
       if (validOptions.length < 2) {
-        setError('Cần ít nhất 2 options.');
+        setError(t('need_at_least_2_options'));
         return;
       }
       const correctCount = validOptions.filter(o => o.isCorrect).length;
       if (qType === 'mcq_single' && correctCount !== 1) {
-        setError('mcq_single cần chính xác 1 đáp án đúng.');
+        setError(t('mcq_single_needs_1_correct'));
         return;
       }
       if (qType === 'mcq_multi' && correctCount < 1) {
-        setError('mcq_multi cần ít nhất 1 đáp án đúng.');
+        setError(t('mcq_multi_needs_at_least_1_correct'));
         return;
       }
       const res = await fetch(`/api/pools/${props.poolId}/questions`, {
@@ -213,7 +216,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
         { content: '', isCorrect: false },
       ]);
       setShowAddForm(false);
-      setToast({ message: 'Đã thêm câu hỏi thành công', type: 'success' });
+      setToast({ message: t('question_added_success'), type: 'success' });
       await loadAll();
     } finally {
       setBusy(false);
@@ -222,7 +225,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
 
   async function deleteQuestion(questionId: string) {
     // eslint-disable-next-line no-alert
-    if (!window.confirm('Bạn có chắc muốn xóa câu hỏi này?')) {
+    if (!window.confirm(t('confirm_delete_question'))) {
       return;
     }
     setBusy(true);
@@ -232,10 +235,10 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
       const data = await res.json() as { error?: string };
       if (!res.ok) {
         setError(data.error ?? 'DELETE_FAILED');
-        setToast({ message: 'Không thể xóa câu hỏi', type: 'error' });
+        setToast({ message: t('cannot_delete_question'), type: 'error' });
         return;
       }
-      setToast({ message: 'Đã xóa câu hỏi thành công', type: 'success' });
+      setToast({ message: t('question_deleted_success'), type: 'success' });
       await loadAll();
     } finally {
       setBusy(false);
@@ -269,10 +272,10 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
       const data = await res.json() as { error?: string; message?: string };
       if (!res.ok) {
         setError(data.error ?? data.message ?? 'UPDATE_FAILED');
-        setToast({ message: 'Không thể cập nhật câu hỏi', type: 'error' });
+        setToast({ message: t('cannot_update_question'), type: 'error' });
         return;
       }
-      setToast({ message: 'Đã cập nhật câu hỏi thành công', type: 'success' });
+      setToast({ message: t('question_updated_success'), type: 'success' });
       setEditingQuestionId(null);
       setQuestionMarkdown('');
       await loadAll();
@@ -299,7 +302,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
         return;
       }
       setShowEditPool(false);
-      setToast({ message: 'Đã cập nhật pool thành công', type: 'success' });
+      setToast({ message: t('pool_updated_success'), type: 'success' });
       await loadAll();
     } finally {
       setBusy(false);
@@ -321,7 +324,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
         return;
       }
       setShareEmail('');
-      setToast({ message: 'Đã share pool thành công', type: 'success' });
+      setToast({ message: t('share_pool_success'), type: 'success' });
       await loadAll();
     } finally {
       setBusy(false);
@@ -330,7 +333,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
 
   async function unsharePool(email: string) {
     // eslint-disable-next-line no-alert
-    if (!window.confirm('Bạn có chắc muốn gỡ share cho người này?')) {
+    if (!window.confirm(t('confirm_unshare'))) {
       return;
     }
     setBusy(true);
@@ -344,10 +347,10 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
       const data = await res.json() as { error?: string };
       if (!res.ok) {
         setError(data.error ?? 'UNSHARE_FAILED');
-        setToast({ message: 'Không thể gỡ share', type: 'error' });
+        setToast({ message: t('cannot_unshare'), type: 'error' });
         return;
       }
-      setToast({ message: 'Đã gỡ share thành công', type: 'success' });
+      setToast({ message: t('unshare_success'), type: 'success' });
       await loadAll();
     } finally {
       setBusy(false);
@@ -383,13 +386,13 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
       if (!res.ok) {
         const data = await res.json() as { error?: string };
         setError(data.error ?? 'EXPORT_FAILED');
-        setToast({ message: 'Không thể export Markdown', type: 'error' });
+        setToast({ message: t('cannot_export_markdown'), type: 'error' });
         return;
       }
       const text = await res.text();
       setMarkdownContent(text);
       setShowMarkdownEditor(true);
-      setToast({ message: 'Đã tải Markdown thành công', type: 'success' });
+      setToast({ message: t('markdown_loaded_success'), type: 'success' });
     } finally {
       setMarkdownBusy(false);
     }
@@ -403,7 +406,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
       if (!res.ok) {
         const data = await res.json() as { error?: string };
         setError(data.error ?? 'EXPORT_FAILED');
-        setToast({ message: 'Không thể export Markdown', type: 'error' });
+        setToast({ message: t('cannot_export_markdown'), type: 'error' });
         return;
       }
       const blob = await res.blob();
@@ -415,7 +418,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      setToast({ message: 'Đã tải file Markdown', type: 'success' });
+      setToast({ message: t('markdown_file_downloaded'), type: 'success' });
     } finally {
       setMarkdownBusy(false);
     }
@@ -423,7 +426,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
 
   async function importMarkdown() {
     if (!markdownContent.trim()) {
-      setError('Nội dung Markdown không được để trống');
+      setError(t('markdown_content_empty'));
       return;
     }
     setMarkdownBusy(true);
@@ -441,10 +444,10 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
       const data = await res.json() as { error?: string; importedQuestions?: number };
       if (!res.ok) {
         setError(data.error ?? 'IMPORT_FAILED');
-        setToast({ message: 'Không thể import Markdown', type: 'error' });
+        setToast({ message: t('cannot_import_markdown'), type: 'error' });
         return;
       }
-      setToast({ message: `Đã import thành công ${data.importedQuestions ?? 0} câu hỏi`, type: 'success' });
+      setToast({ message: t('imported_questions_success', { count: data.importedQuestions ?? 0 }), type: 'success' });
       setShowMarkdownEditor(false);
       setMarkdownContent('');
       await loadAll();
@@ -478,14 +481,14 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
       {/* Breadcrumb */}
       <nav className="text-sm text-text-muted">
         <Link href="/dashboard" className="hover:text-text-heading transition-colors">
-          Dashboard
+          {tQB('breadcrumb_dashboard')}
         </Link>
         <span className="mx-2">·</span>
         <Link href="/dashboard/question-bank" className="hover:text-text-heading transition-colors">
-          Question Bank
+          {tQB('title')}
         </Link>
         <span className="mx-2">·</span>
-        <span className="text-text-heading">{pool?.name || 'Loading...'}</span>
+        <span className="text-text-heading">{pool?.name || t('loading')}</span>
       </nav>
 
       {/* Pool Header */}
@@ -501,7 +504,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                             <Input
                               value={editPoolName}
                               onChange={e => setEditPoolName(e.target.value)}
-                              placeholder="Tên pool..."
+                              placeholder={tQB('pool_name_placeholder')}
                               disabled={busy}
                             />
                             <select
@@ -510,8 +513,8 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                               className="rounded-sm border border-border-subtle bg-bg-section px-3 py-2 text-sm text-text-body"
                               disabled={busy}
                             >
-                              <option value="private">private</option>
-                              <option value="shared">shared</option>
+                              <option value="private">{t('private')}</option>
+                              <option value="shared">{t('shared')}</option>
                             </select>
                             <div className="flex gap-2">
                               <Button
@@ -520,7 +523,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                                 onClick={updatePool}
                                 disabled={busy || !editPoolName.trim()}
                               >
-                                Lưu
+                                {t('save')}
                               </Button>
                               <Button
                                 variant="ghost"
@@ -532,7 +535,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                                 }}
                                 disabled={busy}
                               >
-                                Hủy
+                                {tQB('cancel')}
                               </Button>
                             </div>
                           </div>
@@ -548,17 +551,17 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                               <span>
                                 {pool.questionCount ?? 0}
                                 {' '}
-                                câu
+                                {t('questions')}
                               </span>
                               <span>·</span>
                               <span>
                                 {pool.tagCount ?? 0}
                                 {' '}
-                                tags
+                                {t('tags')}
                               </span>
                               <span>·</span>
                               <span>
-                                Cập nhật:
+                                {t('updated')}
                                 {' '}
                                 {formatDate(pool.updatedAt)}
                               </span>
@@ -573,7 +576,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                         size="sm"
                         onClick={() => setShowEditPool(true)}
                       >
-                        Chỉnh sửa pool
+                        {t('edit_pool')}
                       </Button>
                     )}
                     <Button
@@ -582,7 +585,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                       onClick={exportMarkdown}
                       disabled={markdownBusy}
                     >
-                      {markdownBusy ? 'Đang tải...' : 'Export Markdown'}
+                      {markdownBusy ? t('downloading') : t('export_markdown')}
                     </Button>
                     <Button
                       variant="ghost"
@@ -590,14 +593,14 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                       onClick={downloadMarkdown}
                       disabled={markdownBusy}
                     >
-                      {markdownBusy ? 'Đang tải...' : 'Tải file .md'}
+                      {markdownBusy ? t('downloading') : t('download_md_file')}
                     </Button>
                   </div>
                 </div>
               </>
             )
           : (
-              <div className="text-text-muted">Loading...</div>
+              <div className="text-text-muted">{t('loading')}</div>
             )}
         {error
           ? (
@@ -612,7 +615,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
       {showMarkdownEditor && (
         <Card className="p-5 md:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-text-heading">Chỉnh sửa Markdown</h2>
+            <h2 className="text-lg font-semibold text-text-heading">{t('edit_markdown')}</h2>
             <div className="flex gap-2">
               {canEdit && (
                 <Button
@@ -621,7 +624,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                   onClick={importMarkdown}
                   disabled={markdownBusy || !markdownContent.trim()}
                 >
-                  {markdownBusy ? 'Đang import...' : 'Import lại'}
+                  {markdownBusy ? t('importing_markdown') : t('import_again')}
                 </Button>
               )}
               <Button
@@ -633,22 +636,22 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                 }}
                 disabled={markdownBusy}
               >
-                Đóng
+                {t('close')}
               </Button>
             </div>
           </div>
           <div className="text-sm text-text-muted mb-2">
-            Chỉnh sửa nội dung Markdown bên dưới, sau đó bấm "Import lại" để cập nhật pool.
+            {t('edit_markdown_hint')}
           </div>
           <textarea
             value={markdownContent}
             onChange={e => setMarkdownContent(e.target.value)}
             className="w-full min-h-[400px] rounded-sm border border-border-subtle bg-bg-section px-3 py-2 font-mono text-sm text-text-body"
-            placeholder="Markdown content..."
+            placeholder={t('markdown_content_placeholder')}
             disabled={markdownBusy}
           />
           <div className="mt-2 text-xs text-text-muted">
-            💡 Tip: Bạn có thể copy nội dung này, chỉnh sửa bằng editor bên ngoài, rồi paste lại và import.
+            {t('markdown_tip')}
           </div>
         </Card>
       )}
@@ -657,7 +660,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
       {editingQuestionId && (
         <Card className="mt-4 p-5 md:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-text-heading">Chỉnh sửa câu hỏi (Markdown)</h2>
+            <h2 className="text-lg font-semibold text-text-heading">{t('edit_question_markdown')}</h2>
             <div className="flex gap-2">
               {canEdit && (
                 <Button
@@ -666,7 +669,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                   onClick={updateQuestionFromMarkdown}
                   disabled={questionMarkdownBusy || !questionMarkdown.trim()}
                 >
-                  {questionMarkdownBusy ? 'Đang cập nhật...' : 'Cập nhật'}
+                  {questionMarkdownBusy ? t('updating') : t('update')}
                 </Button>
               )}
               <Button
@@ -677,18 +680,18 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                   setQuestionMarkdown('');
                 }}
               >
-                Đóng
+                {t('close')}
               </Button>
             </div>
           </div>
           <div className="mb-2 text-sm text-text-muted">
-            Chỉnh sửa nội dung Markdown bên dưới, sau đó bấm "Cập nhật" để lưu thay đổi.
+            {t('edit_question_hint')}
           </div>
           <textarea
             value={questionMarkdown}
             onChange={e => setQuestionMarkdown(e.target.value)}
             className="w-full min-h-[300px] rounded-sm border border-border-subtle bg-bg-section px-3 py-2 font-mono text-sm text-text-body"
-            placeholder="# QUESTION:\n...\n## TAGS: [...]\n## ANSWER:\n..."
+            placeholder={t('question_markdown_placeholder')}
           />
         </Card>
       )}
@@ -698,16 +701,10 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-text-heading">
-              Câu hỏi (
-              {filteredQuestions.length}
-              )
+              {t('questions_section', { count: filteredQuestions.length })}
             </h2>
             <div className="mt-1 text-sm text-text-muted">
-              Tổng cộng
-              {' '}
-              {questions.length}
-              {' '}
-              câu hỏi
+              {t('total_questions', { count: questions.length })}
             </div>
           </div>
           {canEdit && (
@@ -716,7 +713,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
               size="sm"
               onClick={() => setShowAddForm(!showAddForm)}
             >
-              {showAddForm ? 'Đóng form' : 'Thêm câu hỏi'}
+              {showAddForm ? t('close_form') : t('add_question')}
             </Button>
           )}
         </div>
@@ -724,7 +721,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
         {/* Search and Filter */}
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           <Input
-            placeholder="Tìm kiếm câu hỏi..."
+            placeholder={t('search_questions_placeholder')}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="flex-1"
@@ -735,7 +732,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
               onChange={e => setFilterTag(e.target.value || null)}
               className="rounded-sm border border-border-subtle bg-bg-section px-3 py-2 text-sm text-text-body"
             >
-              <option value="">Tất cả tags</option>
+              <option value="">{t('all_tags')}</option>
               {allTags.map((tagNorm) => {
                 const tag = questions.find(q => q.tags.some(t => t.normalizedName === tagNorm))?.tags.find(t => t.normalizedName === tagNorm);
                 return (
@@ -751,11 +748,11 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
         {/* Add Question Form */}
         {showAddForm && canEdit && (
           <Card className="mt-4 border-dashed bg-bg-section p-4">
-            <div className="mb-4 text-sm font-medium text-text-heading">Thêm câu hỏi mới</div>
+            <div className="mb-4 text-sm font-medium text-text-heading">{t('add_new_question')}</div>
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="grid gap-1 text-sm">
-                  <span className="font-medium text-text-heading">Type</span>
+                  <span className="font-medium text-text-heading">{t('type')}</span>
                   <select
                     className="rounded-sm border border-border-subtle bg-bg-section px-3 py-2 text-sm text-text-body"
                     value={qType}
@@ -767,38 +764,38 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                   </select>
                 </label>
                 <div className="grid gap-1 text-sm">
-                  <label htmlFor="q-tags" className="font-medium text-text-heading">Tags (comma-separated)</label>
+                  <label htmlFor="q-tags" className="font-medium text-text-heading">{t('tags_comma_separated')}</label>
                   <Input
                     id="q-tags"
                     value={qTags}
                     onChange={e => setQTags(e.target.value)}
-                    placeholder="tag1, tag2, ..."
+                    placeholder={t('tags_placeholder')}
                     disabled={busy}
                   />
                 </div>
               </div>
 
               <label className="grid gap-1 text-sm">
-                <span className="font-medium text-text-heading">Prompt</span>
+                <span className="font-medium text-text-heading">{t('prompt')}</span>
                 <textarea
                   className="min-h-24 rounded-sm border border-border-subtle bg-bg-section px-3 py-2 text-sm text-text-body"
                   value={qPrompt}
                   onChange={e => setQPrompt(e.target.value)}
                   disabled={busy}
-                  placeholder="Câu hỏi..."
+                  placeholder={t('question_placeholder')}
                 />
               </label>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-text-heading">Options</span>
+                  <span className="text-sm font-medium text-text-heading">{t('options')}</span>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={addOption}
                     disabled={busy || qOptions.length >= 12}
                   >
-                    + Thêm option
+                    {t('add_option')}
                   </Button>
                 </div>
                 {qOptions.map((opt, idx) => {
@@ -808,7 +805,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                       <Input
                         value={opt.content}
                         onChange={e => updateOption(idx, 'content', e.target.value)}
-                        placeholder={`Option ${idx + 1}`}
+                        placeholder={t('option_placeholder', { number: idx + 1 })}
                         disabled={busy}
                         className="flex-1"
                       />
@@ -821,7 +818,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                             disabled={busy}
                             className="rounded border-border-subtle"
                           />
-                          <span className="text-text-muted">Đúng</span>
+                          <span className="text-text-muted">{t('correct')}</span>
                         </label>
                       )}
                       {qType === 'mcq_single' && (
@@ -835,7 +832,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                             }}
                             disabled={busy}
                           />
-                          <span className="text-text-muted">Đúng</span>
+                          <span className="text-text-muted">{t('correct')}</span>
                         </label>
                       )}
                       {qOptions.length > 2 && (
@@ -859,7 +856,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                 onClick={addQuestion}
                 disabled={busy || !qPrompt.trim()}
               >
-                {busy ? 'Đang lưu...' : 'Thêm câu hỏi'}
+                {busy ? t('saving') : t('add_question')}
               </Button>
             </div>
         </Card>
@@ -870,7 +867,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
         <Card className="p-5 md:p-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-heading">
-              Tags (comma-separated)
+              {t('pool_tags')}
             </label>
             <TagInput
               value={poolTagsInput}
@@ -879,7 +876,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
               tags={poolTags}
               showSaveButton={true}
               disabled={poolTagsBusy}
-              placeholder="basic, advanced, chapter1..."
+              placeholder={t('pool_tags_placeholder')}
             />
             </div>
           </Card>
@@ -891,8 +888,8 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
             ? (
                 <div className="rounded-md border border-dashed border-border-subtle px-4 py-8 text-center text-sm text-text-muted">
                   {questions.length === 0
-                    ? 'Chưa có câu hỏi nào.'
-                    : 'Không tìm thấy câu hỏi nào phù hợp với bộ lọc.'}
+                    ? t('no_questions')
+                    : t('no_matching_questions')}
                 </div>
               )
             : (
@@ -928,7 +925,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                                 <MathRenderer content={o.content} />
                                 {o.isCorrect && (
                                   <Badge variant="success" className="ml-2 text-xs">
-                                    Đúng
+                                    {t('correct')}
                                   </Badge>
                                 )}
                               </div>
@@ -958,7 +955,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                             onClick={() => openQuestionMarkdownEditor(q)}
                             disabled={busy}
                           >
-                            Edit Markdown
+                            {t('edit_markdown_button')}
                           </Button>
                           <Button
                             variant="ghost"
@@ -966,7 +963,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                             onClick={() => deleteQuestion(q.id)}
                             disabled={busy}
                           >
-                            Xóa
+                            {t('delete')}
                           </Button>
                         </div>
                       )}
@@ -980,12 +977,12 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
       {/* Share Section */}
       {canEdit && (
         <Card className="p-5 md:p-6">
-          <h2 className="text-lg font-semibold text-text-heading">Chia sẻ pool</h2>
+          <h2 className="text-lg font-semibold text-text-heading">{t('share_pool_section')}</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Input
               value={shareEmail}
               onChange={e => setShareEmail(e.target.value)}
-              placeholder="Email giảng viên..."
+              placeholder={t('teacher_email_placeholder')}
               disabled={busy}
             />
             <select
@@ -1006,13 +1003,13 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
               onClick={sharePool}
               disabled={busy || !shareEmail.trim()}
             >
-              Share
+              {t('share_button')}
             </Button>
           </div>
 
           {shares.length > 0 && (
             <div className="mt-5">
-              <div className="mb-3 text-sm font-medium text-text-heading">Danh sách share</div>
+              <div className="mb-3 text-sm font-medium text-text-heading">{t('share_list')}</div>
               <div className="space-y-2">
                 {shares.map(s => (
                   <div
@@ -1021,7 +1018,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                   >
                     <div>
                       <div className="text-sm font-medium text-text-heading">
-                        {s.sharedWith.name || s.sharedWith.email || '(no name)'}
+                        {s.sharedWith.name || s.sharedWith.email || t('no_name')}
                       </div>
                       <div className="mt-1 text-xs text-text-muted">
                         <Badge variant="neutral" className="text-xs">
@@ -1042,7 +1039,7 @@ export function QuestionPoolDetail(props: { poolId: string; userId: string | nul
                       onClick={() => unsharePool(s.sharedWith.email || '')}
                       disabled={busy}
                     >
-                      Gỡ share
+                      {t('unshare')}
                     </Button>
                   </div>
                 ))}
