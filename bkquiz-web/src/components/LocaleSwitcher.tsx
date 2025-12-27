@@ -6,12 +6,17 @@ import { useRouter } from 'next/navigation';
 import { usePathname } from '@/libs/I18nNavigation';
 import { routing } from '@/libs/I18nRouting';
 
+const localeNames: Record<string, string> = {
+  en: 'English',
+  vi: 'Tiếng Việt',
+};
+
 export const LocaleSwitcher = () => {
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale();
 
-  const handleChange: ChangeEventHandler<HTMLSelectElement> = (event) => {
+  const handleChange: ChangeEventHandler<HTMLSelectElement> = (event => {
     router.push(`/${event.target.value}${pathname}`);
     router.refresh(); // Ensure the page takes the new locale into account related to the issue #395
   };
@@ -25,7 +30,7 @@ export const LocaleSwitcher = () => {
     >
       {routing.locales.map(elt => (
         <option key={elt} value={elt}>
-          {elt.toUpperCase()}
+          {localeNames[elt] ?? elt.toUpperCase()}
         </option>
       ))}
     </select>

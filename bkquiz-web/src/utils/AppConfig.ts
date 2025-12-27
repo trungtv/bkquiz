@@ -4,7 +4,7 @@ const localePrefix: LocalePrefixMode = 'as-needed';
 
 export const AppConfig = {
   name: 'BKquiz',
-  locales: ['en', 'fr'],
+  locales: ['en', 'vi'],
   defaultLocale: 'en',
   localePrefix,
 };
