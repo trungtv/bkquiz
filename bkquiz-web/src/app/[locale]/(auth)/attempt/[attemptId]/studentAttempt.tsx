@@ -664,7 +664,7 @@ export function AttemptClient(props: { attemptId: string }) {
               </span>
               <span>·</span>
               <span>
-                Đã trả lời:
+                {t('answered_label')}:
                 {' '}
                 <span className="font-mono font-semibold text-text-heading">{answeredCount}</span>
                 /
@@ -674,7 +674,7 @@ export function AttemptClient(props: { attemptId: string }) {
                 <>
                   <span>·</span>
                   <span>
-                    Còn lại:
+                    {t('time_remaining')}
                     {' '}
                     <span className={cn(
                       'font-mono font-semibold',
@@ -736,7 +736,7 @@ export function AttemptClient(props: { attemptId: string }) {
         {/* Error/Sync status (compact, chỉ hiện khi có) */}
         {syncError && (
           <div className="mt-1 text-[9px] text-danger sm:text-[10px]">
-            Sync lỗi:
+            {t('sync_error')}
             {' '}
             <span className="font-mono">{syncError}</span>
           </div>
@@ -747,7 +747,7 @@ export function AttemptClient(props: { attemptId: string }) {
       {questions.length > 0
         ? (
             <Card className="p-3 sm:p-4">
-              <div className="mb-2 text-xs font-semibold text-text-heading sm:mb-3 sm:text-sm">Danh sách câu hỏi</div>
+              <div className="mb-2 text-xs font-semibold text-text-heading sm:mb-3 sm:text-sm">{t('question_list')}</div>
               <div className="grid grid-cols-8 gap-1.5 sm:grid-cols-10 sm:gap-2 md:grid-cols-12 lg:grid-cols-15 xl:grid-cols-20">
                 {questions.map((question, i) => {
                   const status = getQuestionStatus(question.id, i);
@@ -763,7 +763,10 @@ export function AttemptClient(props: { attemptId: string }) {
                         status === 'answered' && 'border-success/50 bg-success/10',
                         status === 'unanswered' && 'border-border-subtle bg-bg-section hover:bg-bg-elevated',
                       )}
-                      aria-label={`Câu ${i + 1}: ${status === 'answered' ? 'Đã trả lời' : status === 'current' ? 'Đang xem' : 'Chưa trả lời'}`}
+                      aria-label={t('question_status_aria', { 
+                        number: i + 1, 
+                        status: status === 'answered' ? t('answered_label') : status === 'current' ? t('current_question') : t('not_answered_label')
+                      })}
                     >
                       {i + 1}
                     </button>
@@ -773,15 +776,15 @@ export function AttemptClient(props: { attemptId: string }) {
               <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-text-muted sm:mt-3 sm:gap-4 sm:text-xs">
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <div className="h-3 w-3 rounded border-2 border-primary bg-primary/20 sm:h-4 sm:w-4" />
-                  <span>Đang xem</span>
+                  <span>{t('current_question')}</span>
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <div className="h-3 w-3 rounded border-2 border-success/50 bg-success/10 sm:h-4 sm:w-4" />
-                  <span>Đã trả lời</span>
+                  <span>{t('answered_label')}</span>
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <div className="h-3 w-3 rounded border-2 border-border-subtle bg-bg-section sm:h-4 sm:w-4" />
-                  <span>Chưa trả lời</span>
+                  <span>{t('not_answered_label')}</span>
                 </div>
               </div>
             </Card>
@@ -793,10 +796,10 @@ export function AttemptClient(props: { attemptId: string }) {
         <Card className="p-6 sm:p-8">
           <div className="text-center">
             <div className="mb-4 text-lg font-semibold text-text-heading sm:text-xl">
-              Đang chờ giảng viên bắt đầu
+              {t('waiting_for_teacher')}
             </div>
             <div className="mb-6 text-sm text-text-muted sm:text-base">
-              Bạn có thể xem lại các câu hỏi. Thời gian sẽ bắt đầu tính khi giảng viên bắt đầu session.
+              {t('can_review_questions_hint')}
             </div>
           </div>
         </Card>
@@ -817,7 +820,7 @@ export function AttemptClient(props: { attemptId: string }) {
               {questions.length}
             </div>
             <div className="text-sm text-text-muted">
-              {canReview ? 'Đã hoàn thành bài làm' : 'Điểm số của bạn'}
+              {canReview ? t('completed') : t('your_score')}
             </div>
           </div>
         </Card>
@@ -828,11 +831,11 @@ export function AttemptClient(props: { attemptId: string }) {
         <Card className="border-warning bg-warning/10 p-6">
           <div className="text-center">
             <div className="mb-2 text-lg font-semibold text-warning">
-              ⏳ Chưa thể xem đáp án chi tiết
+              {t('cannot_review_yet')}
             </div>
             <div className="text-sm text-text-muted">
               {state.session.status !== 'ended' && (
-                <>Session chưa kết thúc. Vui lòng đợi session kết thúc.</>
+                <>{t('session_not_ended')}</>
               )}
               {state.session.status === 'ended' && reviewWindowEnd && (() => {
                 const now = new Date();
@@ -841,7 +844,7 @@ export function AttemptClient(props: { attemptId: string }) {
                   // Đã hết cửa sổ xem lại
                   return (
                     <>
-                      ⏰ Đã hết thời gian xem lại đáp án chi tiết. Cửa sổ xem lại đã đóng.
+                      {t('review_window_closed')}
                     </>
                   );
                 }
@@ -850,18 +853,12 @@ export function AttemptClient(props: { attemptId: string }) {
                 const diffMins = Math.ceil(diffMs / 60000);
                 return (
                   <>
-                    ⏳ Còn
-                    {' '}
-                    <span className="font-mono font-semibold">
-                      {diffMins}
-                    </span>
-                    {' '}
-                    phút để xem lại đáp án chi tiết. Sau đó cửa sổ sẽ đóng.
+                    {t('review_window_countdown', { minutes: diffMins })}
                   </>
                 );
               })()}
               {state.session.status === 'ended' && !reviewWindowEnd && (
-                <>Giảng viên không cho phép xem lại đáp án chi tiết.</>
+                <>{t('review_not_allowed')}</>
               )}
             </div>
           </div>
@@ -875,20 +872,20 @@ export function AttemptClient(props: { attemptId: string }) {
                 <div>
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2 sm:mb-4">
                     <div className="text-xs text-text-muted sm:text-sm">
-                      Câu
+                      {t('question')}
                       {' '}
                       <span className="font-mono">{idx + 1}</span>
                       /
                       <span className="font-mono">{questions.length}</span>
                     </div>
-                    <Badge variant="info" className="text-[10px] sm:text-xs">{q.type === 'mcq_single' ? 'Chọn 1' : 'Chọn nhiều'}</Badge>
+                    <Badge variant="info" className="text-[10px] sm:text-xs">{q.type === 'mcq_single' ? t('select_one') : t('select_multiple')}</Badge>
                   </div>
                   <div className="text-sm text-text-heading sm:text-base">
                     <MathRenderer content={q.prompt} />
                   </div>
                   {canReview && q.questionScore !== null && q.questionScore !== undefined && (
                     <div className="mt-2 text-xs text-text-muted sm:text-sm">
-                      Điểm:
+                      {t('score')}
                       {' '}
                       <span className="font-mono font-semibold">
                         {q.questionScore.toFixed(2)}
@@ -979,7 +976,7 @@ export function AttemptClient(props: { attemptId: string }) {
                           {canReview && isCorrect && (
                             <div className="absolute right-2 top-2">
                               <Badge variant="success" className="text-[9px] sm:text-[10px]">
-                                ✓ Đúng
+                                {t('correct')}
                               </Badge>
                             </div>
                           )}
@@ -993,16 +990,16 @@ export function AttemptClient(props: { attemptId: string }) {
                         {submittedQuestions.has(q.id)
                           ? (
                               <Badge variant="success" className="text-[10px] sm:text-xs">
-                                ✓ Đã submit
+                                {t('submitted')}
                               </Badge>
                             )
                           : (
                               <Badge variant="neutral" className="text-[10px] sm:text-xs">
-                                Chưa submit
+                                {t('not_submitted')}
                               </Badge>
                             )}
                         <div className="text-[10px] text-text-muted sm:text-xs">
-                          Autosave bật: lưu local ngay lập tức, sync khi online.
+                          {t('autosave_enabled')}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1013,7 +1010,7 @@ export function AttemptClient(props: { attemptId: string }) {
                           disabled={idx === 0}
                           className="flex-1 sm:flex-initial"
                         >
-                          Trước
+                          {t('previous')}
                         </Button>
                         <Button
                           size="sm"
@@ -1022,7 +1019,7 @@ export function AttemptClient(props: { attemptId: string }) {
                           disabled={idx >= questions.length - 1}
                           className="flex-1 sm:flex-initial"
                         >
-                          Sau
+                          {t('next')}
                         </Button>
                       </div>
                     </div>
@@ -1035,13 +1032,13 @@ export function AttemptClient(props: { attemptId: string }) {
                           disabled={busy || !isOnline || state?.status !== 'active' || selected.length === 0 || isDisabled}
                           className="w-full sm:w-auto"
                         >
-                          Submit câu này
+                          {t('submit_this_question')}
                         </Button>
                       </div>
                     )}
                     {canReview && (
                       <div className="text-xs text-text-muted sm:text-sm">
-                        Đã nộp bài - Chế độ xem lại
+                        {t('review_mode')}
                       </div>
                     )}
                   </div>
@@ -1049,7 +1046,7 @@ export function AttemptClient(props: { attemptId: string }) {
               )
             : (
                 <div className="text-sm text-text-body">
-                  Chưa có câu hỏi trong session (cần cấu hình quiz rules + Start session để snapshot).
+                  {t('no_questions_in_session')}
                 </div>
               )}
         </div>
@@ -1059,7 +1056,7 @@ export function AttemptClient(props: { attemptId: string }) {
       {isTimeUp && state.status === 'active' && !canReview && (
         <Card className="border-danger bg-danger/10 p-4">
           <div className="text-center text-sm font-semibold text-danger sm:text-base">
-            ⏰ Hết thời gian làm bài! Bài làm của bạn sẽ được tự động submit.
+            {t('time_up_auto_submit')}
           </div>
         </Card>
       )}
@@ -1078,8 +1075,8 @@ export function AttemptClient(props: { attemptId: string }) {
             </Button>
             <div className="text-[10px] text-text-muted sm:text-xs">
               {isTimeUp
-                ? 'Đã hết thời gian làm bài.'
-                : 'Chỉ submit khi online, không pending sync, và không bị checkpoint block.'}
+                ? t('time_up_message')
+                : t('submit_hint')}
             </div>
           </div>
         </Card>
@@ -1098,24 +1095,24 @@ export function AttemptClient(props: { attemptId: string }) {
                   >
                     {nextDueIn !== null ? nextDueIn : '...'}
                   </div>
-                  <div className="text-lg font-semibold text-text-heading sm:text-xl">Checkpoint: Nhập token để tiếp tục</div>
+                  <div className="text-lg font-semibold text-text-heading sm:text-xl">{t('checkpoint_enter_token')}</div>
                   <div className="mt-2 text-xs text-text-muted sm:text-sm">
                     {!isOnline
-                      ? 'Bạn đang offline. Vui lòng online lại để verify token.'
-                      : (state.isLocked ? 'Bạn đang bị lock do nhập sai nhiều lần.' : 'Đến hạn verify token.')}
+                      ? t('offline_please_online')
+                      : (state.isLocked ? t('locked_due_to_failures') : t('token_due'))}
                   </div>
                 </div>
 
                 <div className="space-y-3 sm:space-y-4">
                   <label htmlFor="checkpointToken">
-                    <div className="mb-1 text-xs font-medium text-text-heading sm:text-sm">Token</div>
+                    <div className="mb-1 text-xs font-medium text-text-heading sm:text-sm">{t('token')}</div>
                     <Input
                       id="checkpointToken"
                       className="font-mono text-sm sm:text-base"
                       value={token}
                       onChange={e => setToken(e.target.value)}
                       disabled={busy || state.inCooldown || !isOnline}
-                      placeholder="Nhập token từ màn hình giáo viên"
+                      placeholder={t('enter_token_from_teacher_screen')}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !busy && token.trim().length > 0 && !state.inCooldown && isOnline) {
                           void verify();
@@ -1130,14 +1127,14 @@ export function AttemptClient(props: { attemptId: string }) {
                     onClick={() => void verify()}
                     disabled={busy || token.trim().length === 0 || state.inCooldown || !isOnline}
                   >
-                    {busy ? 'Đang verify...' : 'Verify'}
+                    {busy ? t('verifying') : t('verify')}
                   </Button>
 
                   <div className="text-center text-[10px] text-text-muted sm:text-xs">
-                    Sai:
+                    {t('wrong')}
                     {' '}
                     <span className="font-mono">{state.failedCount}</span>
-                    {state.inCooldown ? ' · đang cooldown 30s' : null}
+                    {state.inCooldown ? t('cooldown_30s') : null}
                   </div>
                 </div>
               </Card>
@@ -1150,18 +1147,18 @@ export function AttemptClient(props: { attemptId: string }) {
         ? (
             <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-6">
               <Card className="w-full max-w-md p-4 sm:p-6">
-                <div className="mb-3 text-base font-semibold text-text-heading sm:mb-4 sm:text-lg">Xác nhận nộp bài</div>
+                <div className="mb-3 text-base font-semibold text-text-heading sm:mb-4 sm:text-lg">{t('confirm_submit')}</div>
                 <div className="mb-4 space-y-2 text-xs sm:mb-6 sm:text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-text-muted">Tổng số câu:</span>
+                    <span className="text-text-muted">{t('total_questions')}</span>
                     <span className="font-semibold text-text-heading">{questions.length}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-text-muted">Đã trả lời:</span>
+                    <span className="text-text-muted">{t('answered')}</span>
                     <span className="font-semibold text-success">{answeredCount}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-text-muted">Chưa trả lời:</span>
+                    <span className="text-text-muted">{t('not_answered')}</span>
                     <span className={cn(
                       'font-semibold',
                       questions.length - answeredCount > 0 ? 'text-warning' : 'text-text-heading',
@@ -1173,11 +1170,7 @@ export function AttemptClient(props: { attemptId: string }) {
                   {questions.length - answeredCount > 0
                     ? (
                         <div className="mt-3 rounded-md bg-warning/10 p-2.5 text-[10px] text-warning sm:mt-4 sm:p-3 sm:text-xs">
-                          Bạn còn
-                          {' '}
-                          {questions.length - answeredCount}
-                          {' '}
-                          câu chưa trả lời. Bạn có chắc muốn nộp bài?
+                          {t('unanswered_warning', { count: questions.length - answeredCount })}
                         </div>
                       )
                     : null}
@@ -1188,7 +1181,7 @@ export function AttemptClient(props: { attemptId: string }) {
                     onClick={() => setShowSubmitConfirm(false)}
                     className="w-full sm:w-auto"
                   >
-                    Hủy
+                    {t('cancel')}
                   </Button>
                   <Button
                     variant="primary"
@@ -1196,7 +1189,7 @@ export function AttemptClient(props: { attemptId: string }) {
                     disabled={busy}
                     className="w-full sm:w-auto"
                   >
-                    {busy ? 'Đang submit...' : 'Xác nhận nộp bài'}
+                    {busy ? t('submitting') : t('confirm_submit')}
                   </Button>
                 </div>
               </Card>
