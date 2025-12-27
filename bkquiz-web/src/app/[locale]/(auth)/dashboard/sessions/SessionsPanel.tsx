@@ -82,7 +82,7 @@ export function SessionsPanel() {
       const minutes = Math.floor((seconds % 3600) / 60);
       return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
     }
-    return `${Math.floor(seconds / 60)} phút`;
+    return `${Math.floor(seconds / 60)} ${t('minutes')}`;
   }
 
   const activeSessions = sessions.filter(s => s.status === 'active');
@@ -124,7 +124,7 @@ export function SessionsPanel() {
   if (error) {
     return (
       <Card className="p-6">
-        <div className="text-sm text-text-muted">Lỗi</div>
+        <div className="text-sm text-text-muted">{t('error')}</div>
         <div className="mt-2 text-text-body">{error}</div>
       </Card>
     );
@@ -147,12 +147,12 @@ export function SessionsPanel() {
       <Card className="p-5 md:p-6 animate-slideUp">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <div className="text-sm text-text-muted">BKquiz Sessions</div>
+            <div className="text-sm text-text-muted">{t('bkquiz_sessions')}</div>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-text-heading">
               {t('title')}
             </h1>
             <div className="mt-2 text-sm text-text-muted">
-              Xem và quản lý các session bạn đang tham gia hoặc đã tham gia.
+              {t('view_and_manage_description')}
             </div>
           </div>
         </div>
@@ -162,7 +162,7 @@ export function SessionsPanel() {
       {activeSessions.length > 0 && (
         <Card className="p-5 md:p-6 animate-slideUp" style={{ animationDelay: '50ms' }}>
           <div className="text-lg font-semibold text-text-heading mb-4">
-            Đang diễn ra ({activeSessions.length})
+            {t('ongoing', { count: activeSessions.length })}
           </div>
           <div className="space-y-3">
             {activeSessions.map((session, idx) => (
@@ -178,7 +178,7 @@ export function SessionsPanel() {
                       </div>
                       <div className="mt-1 space-y-0.5">
                         <div className="text-xs text-text-muted">
-                          {session.status === 'active' && '🟢 Đang diễn ra'}
+                          {session.status === 'active' && t('status_active')}
                           {session.durationSeconds && (
                             <>
                               {' '}
@@ -194,7 +194,7 @@ export function SessionsPanel() {
                           <div className="text-xs text-text-muted/80">
                             {(session.startedAt || session.scheduledStartAt) && (
                               <>
-                                {session.status === 'lobby' ? '📅 Bắt đầu:' : '▶️ Đã bắt đầu:'}
+                                {session.status === 'lobby' ? t('start_time') : t('started')}
                                 {' '}
                                 {formatDateShort(session.startedAt || session.scheduledStartAt!)}
                               </>
@@ -202,7 +202,7 @@ export function SessionsPanel() {
                             {session.endedAt && session.status === 'ended' && (
                               <>
                                 {(session.startedAt || session.scheduledStartAt) && ' · '}
-                                🏁 Kết thúc:
+                                {t('end_time')}
                                 {' '}
                                 {formatDateShort(session.endedAt)}
                               </>
@@ -242,7 +242,7 @@ export function SessionsPanel() {
       {lobbySessions.length > 0 && (
         <Card className="p-5 md:p-6 animate-slideUp" style={{ animationDelay: '100ms' }}>
           <div className="text-lg font-semibold text-text-heading mb-4">
-            Chờ bắt đầu ({lobbySessions.length})
+            {t('waiting_to_start', { count: lobbySessions.length })}
           </div>
           <div className="space-y-3">
             {lobbySessions.map((session, idx) => (
@@ -258,7 +258,7 @@ export function SessionsPanel() {
                       </div>
                       <div className="mt-1 space-y-0.5">
                         <div className="text-xs text-text-muted">
-                          {session.status === 'lobby' && '🟡 Chờ bắt đầu'}
+                          {session.status === 'lobby' && t('status_lobby')}
                           {session.durationSeconds && (
                             <>
                               {' '}
@@ -274,7 +274,7 @@ export function SessionsPanel() {
                           <div className="text-xs text-text-muted/80">
                             {(session.startedAt || session.scheduledStartAt) && (
                               <>
-                                {session.status === 'lobby' ? '📅 Bắt đầu:' : '▶️ Đã bắt đầu:'}
+                                {session.status === 'lobby' ? t('start_time') : t('started')}
                                 {' '}
                                 {formatDateShort(session.startedAt || session.scheduledStartAt!)}
                               </>
@@ -282,7 +282,7 @@ export function SessionsPanel() {
                             {session.endedAt && session.status === 'ended' && (
                               <>
                                 {(session.startedAt || session.scheduledStartAt) && ' · '}
-                                🏁 Kết thúc:
+                                {t('end_time')}
                                 {' '}
                                 {formatDateShort(session.endedAt)}
                               </>
@@ -317,7 +317,7 @@ export function SessionsPanel() {
       {pastSessions.length > 0 && (
         <Card className="p-5 md:p-6 animate-slideUp" style={{ animationDelay: '150ms' }}>
           <div className="text-lg font-semibold text-text-heading mb-4">
-            Đã kết thúc ({pastSessions.length})
+            {t('ended', { count: pastSessions.length })}
           </div>
           <div className="space-y-6">
             {Array.from(pastSessionsByClass.entries()).map(([classId, classSessions], groupIdx) => {
@@ -335,17 +335,17 @@ export function SessionsPanel() {
                             📚 {classroom.name}
                           </Link>
                           <Badge variant="neutral" className="text-xs">
-                            {classSessions.length} session{classSessions.length > 1 ? 's' : ''}
+                            {classSessions.length} {classSessions.length > 1 ? t('sessions') : t('session')}
                           </Badge>
                         </div>
                       )
                     : (
                         <div className="flex items-center gap-2 pb-2 border-b border-border-subtle">
                           <span className="text-sm font-semibold text-text-muted">
-                            Khác
+                            {t('other')}
                           </span>
                           <Badge variant="neutral" className="text-xs">
-                            {classSessions.length} session{classSessions.length > 1 ? 's' : ''}
+                            {classSessions.length} {classSessions.length > 1 ? t('sessions') : t('session')}
                           </Badge>
                         </div>
                       )}
@@ -367,7 +367,7 @@ export function SessionsPanel() {
                               </div>
                               <div className="mt-1 space-y-0.5">
                                 <div className="text-xs text-text-muted">
-                                  {session.status === 'ended' && '⚫ Đã kết thúc'}
+                                  {session.status === 'ended' && t('status_ended')}
                                   {session.durationSeconds && (
                                     <>
                                       {' '}
@@ -383,7 +383,7 @@ export function SessionsPanel() {
                                   <div className="text-xs text-text-muted/80">
                                     {(session.startedAt || session.scheduledStartAt) && (
                                       <>
-                                        ▶️ Đã bắt đầu:
+                                        {t('started')}
                                         {' '}
                                         {formatDateShort(session.startedAt || session.scheduledStartAt!)}
                                       </>
@@ -391,7 +391,7 @@ export function SessionsPanel() {
                                     {session.endedAt && session.status === 'ended' && (
                                       <>
                                         {(session.startedAt || session.scheduledStartAt) && ' · '}
-                                        🏁 Kết thúc:
+                                        {t('end_time')}
                                         {' '}
                                         {formatDateShort(session.endedAt)}
                                       </>
@@ -409,7 +409,7 @@ export function SessionsPanel() {
                             {session.attempt && session.attempt.score !== null && (
                               <div className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary/10 border border-primary/30">
                                 <div className="text-sm font-medium text-text-muted uppercase tracking-wide">
-                                  Điểm:
+                                  {t('score')}
                                 </div>
                                 <div className="text-2xl font-bold text-primary tabular-nums">
                                   {session.attempt.score.toFixed(1)}
@@ -442,15 +442,15 @@ export function SessionsPanel() {
         <Card className="p-5 md:p-6 animate-slideUp" style={{ animationDelay: '200ms' }}>
           <div className="rounded-md border border-dashed border-border-subtle px-4 py-8 text-center">
             <div className="text-sm text-text-muted">
-              Chưa có session nào.
+              {t('no_sessions')}
             </div>
             <div className="mt-2 text-xs text-text-muted">
-              Tham gia lớp học để được mời vào các session.
+              {t('join_class_hint')}
             </div>
             <div className="mt-4">
               <Link href="/dashboard/classes">
                 <Button variant="primary" size="sm" className="hover:scale-105">
-                  Tham gia lớp học
+                  {t('join_class')}
                 </Button>
               </Link>
             </div>
