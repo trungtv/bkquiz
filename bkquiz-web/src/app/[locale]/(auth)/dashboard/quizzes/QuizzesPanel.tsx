@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -28,6 +29,7 @@ type QuizLite = {
 
 export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
   const router = useRouter();
+  const t = useTranslations('Quizzes');
   const [quizzes, setQuizzes] = useState<QuizLite[]>([]);
   const [title, setTitle] = useState('');
   const [busy, setBusy] = useState(false);
@@ -130,7 +132,7 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
 
   async function createQuiz() {
     if (title.trim().length === 0) {
-      setError('Vui lòng nhập tên quiz');
+      setError(t('please_enter_quiz_title'));
       return;
     }
     setBusy(true);
@@ -158,7 +160,7 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
         return;
       }
       setTitle('');
-      setToast({ message: 'Đã tạo quiz thành công', type: 'success' });
+      setToast({ message: t('quiz_created_success'), type: 'success' });
       await load();
       // Delay redirect để user thấy toast
       setTimeout(() => {
@@ -181,10 +183,10 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
       const json = await res.json() as { error?: string };
       if (!res.ok) {
         setError(json.error ?? 'UPDATE_STATUS_FAILED');
-        setToast({ message: 'Không thể publish quiz', type: 'error' });
+        setToast({ message: t('cannot_publish_quiz'), type: 'error' });
         return;
       }
-      setToast({ message: 'Đã publish quiz thành công', type: 'success' });
+      setToast({ message: t('quiz_published_success'), type: 'success' });
       await load();
     } finally {
       setBusy(false);
@@ -197,10 +199,10 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
       <nav className="text-sm">
         <div className="flex items-center gap-2 text-text-muted">
           <Link href="/dashboard" className="hover:text-text-heading">
-            Dashboard
+            {t('breadcrumb_dashboard')}
           </Link>
           <span>·</span>
-          <span className="text-text-heading">Quizzes</span>
+          <span className="text-text-heading">{t('title')}</span>
         </div>
       </nav>
 
@@ -208,21 +210,21 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
       <Card className="p-5 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-text-heading">Quizzes</h1>
+            <h1 className="text-2xl font-semibold text-text-heading">{t('title')}</h1>
             <div className="mt-1 text-sm text-text-muted">
-              Quản lý quiz của bạn. Quiz có thể được sử dụng cho nhiều lớp học.
+              {t('description')}
             </div>
           </div>
         </div>
 
         <div className="mt-4">
           <label className="grid gap-1 text-sm" htmlFor="quizTitle">
-            <div className="font-medium text-text-muted">Tạo quiz mới (draft)</div>
+            <div className="font-medium text-text-muted">{t('create_new_quiz_draft')}</div>
             <div className="flex gap-2">
               <Input
                 id="quizTitle"
                 className="w-full"
-                placeholder="VD: Quiz tuần 1"
+                placeholder={t('quiz_title_placeholder')}
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 disabled={busy}
@@ -232,7 +234,7 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
                 disabled={busy || title.trim().length === 0}
                 onClick={() => void createQuiz()}
               >
-                Tạo
+                {t('create')}
               </Button>
             </div>
           </label>
@@ -251,19 +253,19 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
       {quizzes.length > 0 && (
         <div className="grid gap-4 md:grid-cols-4">
           <Card className="p-4">
-            <div className="text-xs text-text-muted">Tổng quiz</div>
+            <div className="text-xs text-text-muted">{t('total_quizzes')}</div>
             <div className="mt-1 text-2xl font-semibold text-text-heading">{stats.total}</div>
           </Card>
           <Card className="p-4">
-            <div className="text-xs text-text-muted">Draft</div>
+            <div className="text-xs text-text-muted">{t('draft')}</div>
             <div className="mt-1 text-2xl font-semibold text-text-heading">{stats.draft}</div>
           </Card>
           <Card className="p-4">
-            <div className="text-xs text-text-muted">Published</div>
+            <div className="text-xs text-text-muted">{t('published')}</div>
             <div className="mt-1 text-2xl font-semibold text-text-heading">{stats.published}</div>
           </Card>
           <Card className="p-4">
-            <div className="text-xs text-text-muted">Archived</div>
+            <div className="text-xs text-text-muted">{t('archived')}</div>
             <div className="mt-1 text-2xl font-semibold text-text-heading">{stats.archived}</div>
           </Card>
         </div>
@@ -282,9 +284,9 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
       <Card className="p-5 md:p-6 animate-slideUp" style={{ animationDelay: '100ms' }}>
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-lg font-semibold text-text-heading">Danh sách quiz</div>
+            <div className="text-lg font-semibold text-text-heading">{t('quiz_list_title')}</div>
             <div className="mt-1 text-sm text-text-muted">
-              Mỗi quiz tương ứng với một cấu hình rules và session.
+              {t('quiz_list_description')}
             </div>
           </div>
         </div>
@@ -293,10 +295,10 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
           ? (
               <div className="mt-6 rounded-md border border-dashed border-border-subtle px-4 py-8 text-center">
                 <div className="text-sm text-text-muted">
-                  Chưa có quiz nào.
+                  {t('no_quizzes_yet')}
                 </div>
                 <div className="mt-2 text-xs text-text-muted">
-                  Tạo quiz draft ở phía trên để bắt đầu.
+                  {t('create_quiz_draft_hint')}
                 </div>
               </div>
             )
@@ -316,7 +318,7 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
                             <div className="mt-1 text-xs text-text-muted">
                               {q.ruleCount}
                               {' '}
-                              lượt chọn câu
+                              {t('rule_count')}
                             </div>
                           )}
                         </div>
@@ -383,7 +385,7 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
                                     void updateQuizStatus(q.id, 'published');
                                   }}
                               >
-                                Publish
+                                {t('publish')}
                               </Button>
                             )
                           : null}
@@ -396,7 +398,7 @@ export function QuizzesPanel(_props: { classrooms: ClassroomLite[] }) {
                             router.push(`/dashboard/quizzes/${q.id}`);
                           }}
                         >
-                          Mở
+                          {t('open')}
                         </Button>
                       </div>
                     </div>

@@ -186,7 +186,28 @@
     "expand_sidebar": "Mở rộng thanh bên"
   },
   "Quizzes": {
-    "meta_title": "Bài kiểm tra"
+    "meta_title": "Bài kiểm tra",
+    "title": "Quizzes",
+    "description": "Quản lý quiz của bạn. Quiz có thể được sử dụng cho nhiều lớp học.",
+    "breadcrumb_dashboard": "Bảng điều khiển",
+    "create_new_quiz_draft": "Tạo quiz mới (draft)",
+    "quiz_title_placeholder": "VD: Quiz tuần 1",
+    "create": "Tạo",
+    "please_enter_quiz_title": "Vui lòng nhập tên quiz",
+    "quiz_created_success": "Đã tạo quiz thành công",
+    "quiz_published_success": "Đã publish quiz thành công",
+    "cannot_publish_quiz": "Không thể publish quiz",
+    "total_quizzes": "Tổng quiz",
+    "draft": "Draft",
+    "published": "Published",
+    "archived": "Archived",
+    "quiz_list_title": "Danh sách quiz",
+    "quiz_list_description": "Mỗi quiz tương ứng với một cấu hình rules và session.",
+    "no_quizzes_yet": "Chưa có quiz nào.",
+    "create_quiz_draft_hint": "Tạo quiz draft ở phía trên để bắt đầu.",
+    "rule_count": "lượt chọn câu",
+    "publish": "Publish",
+    "open": "Mở"
   },
   "QuestionBank": {
     "meta_title": "Ngân hàng câu hỏi",

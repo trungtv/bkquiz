@@ -186,7 +186,28 @@
     "expand_sidebar": "Expand sidebar"
   },
   "Quizzes": {
-    "meta_title": "Quizzes"
+    "meta_title": "Quizzes",
+    "title": "Quizzes",
+    "description": "Manage your quizzes. Quizzes can be used for multiple classes.",
+    "breadcrumb_dashboard": "Dashboard",
+    "create_new_quiz_draft": "Create new quiz (draft)",
+    "quiz_title_placeholder": "E.g.: Week 1 Quiz",
+    "create": "Create",
+    "please_enter_quiz_title": "Please enter quiz title",
+    "quiz_created_success": "Quiz created successfully",
+    "quiz_published_success": "Quiz published successfully",
+    "cannot_publish_quiz": "Cannot publish quiz",
+    "total_quizzes": "Total quizzes",
+    "draft": "Draft",
+    "published": "Published",
+    "archived": "Archived",
+    "quiz_list_title": "Quiz list",
+    "quiz_list_description": "Each quiz corresponds to a rules configuration and session.",
+    "no_quizzes_yet": "No quizzes yet.",
+    "create_quiz_draft_hint": "Create a quiz draft above to get started.",
+    "rule_count": "rule selections",
+    "publish": "Publish",
+    "open": "Open"
   },
   "QuestionBank": {
     "meta_title": "Question bank",
