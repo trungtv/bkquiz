@@ -28,6 +28,13 @@ type MobileSidebarProviderProps = {
   quizzesLink: string;
   questionBankLink: string;
   userProfileLink: string;
+  teacherRole: string;
+  studentRole: string;
+  mySessions: string;
+  userProfile: string;
+  collapseSidebar: string;
+  expandSidebar: string;
+  signOutLabel?: string;
 };
 
 export function MobileSidebarProvider(props: MobileSidebarProviderProps) {
@@ -57,6 +64,13 @@ export function MobileSidebarProvider(props: MobileSidebarProviderProps) {
         quizzesLink={props.quizzesLink}
         questionBankLink={props.questionBankLink}
         userProfileLink={props.userProfileLink}
+        teacherRole={props.teacherRole}
+        studentRole={props.studentRole}
+        mySessions={props.mySessions}
+        userProfile={props.userProfile}
+        collapseSidebar={props.collapseSidebar}
+        expandSidebar={props.expandSidebar}
+        signOutLabel={props.signOutLabel}
         isMobileOpen={isMobileOpen}
         onMobileClose={() => setIsMobileOpen(false)}
       />

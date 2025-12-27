@@ -305,7 +305,11 @@ export function AttemptClient(props: { attemptId: string }) {
         setError(json.error ?? t('submit_failed'));
         return;
       }
-      setError(t('submit_success', { score: json.score, correctCount: json.correctCount, totalQuestions: json.totalQuestions }));
+      setError(t('submit_success', { 
+        score: json.score ?? 0, 
+        correctCount: json.correctCount ?? 0, 
+        totalQuestions: json.totalQuestions ?? 0 
+      }));
       await load();
     } finally {
       setBusy(false);
