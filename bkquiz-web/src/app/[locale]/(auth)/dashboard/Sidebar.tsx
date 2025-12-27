@@ -14,6 +14,12 @@ type SidebarProps = {
   quizzesLink: string;
   questionBankLink: string;
   userProfileLink: string;
+  teacherRole: string;
+  studentRole: string;
+  mySessions: string;
+  userProfile: string;
+  collapseSidebar: string;
+  expandSidebar: string;
   signOutLabel?: string;
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
@@ -119,7 +125,7 @@ export function Sidebar(props: SidebarProps) {
           onClick={toggle}
           onKeyDown={handleKeyDown}
           role="button"
-          aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
+          aria-label={isExpanded ? props.collapseSidebar : props.expandSidebar}
           tabIndex={0}
           className="flex h-full flex-col py-4"
         >
@@ -129,18 +135,18 @@ export function Sidebar(props: SidebarProps) {
               ? (
                   <>
                     <div className="flex-1">
-                      <div className="text-sm font-semibold tracking-wide text-text-muted uppercase">
+                        <div className="text-sm font-semibold tracking-wide text-text-muted uppercase">
                         BKquiz
                       </div>
                       <div className="mt-1 flex items-center gap-2">
                         <div className="text-xs text-text-muted">
-                          Dashboard
+                          {props.dashboardLink}
                         </div>
                         <Badge
                           variant={props.role === 'teacher' ? 'success' : 'info'}
                           className="px-1.5 py-0.5 text-[10px]"
                         >
-                          {props.role === 'teacher' ? 'Teacher' : 'Student'}
+                          {props.role === 'teacher' ? props.teacherRole : props.studentRole}
                         </Badge>
                       </div>
                     </div>
@@ -151,7 +157,7 @@ export function Sidebar(props: SidebarProps) {
                         toggle();
                       }}
                       className="rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-card hover:text-text-heading"
-                      aria-label="Collapse sidebar"
+                      aria-label={props.collapseSidebar}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -178,7 +184,7 @@ export function Sidebar(props: SidebarProps) {
                       toggle();
                     }}
                     className="mx-auto rounded-md p-1.5 text-text-muted transition-colors hover:bg-bg-card hover:text-text-heading"
-                    aria-label="Expand sidebar"
+                    aria-label={props.expandSidebar}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -210,7 +216,7 @@ export function Sidebar(props: SidebarProps) {
                   ? 'bg-bg-card text-text-heading'
                   : 'text-text-muted hover:bg-bg-card hover:text-text-heading'
               }`}
-              title={isExpanded ? undefined : 'Dashboard'}
+              title={isExpanded ? undefined : props.dashboardLink}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -242,7 +248,7 @@ export function Sidebar(props: SidebarProps) {
                   ? 'bg-bg-card text-text-heading'
                   : 'text-text-muted hover:bg-bg-card hover:text-text-heading'
               }`}
-              title={isExpanded ? undefined : 'Classes'}
+              title={isExpanded ? undefined : props.classesLink}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -277,7 +283,7 @@ export function Sidebar(props: SidebarProps) {
                           ? 'bg-bg-card text-text-heading'
                           : 'text-text-muted hover:bg-bg-card hover:text-text-heading'
                       }`}
-                      title={isExpanded ? undefined : 'Quizzes'}
+                      title={isExpanded ? undefined : props.quizzesLink}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -308,7 +314,7 @@ export function Sidebar(props: SidebarProps) {
                           ? 'bg-bg-card text-text-heading'
                           : 'text-text-muted hover:bg-bg-card hover:text-text-heading'
                       }`}
-                      title={isExpanded ? undefined : 'Question Bank'}
+                      title={isExpanded ? undefined : props.questionBankLink}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -342,7 +348,7 @@ export function Sidebar(props: SidebarProps) {
                         ? 'bg-bg-card text-text-heading'
                         : 'text-text-muted hover:bg-bg-card hover:text-text-heading'
                     }`}
-                    title={isExpanded ? undefined : 'My Sessions'}
+                    title={isExpanded ? undefined : props.mySessions}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -359,7 +365,7 @@ export function Sidebar(props: SidebarProps) {
                       <circle cx="12" cy="12" r="10" />
                       <polygon points="10 8 16 12 10 16 10 8" />
                     </svg>
-                    {isExpanded && <span>My Sessions</span>}
+                    {isExpanded && <span>{props.mySessions}</span>}
                   </Link>
                 )}
 
@@ -373,7 +379,7 @@ export function Sidebar(props: SidebarProps) {
                   ? 'bg-bg-card text-text-heading'
                   : 'text-text-muted hover:bg-bg-card hover:text-text-heading'
               }`}
-              title={isExpanded ? undefined : 'User Profile'}
+              title={isExpanded ? undefined : props.userProfile}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -411,7 +417,7 @@ export function Sidebar(props: SidebarProps) {
               className={`flex w-full items-center rounded-md py-2 transition-colors ${
                 isExpanded ? 'gap-3 px-3' : 'justify-center px-2'
               } text-text-muted hover:bg-bg-card hover:text-text-heading`}
-              title={isExpanded ? undefined : 'Đăng xuất'}
+              title={isExpanded ? undefined : props.signOutLabel || 'Sign out'}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

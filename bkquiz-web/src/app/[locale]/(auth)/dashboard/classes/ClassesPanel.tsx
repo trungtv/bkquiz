@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
@@ -28,6 +29,7 @@ type ClassesPanelProps = {
 
 export function ClassesPanel(props: ClassesPanelProps) {
   const { role } = props;
+  const t = useTranslations('Classes');
   const router = useRouter();
   const searchParams = useSearchParams();
   const [classes, setClasses] = useState<ClassroomLite[]>([]);
@@ -129,7 +131,7 @@ export function ClassesPanel(props: ClassesPanelProps) {
 
   async function createClass() {
     if (newClassName.trim().length === 0) {
-      setError('Vui lòng nhập tên lớp');
+      setError(t('please_enter_class_name'));
       return;
     }
     setBusy(true);
@@ -146,7 +148,7 @@ export function ClassesPanel(props: ClassesPanelProps) {
         return;
       }
       setNewClassName('');
-      setToast({ message: 'Đã tạo lớp thành công', type: 'success' });
+      setToast({ message: t('class_created_success'), type: 'success' });
       await load();
     } finally {
       setBusy(false);
@@ -185,7 +187,7 @@ export function ClassesPanel(props: ClassesPanelProps) {
         return;
       }
       setJoinCode('');
-      setToast({ message: 'Đã join lớp thành công', type: 'success' });
+      setToast({ message: t('class_joined_success'), type: 'success' });
       await load();
       // Redirect to class detail page
       if (json.id) {
@@ -290,8 +292,8 @@ export function ClassesPanel(props: ClassesPanelProps) {
             <h1 className="text-2xl font-semibold text-text-heading">Classes</h1>
             <div className="mt-1 text-sm text-text-muted">
               {role === 'teacher'
-                ? 'Quản lý các lớp học của bạn'
-                : 'Các lớp bạn đang tham gia'}
+                ? t('manage_your_classes')
+                : t('classes_you_joined')}
             </div>
           </div>
         </div>
@@ -300,7 +302,7 @@ export function ClassesPanel(props: ClassesPanelProps) {
           ? (
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <label className="grid gap-1 text-sm" htmlFor="newClassName">
-                  <div className="font-medium text-text-muted">Tạo lớp mới</div>
+                  <div className="font-medium text-text-muted">{t('create_new_class')}</div>
                   <div className="flex gap-2">
                     <Input
                       id="newClassName"
@@ -327,7 +329,7 @@ export function ClassesPanel(props: ClassesPanelProps) {
                 </label>
 
                 <label className="grid gap-1 text-sm" htmlFor="joinCode">
-                  <div className="font-medium text-text-muted">Join lớp bằng code</div>
+                  <div className="font-medium text-text-muted">{t('join_class_by_code')}</div>
                   <div className="flex gap-2">
                     <Input
                       id="joinCode"
@@ -357,7 +359,7 @@ export function ClassesPanel(props: ClassesPanelProps) {
           : (
               <div className="mt-4">
                 <label className="grid gap-1 text-sm" htmlFor="joinCode">
-                  <div className="font-medium text-text-muted">Join lớp bằng code</div>
+                  <div className="font-medium text-text-muted">{t('join_class_by_code')}</div>
                   <div className="flex gap-2">
                     <Input
                       id="joinCode"
@@ -398,7 +400,7 @@ export function ClassesPanel(props: ClassesPanelProps) {
       {classes.length > 0 && (
         <div className="grid gap-4 md:grid-cols-3 animate-slideUp" style={{ animationDelay: '50ms' }}>
           <Card className="p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg">
-            <div className="text-xs text-text-muted">Tổng lớp</div>
+            <div className="text-xs text-text-muted">{t('total_classes')}</div>
             <div className="mt-1 text-2xl font-semibold text-text-heading">{stats.total}</div>
           </Card>
           {role === 'teacher'
@@ -447,12 +449,10 @@ export function ClassesPanel(props: ClassesPanelProps) {
         <div className="flex items-center justify-between">
           <div>
             <div className="text-lg font-semibold text-text-heading">
-              {role === 'teacher' ? 'My Classes' : 'My Classes'}
+              {t('my_classes')}
             </div>
             <div className="mt-1 text-sm text-text-muted">
-              {classes.length}
-              {' '}
-              lớp
+              {t('classes_count', { count: classes.length })}
             </div>
           </div>
         </div>
@@ -555,15 +555,15 @@ export function ClassesPanel(props: ClassesPanelProps) {
           <Card className="w-full max-w-md p-6 animate-slideUp">
             <div className="mb-4">
               <h2 className="text-xl font-semibold text-text-heading mb-2">
-                Xác nhận tham gia lớp
+                {t('confirm_join_class')}
               </h2>
               <div className="space-y-3 text-sm">
                 <div>
-                  <div className="text-text-muted">Tên lớp:</div>
+                  <div className="text-text-muted">{t('class_name')}</div>
                   <div className="font-semibold text-text-heading">{classPreview.name}</div>
                 </div>
                 <div>
-                  <div className="text-text-muted">Mã lớp:</div>
+                  <div className="text-text-muted">{t('class_code')}</div>
                   <div className="font-mono font-semibold text-text-heading">{classPreview.classCode}</div>
                 </div>
                 <div>
@@ -606,7 +606,7 @@ export function ClassesPanel(props: ClassesPanelProps) {
           <Card className="p-6">
             <div className="text-center">
               <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-              <div className="text-sm text-text-muted">Đang tải thông tin lớp...</div>
+              <div className="text-sm text-text-muted">{t('loading_class_info')}</div>
             </div>
           </Card>
         </div>

@@ -53,11 +53,29 @@
   },
   "SignIn": {
     "meta_title": "Đăng nhập",
-    "meta_description": "Đăng nhập vào tài khoản của bạn một cách liền mạch với quy trình đăng nhập thân thiện với người dùng."
+    "meta_description": "Đăng nhập vào tài khoản của bạn một cách liền mạch với quy trình đăng nhập thân thiện với người dùng.",
+    "title": "Đăng nhập",
+    "description": "Đăng nhập bằng Google để vào BKquiz. Nếu bạn chưa có tài khoản, hệ thống sẽ tự động tạo tài khoản mới khi đăng nhập lần đầu.",
+    "tagline": "Quiz trên lớp với token 45s",
+    "terms_text": "Bằng cách đăng nhập, bạn đồng ý với",
+    "terms_link": "Điều khoản sử dụng",
+    "and": "và",
+    "privacy_link": "Chính sách bảo mật",
+    "back_to_home": "← Về trang chủ"
   },
   "SignUp": {
     "meta_title": "Đăng ký",
-    "meta_description": "Tạo tài khoản một cách dễ dàng thông qua quy trình đăng ký trực quan của chúng tôi."
+    "meta_description": "Tạo tài khoản một cách dễ dàng thông qua quy trình đăng ký trực quan của chúng tôi.",
+    "title": "Đăng ký",
+    "description": "Đăng ký tài khoản BKquiz bằng Google. Hệ thống sẽ tự động tạo tài khoản mới khi bạn đăng nhập lần đầu.",
+    "tagline": "Quiz trên lớp với token 45s",
+    "already_have_account": "Đã có tài khoản?",
+    "sign_in_link": "Đăng nhập",
+    "terms_text": "Bằng cách đăng ký, bạn đồng ý với",
+    "terms_link": "Điều khoản sử dụng",
+    "and": "và",
+    "privacy_link": "Chính sách bảo mật",
+    "back_to_home": "← Về trang chủ"
   },
   "Dashboard": {
     "meta_title": "Bảng điều khiển",
@@ -73,13 +91,58 @@
     "quizzes_link": "Bài kiểm tra",
     "question_bank_link": "Ngân hàng câu hỏi",
     "user_profile_link": "Quản lý tài khoản của bạn",
-    "sign_out": "Đăng xuất"
+    "sign_out": "Đăng xuất",
+    "dashboard_label": "Bảng điều khiển",
+    "teacher_role": "Giáo viên",
+    "student_role": "Học sinh",
+    "my_sessions": "Phiên của tôi",
+    "user_profile": "Hồ sơ người dùng",
+    "collapse_sidebar": "Thu gọn thanh bên",
+    "expand_sidebar": "Mở rộng thanh bên"
   },
   "Quizzes": {
     "meta_title": "Bài kiểm tra"
   },
   "QuestionBank": {
-    "meta_title": "Ngân hàng câu hỏi"
+    "meta_title": "Ngân hàng câu hỏi",
+    "title": "Ngân hàng câu hỏi",
+    "description": "Quản lý question pools và import nhanh câu hỏi từ Markdown/ZIP.",
+    "breadcrumb_dashboard": "Bảng điều khiển"
+  },
+  "Classes": {
+    "meta_title": "Lớp học",
+    "my_classes": "Lớp của tôi",
+    "classes_count": "{count} lớp",
+    "breadcrumb_dashboard": "Bảng điều khiển"
+  },
+  "Sessions": {
+    "meta_title": "Phiên của tôi",
+    "title": "Phiên của tôi",
+    "breadcrumb_dashboard": "Bảng điều khiển"
+  },
+  "Classes": {
+    "meta_title": "Lớp học",
+    "my_classes": "Lớp của tôi",
+    "classes_count": "{count} lớp",
+    "breadcrumb_dashboard": "Bảng điều khiển",
+    "manage_your_classes": "Quản lý các lớp học của bạn",
+    "classes_you_joined": "Các lớp bạn đang tham gia",
+    "create_new_class": "Tạo lớp mới",
+    "join_class_by_code": "Join lớp bằng code",
+    "total_classes": "Tổng lớp",
+    "no_classes_yet": "Chưa có lớp nào.",
+    "create_or_join_hint_teacher": "Tạo lớp mới hoặc join lớp bằng class code ở phía trên.",
+    "create_or_join_hint_student": "Join lớp bằng class code ở phía trên.",
+    "confirm_join_class": "Xác nhận tham gia lớp",
+    "class_name": "Tên lớp:",
+    "class_code": "Mã lớp:",
+    "loading_class_info": "Đang tải thông tin lớp...",
+    "please_enter_class_name": "Vui lòng nhập tên lớp",
+    "class_created_success": "Đã tạo lớp thành công",
+    "class_joined_success": "Đã join lớp thành công"
+  },
+  "Attempt": {
+    "submit_success": "Đã submit. Score: {score} (đúng {correctCount}/{totalQuestions})",
+    "submit_failed": "Submit thất bại"
   }
 }
-

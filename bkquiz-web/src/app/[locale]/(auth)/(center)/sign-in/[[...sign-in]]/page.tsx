@@ -25,6 +25,10 @@ export async function generateMetadata(props: ISignInPageProps): Promise<Metadat
 export default async function SignInPage(props: ISignInPageProps) {
   const { locale } = await props.params;
   setRequestLocale(locale);
+  const t = await getTranslations({
+    locale,
+    namespace: 'SignIn',
+  });
 
   return (
     <div className="mx-auto w-full max-w-md px-4">
@@ -38,16 +42,16 @@ export default async function SignInPage(props: ISignInPageProps) {
             {AppConfig.name}
           </Link>
           <p className="mt-2 text-sm text-text-muted">
-            Quiz trên lớp với token 45s
+            {t('tagline')}
           </p>
         </div>
 
         {/* Title */}
         <h1 className="mb-2 text-2xl font-semibold text-text-heading">
-          Đăng nhập
+          {t('title')}
         </h1>
         <p className="mb-6 text-sm text-text-body">
-          Đăng nhập bằng Google để vào BKquiz. Nếu bạn chưa có tài khoản, hệ thống sẽ tự động tạo tài khoản mới khi đăng nhập lần đầu.
+          {t('description')}
         </p>
 
         {/* Sign In Form */}
@@ -56,19 +60,19 @@ export default async function SignInPage(props: ISignInPageProps) {
         {/* Footer */}
         <div className="mt-6 border-t border-border-subtle pt-6 text-center">
           <p className="text-xs text-text-muted">
-            Bằng cách đăng nhập, bạn đồng ý với{' '}
+            {t('terms_text')}{' '}
             <Link
               href={`/${locale}/terms`}
               className="text-primary hover:underline"
             >
-              Điều khoản sử dụng
+              {t('terms_link')}
             </Link>
-            {' '}và{' '}
+            {' '}{t('and')}{' '}
             <Link
               href={`/${locale}/privacy`}
               className="text-primary hover:underline"
             >
-              Chính sách bảo mật
+              {t('privacy_link')}
             </Link>
             .
           </p>
@@ -81,7 +85,7 @@ export default async function SignInPage(props: ISignInPageProps) {
           href={`/${locale}/`}
           className="text-sm text-text-muted hover:text-text-heading transition-colors"
         >
-          ← Về trang chủ
+          {t('back_to_home')}
         </Link>
       </div>
     </div>

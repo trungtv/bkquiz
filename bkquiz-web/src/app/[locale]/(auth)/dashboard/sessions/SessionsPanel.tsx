@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -36,6 +37,7 @@ type Session = {
 };
 
 export function SessionsPanel() {
+  const t = useTranslations('Sessions');
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -134,10 +136,10 @@ export function SessionsPanel() {
       <nav className="text-sm animate-fadeIn">
         <div className="flex items-center gap-2 text-text-muted">
           <Link href="/dashboard" className="hover:text-text-heading transition-colors">
-            Dashboard
+            {t('breadcrumb_dashboard')}
           </Link>
           <span>·</span>
-          <span className="text-text-heading">My Sessions</span>
+          <span className="text-text-heading">{t('title')}</span>
         </div>
       </nav>
 
@@ -147,7 +149,7 @@ export function SessionsPanel() {
           <div>
             <div className="text-sm text-text-muted">BKquiz Sessions</div>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-text-heading">
-              My Sessions
+              {t('title')}
             </h1>
             <div className="mt-2 text-sm text-text-muted">
               Xem và quản lý các session bạn đang tham gia hoặc đã tham gia.

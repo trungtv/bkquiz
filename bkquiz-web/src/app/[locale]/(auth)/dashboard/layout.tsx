@@ -41,6 +41,13 @@ export default async function DashboardLayout(props: {
           quizzesLink={t('quizzes_link')}
           questionBankLink={t('question_bank_link')}
           userProfileLink={t('user_profile_link')}
+          teacherRole={t('teacher_role')}
+          studentRole={t('student_role')}
+          mySessions={t('my_sessions')}
+          userProfile={t('user_profile')}
+          collapseSidebar={t('collapse_sidebar')}
+          expandSidebar={t('expand_sidebar')}
+          signOutLabel={t('sign_out')}
         />
 
         {/* Main column */}
@@ -56,7 +63,7 @@ export default async function DashboardLayout(props: {
                 {AppConfig.name}
               </Link>
               <span className="hidden text-sm text-text-muted sm:inline">
-                Dashboard
+                {t('dashboard_label')}
               </span>
             </div>
             <div className="flex items-center gap-4 text-sm">

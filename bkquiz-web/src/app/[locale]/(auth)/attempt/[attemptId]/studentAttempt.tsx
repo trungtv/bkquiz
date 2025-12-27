@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MathRenderer } from '@/components/MathRenderer';
 import { Badge } from '@/components/ui/Badge';
@@ -85,6 +86,7 @@ async function writeLocalAnswers(attemptId: string, store: LocalAnswerStore) {
 }
 
 export function AttemptClient(props: { attemptId: string }) {
+  const t = useTranslations('Attempt');
   const [state, setState] = useState<AttemptState | null>(null);
   const [questions, setQuestions] = useState<SnapshotQuestion[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -300,10 +302,10 @@ export function AttemptClient(props: { attemptId: string }) {
         return;
       }
       if (!res.ok || !json.ok) {
-        setError(json.error ?? 'SUBMIT_FAILED');
+        setError(json.error ?? t('submit_failed'));
         return;
       }
-      setError(`Đã submit. Score: ${json.score} (đúng ${json.correctCount}/${json.totalQuestions})`);
+      setError(t('submit_success', { score: json.score, correctCount: json.correctCount, totalQuestions: json.totalQuestions }));
       await load();
     } finally {
       setBusy(false);

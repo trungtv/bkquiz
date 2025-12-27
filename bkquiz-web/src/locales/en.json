@@ -53,11 +53,29 @@
   },
   "SignIn": {
     "meta_title": "Sign in",
-    "meta_description": "Seamlessly sign in to your account with our user-friendly login process."
+    "meta_description": "Seamlessly sign in to your account with our user-friendly login process.",
+    "title": "Sign in",
+    "description": "Sign in with Google to access BKquiz. If you don't have an account, the system will automatically create a new account on your first login.",
+    "tagline": "In-class quiz with 45s token",
+    "terms_text": "By signing in, you agree to",
+    "terms_link": "Terms of Service",
+    "and": "and",
+    "privacy_link": "Privacy Policy",
+    "back_to_home": "← Back to home"
   },
   "SignUp": {
     "meta_title": "Sign up",
-    "meta_description": "Effortlessly create an account through our intuitive sign-up process."
+    "meta_description": "Effortlessly create an account through our intuitive sign-up process.",
+    "title": "Sign up",
+    "description": "Sign up for BKquiz with Google. The system will automatically create a new account when you log in for the first time.",
+    "tagline": "In-class quiz with 45s token",
+    "already_have_account": "Already have an account?",
+    "sign_in_link": "Sign in",
+    "terms_text": "By signing up, you agree to",
+    "terms_link": "Terms of Service",
+    "and": "and",
+    "privacy_link": "Privacy Policy",
+    "back_to_home": "← Back to home"
   },
   "Dashboard": {
     "meta_title": "Dashboard",
@@ -73,12 +91,58 @@
     "quizzes_link": "Quizzes",
     "question_bank_link": "Question bank",
     "user_profile_link": "Manage your account",
-    "sign_out": "Sign out"
+    "sign_out": "Sign out",
+    "dashboard_label": "Dashboard",
+    "teacher_role": "Teacher",
+    "student_role": "Student",
+    "my_sessions": "My Sessions",
+    "user_profile": "User Profile",
+    "collapse_sidebar": "Collapse sidebar",
+    "expand_sidebar": "Expand sidebar"
   },
   "Quizzes": {
     "meta_title": "Quizzes"
   },
   "QuestionBank": {
-    "meta_title": "Question bank"
+    "meta_title": "Question bank",
+    "title": "Question Bank",
+    "description": "Manage question pools and quickly import questions from Markdown/ZIP.",
+    "breadcrumb_dashboard": "Dashboard"
+  },
+  "Classes": {
+    "meta_title": "Classes",
+    "my_classes": "My Classes",
+    "classes_count": "{count} classes",
+    "breadcrumb_dashboard": "Dashboard"
+  },
+  "Sessions": {
+    "meta_title": "My Sessions",
+    "title": "My Sessions",
+    "breadcrumb_dashboard": "Dashboard"
+  },
+  "Classes": {
+    "meta_title": "Classes",
+    "my_classes": "My Classes",
+    "classes_count": "{count} classes",
+    "breadcrumb_dashboard": "Dashboard",
+    "manage_your_classes": "Manage your classes",
+    "classes_you_joined": "Classes you joined",
+    "create_new_class": "Create new class",
+    "join_class_by_code": "Join class by code",
+    "total_classes": "Total classes",
+    "no_classes_yet": "No classes yet.",
+    "create_or_join_hint_teacher": "Create a new class or join a class using the class code above.",
+    "create_or_join_hint_student": "Join a class using the class code above.",
+    "confirm_join_class": "Confirm join class",
+    "class_name": "Class name:",
+    "class_code": "Class code:",
+    "loading_class_info": "Loading class information...",
+    "please_enter_class_name": "Please enter class name",
+    "class_created_success": "Class created successfully",
+    "class_joined_success": "Class joined successfully"
+  },
+  "Attempt": {
+    "submit_success": "Submitted. Score: {score} (correct {correctCount}/{totalQuestions})",
+    "submit_failed": "Submit failed"
   }
 }

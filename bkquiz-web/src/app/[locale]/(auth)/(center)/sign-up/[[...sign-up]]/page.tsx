@@ -25,6 +25,10 @@ export async function generateMetadata(props: ISignUpPageProps): Promise<Metadat
 export default async function SignUpPage(props: ISignUpPageProps) {
   const { locale } = await props.params;
   setRequestLocale(locale);
+  const t = await getTranslations({
+    locale,
+    namespace: 'SignUp',
+  });
 
   return (
     <div className="mx-auto w-full max-w-md px-4">
@@ -38,16 +42,16 @@ export default async function SignUpPage(props: ISignUpPageProps) {
             {AppConfig.name}
           </Link>
           <p className="mt-2 text-sm text-text-muted">
-            Quiz trên lớp với token 45s
+            {t('tagline')}
           </p>
         </div>
 
         {/* Title */}
         <h1 className="mb-2 text-2xl font-semibold text-text-heading">
-          Đăng ký
+          {t('title')}
         </h1>
         <p className="mb-6 text-sm text-text-body">
-          Đăng ký tài khoản BKquiz bằng Google. Hệ thống sẽ tự động tạo tài khoản mới khi bạn đăng nhập lần đầu.
+          {t('description')}
         </p>
 
         {/* Sign Up Form (same as sign-in) */}
@@ -56,12 +60,12 @@ export default async function SignUpPage(props: ISignUpPageProps) {
         {/* Already have account */}
         <div className="mt-6 border-t border-border-subtle pt-6 text-center">
           <p className="text-sm text-text-muted">
-            Đã có tài khoản?{' '}
+            {t('already_have_account')}{' '}
             <Link
               href={`/${locale}/sign-in`}
               className="font-medium text-primary hover:underline"
             >
-              Đăng nhập
+              {t('sign_in_link')}
             </Link>
           </p>
         </div>
@@ -69,19 +73,19 @@ export default async function SignUpPage(props: ISignUpPageProps) {
         {/* Footer */}
         <div className="mt-4 text-center">
           <p className="text-xs text-text-muted">
-            Bằng cách đăng ký, bạn đồng ý với{' '}
+            {t('terms_text')}{' '}
             <Link
               href={`/${locale}/terms`}
               className="text-primary hover:underline"
             >
-              Điều khoản sử dụng
+              {t('terms_link')}
             </Link>
-            {' '}và{' '}
+            {' '}{t('and')}{' '}
             <Link
               href={`/${locale}/privacy`}
               className="text-primary hover:underline"
             >
-              Chính sách bảo mật
+              {t('privacy_link')}
             </Link>
             .
           </p>
@@ -94,7 +98,7 @@ export default async function SignUpPage(props: ISignUpPageProps) {
           href={`/${locale}/`}
           className="text-sm text-text-muted hover:text-text-heading transition-colors"
         >
-          ← Về trang chủ
+          {t('back_to_home')}
         </Link>
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -20,6 +21,7 @@ type Pool = {
 };
 
 export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
+  const t = useTranslations('QuestionBank');
   const [owned, setOwned] = useState<Pool[]>(props.initialOwned);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -177,18 +179,18 @@ export function QuestionBankPanel(props: { initialOwned: Pool[] }) {
       {/* Breadcrumb */}
       <nav className="text-sm text-text-muted">
         <Link href="/dashboard" className="hover:text-text-heading transition-colors">
-          Dashboard
+          {t('breadcrumb_dashboard')}
         </Link>
         <span className="mx-2">·</span>
-        <span className="text-text-heading">Question Bank</span>
+        <span className="text-text-heading">{t('title')}</span>
       </nav>
 
       <Card className="p-5 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-lg font-semibold text-text-heading">Question Bank</div>
+            <div className="text-lg font-semibold text-text-heading">{t('title')}</div>
             <div className="mt-1 text-sm text-text-muted">
-              Quản lý question pools và import nhanh câu hỏi từ Markdown/ZIP.
+              {t('description')}
             </div>
           </div>
           <div className="flex gap-2">
